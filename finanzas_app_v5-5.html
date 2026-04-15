@@ -397,30 +397,64 @@
                 );
             };
 
-            // Vista Calendario de Ingresos CON EDICIÓN
+            // Vista Ingresos
             const VistaIngresos = () => {
                 const totalPropinas = estado.ingresosDiarios.reduce((sum, ing) => sum + ing.propinas, 0);
                 const totalUSD = estado.ingresosDiarios.reduce((sum, ing) => sum + ing.usd, 0);
+                const totalARS = estado.ingresosDiarios.reduce((sum, ing) => sum + (ing.ars || 0), 0);
                 const promedioDiario = estado.ingresosDiarios.length > 0 ? totalPropinas / estado.ingresosDiarios.length : 0;
 
                 return (
                     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-4 pb-24">
                         <div className="max-w-4xl mx-auto">
+
+                            {/* Botones de acción */}
                             <div className="bg-white rounded-3xl shadow-2xl p-6 mb-6">
-                                <h1 className="text-3xl font-bold text-gray-800 mb-4">📅 Historial de Ingresos</h1>
-                                
-                                <div className="grid grid-cols-3 gap-4 mb-6">
-                                    <div className="bg-green-100 rounded-xl p-4">
-                                        <p className="text-sm text-gray-600">💵 Total MXN</p>
-                                        <p className="text-3xl font-bold text-green-700">${Math.round(totalPropinas)}</p>
+                                <h1 className="text-2xl font-bold text-gray-800 mb-4">➕ Registrar ingreso</h1>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button onClick={() => setModal('ingresoDiario')}
+                                        className="flex flex-col items-center bg-gradient-to-br from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 text-white rounded-2xl p-5 shadow-md transition-all">
+                                        <span className="text-3xl mb-2">💵</span>
+                                        <span className="font-bold text-lg">Ingreso Diario</span>
+                                        <span className="text-xs opacity-80 mt-1">Pesos mexicanos</span>
+                                    </button>
+                                    <button onClick={() => setModal('ingresoUSD')}
+                                        className="flex flex-col items-center bg-gradient-to-br from-blue-400 to-cyan-500 hover:from-blue-500 hover:to-cyan-600 text-white rounded-2xl p-5 shadow-md transition-all">
+                                        <span className="text-3xl mb-2">💲</span>
+                                        <span className="font-bold text-lg">Dólares</span>
+                                        <span className="text-xs opacity-80 mt-1">USD a billetera</span>
+                                    </button>
+                                    <button onClick={() => setModal('ingresoARS')}
+                                        className="flex flex-col items-center bg-gradient-to-br from-sky-400 to-blue-500 hover:from-sky-500 hover:to-blue-600 text-white rounded-2xl p-5 shadow-md transition-all">
+                                        <span className="text-3xl mb-2">🇦🇷</span>
+                                        <span className="font-bold text-lg">Pesos Arg.</span>
+                                        <span className="text-xs opacity-80 mt-1">ARS a billetera</span>
+                                    </button>
+                                    <button onClick={() => setModal('ingresoSueldo')}
+                                        className="flex flex-col items-center bg-gradient-to-br from-purple-400 to-indigo-500 hover:from-purple-500 hover:to-indigo-600 text-white rounded-2xl p-5 shadow-md transition-all">
+                                        <span className="text-3xl mb-2">💰</span>
+                                        <span className="font-bold text-lg">Salario</span>
+                                        <span className="text-xs opacity-80 mt-1">Asignar a gastos</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Historial */}
+                            <div className="bg-white rounded-3xl shadow-2xl p-6">
+                                <h2 className="text-xl font-bold text-gray-800 mb-4">📋 Historial</h2>
+
+                                <div className="grid grid-cols-3 gap-3 mb-6">
+                                    <div className="bg-green-100 rounded-xl p-3">
+                                        <p className="text-xs text-gray-600">💵 Total MXN</p>
+                                        <p className="text-2xl font-bold text-green-700">${Math.round(totalPropinas)}</p>
                                     </div>
-                                    <div className="bg-blue-100 rounded-xl p-4">
-                                        <p className="text-sm text-gray-600">💲 Total USD</p>
-                                        <p className="text-3xl font-bold text-blue-700">${Math.round(totalUSD)}</p>
+                                    <div className="bg-blue-100 rounded-xl p-3">
+                                        <p className="text-xs text-gray-600">💲 Total USD</p>
+                                        <p className="text-2xl font-bold text-blue-700">${Math.round(totalUSD)}</p>
                                     </div>
-                                    <div className="bg-purple-100 rounded-xl p-4">
-                                        <p className="text-sm text-gray-600">Promedio/día</p>
-                                        <p className="text-3xl font-bold text-purple-700">${Math.round(promedioDiario)}</p>
+                                    <div className="bg-sky-100 rounded-xl p-3">
+                                        <p className="text-xs text-gray-600">🇦🇷 Total ARS</p>
+                                        <p className="text-2xl font-bold text-sky-700">${Math.round(totalARS).toLocaleString()}</p>
                                     </div>
                                 </div>
 
@@ -428,7 +462,6 @@
                                     <div className="text-center py-12 text-gray-500">
                                         <p className="text-5xl mb-4">📭</p>
                                         <p>No hay ingresos registrados aún</p>
-                                        <p className="text-sm">Registrá tus ingresos diarios desde el dashboard</p>
                                     </div>
                                 ) : (
                                     <div className="space-y-3 max-h-96 overflow-y-auto">
@@ -436,7 +469,7 @@
                                             const fechaIngreso = new Date(estado.fechaInicio);
                                             fechaIngreso.setDate(fechaIngreso.getDate() + ingreso.dia);
                                             const ingresoId = estado.ingresosDiarios.length - 1 - idx;
-                                            
+
                                             return (
                                                 <div key={idx} className="bg-gray-50 rounded-xl p-4 border-2 border-gray-200">
                                                     <div className="flex justify-between items-start">
@@ -453,9 +486,12 @@
                                                                 {ingreso.usd > 0 && (
                                                                     <p className="text-blue-700 font-bold">💲 ${Math.round(ingreso.usd)}</p>
                                                                 )}
+                                                                {(ingreso.ars || 0) > 0 && (
+                                                                    <p className="text-sky-700 font-bold">🇦🇷 ${Math.round(ingreso.ars).toLocaleString()}</p>
+                                                                )}
                                                             </div>
                                                             <div className="flex flex-col gap-1">
-                                                                <button 
+                                                                <button
                                                                     onClick={() => {
                                                                         setForm({...ingreso, index: ingresoId});
                                                                         setModal('editarIngreso');
@@ -463,7 +499,7 @@
                                                                     className="text-blue-600 hover:text-blue-800 text-sm">
                                                                     ✏️
                                                                 </button>
-                                                                <button 
+                                                                <button
                                                                     onClick={() => {
                                                                         if (confirm('¿Eliminar este ingreso?')) {
                                                                             const nuevosIngresos = [...estado.ingresosDiarios];
@@ -696,26 +732,32 @@
                                 e.preventDefault();
                                 const propinas = parseFloat(e.target.propinas.value) || 0;
                                 const usd = parseFloat(e.target.usd.value) || 0;
+                                const ars = parseFloat(e.target.ars.value) || 0;
                                 const concepto = e.target.concepto.value;
-                                
+
                                 const nuevosIngresos = [...estado.ingresosDiarios];
                                 nuevosIngresos[form.index] = {
                                     ...nuevosIngresos[form.index],
                                     propinas,
                                     usd,
+                                    ars,
                                     concepto
                                 };
-                                
+
                                 setEstado({...estado, ingresosDiarios: nuevosIngresos});
                                 setModal(null);
                             }}>
                                 <div className="mb-3">
-                                    <label className="block text-gray-700 font-bold mb-2">Propinas MXN</label>
+                                    <label className="block text-gray-700 font-bold mb-2">💵 MXN</label>
                                     <input type="number" name="propinas" step="0.01" defaultValue={form.propinas} className="w-full px-4 py-3 border-2 rounded-xl" />
                                 </div>
                                 <div className="mb-3">
-                                    <label className="block text-gray-700 font-bold mb-2">USD</label>
+                                    <label className="block text-gray-700 font-bold mb-2">💲 USD</label>
                                     <input type="number" name="usd" step="0.01" defaultValue={form.usd} className="w-full px-4 py-3 border-2 rounded-xl" />
+                                </div>
+                                <div className="mb-3">
+                                    <label className="block text-gray-700 font-bold mb-2">🇦🇷 ARS</label>
+                                    <input type="number" name="ars" step="0.01" defaultValue={form.ars || 0} className="w-full px-4 py-3 border-2 rounded-xl" />
                                 </div>
                                 <div className="mb-4">
                                     <label className="block text-gray-700 font-bold mb-2">Concepto</label>
@@ -759,6 +801,42 @@
                                 <div className="flex gap-3">
                                     <button type="button" onClick={() => setModal(null)} className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">Cancelar</button>
                                     <button type="submit" className="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-xl font-bold">Agregar</button>
+                                </div>
+                            </form>
+                        </Modal>
+                    )}
+
+                    {/* Modal: Ingreso ARS */}
+                    {modal === 'ingresoARS' && (
+                        <Modal onClose={() => setModal(null)}>
+                            <h2 className="text-2xl font-bold mb-4">🇦🇷 Ingreso en ARS</h2>
+                            <p className="text-gray-600 mb-4">Agregá pesos argentinos a tu billetera</p>
+                            <form onSubmit={(e) => {
+                                e.preventDefault();
+                                const monto = parseFloat(e.target.monto.value);
+                                const concepto = e.target.concepto.value;
+
+                                const nuevoIngreso = {
+                                    dia: estado.diasAcumulados,
+                                    propinas: 0,
+                                    usd: 0,
+                                    ars: monto,
+                                    concepto: concepto
+                                };
+
+                                setEstado({
+                                    ...estado,
+                                    billetera: {...estado.billetera, ars: estado.billetera.ars + monto},
+                                    ingresosDiarios: [...estado.ingresosDiarios, nuevoIngreso]
+                                });
+                                setModal(null);
+                            }}>
+                                <input type="number" name="monto" step="0.01" required className="w-full px-4 py-3 border-2 rounded-xl mb-3 text-2xl" placeholder="50000" />
+                                <input type="text" name="concepto" className="w-full px-4 py-3 border-2 rounded-xl mb-3" placeholder="Concepto (opcional)" />
+                                <p className="text-sm text-gray-600 mb-4">TC: $1 ARS = ${estado.tipoCambio} MXN</p>
+                                <div className="flex gap-3">
+                                    <button type="button" onClick={() => setModal(null)} className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">Cancelar</button>
+                                    <button type="submit" className="flex-1 bg-sky-500 hover:bg-sky-600 text-white px-6 py-3 rounded-xl font-bold">Agregar</button>
                                 </div>
                             </form>
                         </Modal>
