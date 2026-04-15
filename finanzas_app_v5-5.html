@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finanzas App v5</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div id="app"></div>
+    
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function FinanzasApp() {
+            // Estado inicial desde localStorage o valores por defecto
+            const estadoInicial = () => {
+                const guardado = localStorage.getItem('finanzasAppData');
+                if (guardado) {
+                    return JSON.parse(guardado);
+                }
+                return {
+                    fechaInicio: '2026-02-07',
+                    diasAcumulados: 36,
+                    tipoCambio: 0.011,
+                    tipoCambioUSD: 17.16,
+                    gastosFijos: [
+                        { id: 1, nombre: 'Renta', monto: 7500, moneda: 'MXN', periodicidad: 'Mensual', vencimiento: '2026-03-07', diaInicioCiclo: 0, categoria: 'Fijo', porcentajeCostoDiario: 50, montoSueldoAsignado: 0 },
+                        { id: 2, nombre: 'Universidad', monto: 320000, moneda: 'ARS', periodicidad: 'Mensual', vencimiento: '2026-03-03', diaInicioCiclo: 0, categoria: 'Fijo', porcentajeCostoDiario: 0, montoSueldoAsignado: 0 },
+                        { id: 3, nombre: 'Yoga', monto: 1500, moneda: 'MXN', periodicidad: 'Mensual', vencimiento: '2026-03-07', diaInicioCiclo: 0, categoria: 'Fijo', porcentajeCostoDiario: 100, montoSueldoAsignado: 0 },
+                        { id: 4, nombre: 'Fondo gastos', monto: 500, moneda: 'MXN', periodicidad: 'Diario', vencimiento: '-', diaInicioCiclo: 0, categoria: 'No Negociable', porcentajeCostoDiario: 100, montoSueldoAsignado: 0 },
+                        { id: 5, nombre: 'Tanda', monto: 1000, moneda: 'MXN', periodicidad: 'Semanal', vencimiento: '2026-03-19', diaInicioCiclo: 36, categoria: 'No Negociable', porcentajeCostoDiario: 100, montoSueldoAsignado: 0 }
+                    ],
+                    ingresosDiarios: [],
+                    gastosExtras: [],
+                    billetera: { mxnFisico: 8740, mxnDigital: 0, usd: 1325, ars: 15000, tanda: 9000 }
+                };
+            };
+
+            const [estado, setEstado] = useState(estadoInicial);
+            const [vista, setVista] = useState('dashboard');
+            const [seleccionado, setSeleccionado] = useState(null);
+            const [modal, setModal] = useState(null);
+            const [form, setForm] = useState({});
+
+            // Guardar en localStorage cada vez que cambia el estado
+            useEffect(() => {
+                localStorage.setItem('finanzasAppData', JSON.stringify(estado));
+            }, [estado]);
+
+            const formatearFecha = (fecha) => {
+                if (!fecha || fecha === '-') return '-';
+                const f = new Date(fecha);
+                return f.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
+            };
+
+            const calcularFechaActual = () => {
+                const fechaInicio = new Date(estado.fechaInicio);
+                const fechaActual = new Date(fechaInicio);
+                fechaActual.setDate(fechaInicio.getDate() + estado.diasAcumulados);
+                return fechaActual;
+            };
+
+            const calcularCiclo = (gasto) => {
+                const porcentaje = (gasto.porcentajeCostoDiario !== undefined && gasto.porcentajeCostoDiario !== null) 
+                    ? gasto.porcentajeCostoDiario 
+                    : 100;
+
+                if (!gasto.vencimiento || gasto.vencimiento === '-') {
+                    let montoDiarioMXN = gasto.monto;
+                    if (gasto.moneda === 'ARS') {
+                        montoDiarioMXN = gasto.monto * estado.tipoCambio;
+                    } else if (gasto.moneda === 'USD') {
+                        montoDiarioMXN = gasto.monto * estado.tipoCambioUSD;
+                    }
+                    
+                    const montoDiarioCostoDiario = montoDiarioMXN * (porcentaje / 100);
+                    const montoDiarioSueldo = montoDiarioMXN * ((100 - porcentaje) / 100);
+                    
+                    return { 
+                        residuo: 0, 
+                        progreso: 100, 
+                        montoAcumulado: gasto.monto, 
+                        montoAcumuladoPropinas: gasto.monto,
+                        montoSueldoAsignado: 0,
+                        montoDiario: gasto.monto, 
+                        montoDiarioMXN: montoDiarioMXN, 
+                        montoDiarioCostoDiario: montoDiarioCostoDiario,
+                        montoDiarioSueldo: montoDiarioSueldo,
+                        porcentajeCostoDiario: porcentaje, 
+                        diasDelCiclo: 1,
+                        fechaInicioCiclo: estado.fechaInicio,
+                        fechaVencimiento: '-'
+                    };
+                }
+                
+                const fechaInicio = new Date(estado.fechaInicio);
+                const fechaVenc = new Date(gasto.vencimiento);
+                const fechaInicioCiclo = new Date(fechaInicio);
+                fechaInicioCiclo.setDate(fechaInicio.getDate() + gasto.diaInicioCiclo);
+                
+                const diasDelCiclo = Math.max(1, Math.floor((fechaVenc - fechaInicioCiclo) / (1000 * 60 * 60 * 24)));
+                const residuo = (estado.diasAcumulados - gasto.diaInicioCiclo) % diasDelCiclo;
+                
+                const montoDiario = gasto.monto / diasDelCiclo;
+                
+                let montoDiarioMXN = montoDiario;
+                if (gasto.moneda === 'ARS') {
+                    montoDiarioMXN = montoDiario * estado.tipoCambio;
+                } else if (gasto.moneda === 'USD') {
+                    montoDiarioMXN = montoDiario * estado.tipoCambioUSD;
+                }
+                
+                const montoDiarioCostoDiario = montoDiarioMXN * (porcentaje / 100);
+                const montoDiarioSueldo = montoDiarioMXN * ((100 - porcentaje) / 100);
+                
+                const montoAcumuladoPropinas = residuo * montoDiarioCostoDiario;
+                const montoSueldoAsignado = gasto.montoSueldoAsignado || 0;
+                const montoAcumuladoTotal = montoAcumuladoPropinas + montoSueldoAsignado;
+                
+                const progreso = (montoAcumuladoTotal / (gasto.monto * (montoDiarioMXN / montoDiario))) * 100;
+                const cicloCompleto = residuo === 0 && estado.diasAcumulados > gasto.diaInicioCiclo;
+                
+                return { 
+                    residuo, 
+                    progreso, 
+                    montoAcumulado: montoAcumuladoTotal,
+                    montoAcumuladoPropinas,
+                    montoSueldoAsignado,
+                    montoDiario, 
+                    montoDiarioMXN, 
+                    montoDiarioCostoDiario, 
+                    montoDiarioSueldo, 
+                    porcentajeCostoDiario: porcentaje, 
+                    cicloCompleto, 
+                    diasDelCiclo,
+                    fechaInicioCiclo: fechaInicioCiclo.toISOString().split('T')[0],
+                    fechaVencimiento: gasto.vencimiento
+                };
+            };
+
+            const costoVidaDiario = estado.gastosFijos.reduce((total, g) => {
+                const ciclo = calcularCiclo(g);
+                return total + (ciclo.montoDiarioCostoDiario || 0);
+            }, 0);
+
+            // Acumulado esperado del ciclo actual
+            const acumuladoEsperado = estado.gastosFijos.reduce((total, g) => {
+                const ciclo = calcularCiclo(g);
+                // Si el ciclo está completo pero NO confirmado, seguir contando el monto total
+                if (ciclo.cicloCompleto) {
+                    // Convertir el monto a MXN si es necesario
+                    let montoTotalMXN = g.monto;
+                    if (g.moneda === 'ARS') {
+                        montoTotalMXN = g.monto * estado.tipoCambio;
+                    } else if (g.moneda === 'USD') {
+                        montoTotalMXN = g.monto * estado.tipoCambioUSD;
+                    }
+                    // Solo contar la parte de propinas del monto total
+                    const montoPropinas = montoTotalMXN * (ciclo.porcentajeCostoDiario / 100);
+                    return total + montoPropinas;
+                }
+                // Si el ciclo está en progreso, solo sumar el acumulado de propinas
+                return total + (ciclo.montoAcumuladoPropinas || 0);
+            }, 0);
+
+            // Total de ingresos en MXN (SOLO propinas, USD no cuenta para disponible)
+            const totalIngresosMXN = estado.ingresosDiarios.reduce((total, ing) => {
+                return total + ing.propinas; // Solo propinas, SIN USD
+            }, 0);
+
+            // Total de gastos extras
+            const totalGastosExtras = estado.gastosExtras.reduce((total, g) => total + g.monto, 0);
+
+            // DISPONIBLE = Ingresos MXN - Acumulado esperado - Gastos extras (USD NO cuenta)
+            const superavit = totalIngresosMXN - acumuladoEsperado - totalGastosExtras;
+
+            const Modal = ({ children, onClose }) => (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={onClose}>
+                    <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                        {children}
+                    </div>
+                </div>
+            );
+
+            const MenuNav = () => (
+                <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 shadow-lg">
+                    <div className="max-w-6xl mx-auto grid grid-cols-5 gap-1 p-2">
+                        <button onClick={() => setVista('dashboard')} className={`flex flex-col items-center py-2 rounded-xl ${vista === 'dashboard' ? 'bg-purple-100 text-purple-600' : 'text-gray-600'}`}>
+                            <span className="text-xl">📊</span>
+                            <span className="text-xs font-semibold">Gastos</span>
+                        </button>
+                        <button onClick={() => setVista('billetera')} className={`flex flex-col items-center py-2 rounded-xl ${vista === 'billetera' ? 'bg-purple-100 text-purple-600' : 'text-gray-600'}`}>
+                            <span className="text-xl">💰</span>
+                            <span className="text-xs font-semibold">Billetera</span>
+                        </button>
+                        <button onClick={() => setVista('ingresos')} className={`flex flex-col items-center py-2 rounded-xl ${vista === 'ingresos' ? 'bg-purple-100 text-purple-600' : 'text-gray-600'}`}>
+                            <span className="text-xl">📅</span>
+                            <span className="text-xs font-semibold">Ingresos</span>
+                        </button>
+                        <button onClick={() => setVista('gastos')} className={`flex flex-col items-center py-2 rounded-xl ${vista === 'gastos' ? 'bg-purple-100 text-purple-600' : 'text-gray-600'}`}>
+                            <span className="text-xl">🛒</span>
+                            <span className="text-xs font-semibold">Extras</span>
+                        </button>
+                        <button onClick={() => setModal('config')} className="flex flex-col items-center py-2 rounded-xl text-gray-600">
+                            <span className="text-xl">⚙️</span>
+                            <span className="text-xs font-semibold">Config</span>
+                        </button>
+                    </div>
+                </div>
+            );
+
+            // Vista Dashboard
+            const Dashboard = () => {
+                const fechaActual = calcularFechaActual();
+                
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-4 pb-24">
+                        <div className="max-w-6xl mx-auto">
+                            <div className="bg-white rounded-3xl shadow-2xl p-6 mb-6">
+                                <div className="flex justify-between items-center mb-4">
+                                    <div>
+                                        <h1 className="text-3xl font-bold text-gray-800">💰 Finanzas App</h1>
+                                        <p className="text-gray-600">Día {estado.diasAcumulados} • {formatearFecha(fechaActual.toISOString().split('T')[0])}</p>
+                                        <p className="text-xs text-gray-500">Inicio: {formatearFecha(estado.fechaInicio)}</p>
+                                    </div>
+                                    <button onClick={() => setEstado({...estado, diasAcumulados: estado.diasAcumulados + 1})}
+                                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold">
+                                        ⏭️ Avanzar
+                                    </button>
+                                </div>
+                                <div className="grid grid-cols-3 gap-3">
+                                    <button onClick={() => setModal('ingresoDiario')} className="bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-xl font-bold">
+                                        💵 Ingreso
+                                    </button>
+                                    <button onClick={() => setModal('ingresoUSD')} className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 rounded-xl font-bold">
+                                        💲 USD
+                                    </button>
+                                    <button onClick={() => { setForm({nombre:'', monto:'', moneda:'MXN', periodicidad:'Mensual', vencimiento:'', categoria:'Fijo', porcentajeCostoDiario: 100}); setModal('nuevo'); }}
+                                        className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-3 rounded-xl font-bold">
+                                        ➕ Gasto
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="grid md:grid-cols-3 gap-6 mb-6">
+                                <div className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-3xl shadow-xl p-6 text-white">
+                                    <p className="text-sm opacity-90 mb-2">Costo de vida diario</p>
+                                    <p className="text-4xl font-bold">${Math.round(costoVidaDiario)}</p>
+                                    <div className="mt-3 pt-3 border-t border-white border-opacity-30">
+                                        <p className="text-xs opacity-75">Acumulado ciclo actual</p>
+                                        <p className="text-2xl font-bold">${Math.round(acumuladoEsperado)}</p>
+                                    </div>
+                                </div>
+                                <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-3xl shadow-xl p-6 text-white">
+                                    <p className="text-sm opacity-90 mb-2">Disponible</p>
+                                    <p className="text-4xl font-bold">${Math.round(superavit)}</p>
+                                    <p className="text-xs opacity-75 mt-1">En pesos mexicanos</p>
+                                </div>
+                                <div onClick={() => setVista('billetera')} className="bg-gradient-to-br from-orange-500 to-red-600 rounded-3xl shadow-xl p-6 text-white cursor-pointer hover:scale-105 transition-all">
+                                    <p className="text-sm opacity-90 mb-2">Billetera Total</p>
+                                    <p className="text-4xl font-bold">${Math.round(superavit + (estado.billetera.usd * estado.tipoCambioUSD) + (estado.billetera.ars * estado.tipoCambio) + estado.billetera.tanda)}</p>
+                                    <p className="text-xs opacity-75 mt-1">Disponible + USD + ARS + Tanda</p>
+                                </div>
+                            </div>
+
+                            <div className="bg-white rounded-3xl shadow-2xl p-6">
+                                <h2 className="text-2xl font-bold text-gray-800 mb-6">📊 Gastos Fijos</h2>
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    {estado.gastosFijos.map(gasto => {
+                                        const ciclo = calcularCiclo(gasto);
+                                        return (
+                                            <div key={gasto.id} onClick={() => { setSeleccionado(gasto); setVista('detalle'); }}
+                                                className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-5 cursor-pointer hover:shadow-lg transition-all border-2 border-gray-200 hover:border-purple-400">
+                                                <div className="flex justify-between items-start mb-3">
+                                                    <div>
+                                                        <h3 className="text-lg font-bold text-gray-800">{gasto.nombre}</h3>
+                                                        <p className="text-sm text-gray-600">{gasto.periodicidad}</p>
+                                                        <p className="text-xs text-gray-500">📅 {formatearFecha(ciclo.fechaInicioCiclo)} → {formatearFecha(ciclo.fechaVencimiento)}</p>
+                                                    </div>
+                                                    <div className="flex flex-col gap-1 items-end">
+                                                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${gasto.categoria === 'Fijo' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
+                                                            {gasto.categoria}
+                                                        </span>
+                                                        {ciclo.porcentajeCostoDiario < 100 && (
+                                                            <span className="px-2 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-700">
+                                                                {ciclo.porcentajeCostoDiario}% 💵 / {100-ciclo.porcentajeCostoDiario}% 💰
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                {ciclo.cicloCompleto && (
+                                                    <div className="bg-green-100 border-l-4 border-green-500 p-3 mb-3 rounded">
+                                                        <p className="text-green-800 font-bold text-sm">✅ Completo - ${Math.round(gasto.monto)}</p>
+                                                    </div>
+                                                )}
+                                                <div className="mb-3">
+                                                    <div className="flex justify-between text-sm mb-1">
+                                                        <span className="text-gray-600">Día {ciclo.residuo}/{ciclo.diasDelCiclo}</span>
+                                                        <span className="font-bold text-purple-600">${Math.round(ciclo.montoAcumulado)}</span>
+                                                    </div>
+                                                    <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
+                                                        <div className="bg-gradient-to-r from-purple-500 to-indigo-500 h-3 rounded-full" style={{width: `${Math.min(100, ciclo.progreso)}%`}}></div>
+                                                    </div>
+                                                    <div className="flex justify-between text-xs text-gray-600">
+                                                        <span>💵 Propinas: ${Math.round(ciclo.montoAcumuladoPropinas)}</span>
+                                                        {ciclo.porcentajeCostoDiario < 100 && (
+                                                            <span>💰 Sueldo: ${Math.round(ciclo.montoSueldoAsignado)}</span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div className="text-sm">
+                                                    {ciclo.porcentajeCostoDiario === 100 ? (
+                                                        <div className="flex justify-between">
+                                                            <span className="text-gray-500">💵 Diario:</span>
+                                                            <span className="font-bold text-green-700">${Math.round(ciclo.montoDiarioCostoDiario)}</span>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="space-y-1">
+                                                            <div className="flex justify-between">
+                                                                <span className="text-gray-500">💵 Propinas:</span>
+                                                                <span className="font-bold text-green-700">${Math.round(ciclo.montoDiarioCostoDiario)}/día</span>
+                                                            </div>
+                                                            <div className="flex justify-between">
+                                                                <span className="text-gray-500">💰 Sueldo:</span>
+                                                                <span className="font-bold text-blue-700">${Math.round((ciclo.montoDiarioMXN * ciclo.diasDelCiclo) * ((100 - ciclo.porcentajeCostoDiario) / 100))}</span>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            // VistaBilletera
+            const VistaBilletera = () => {
+                // MXN Físico es igual al Disponible (efectivo real)
+                const mxnFisico = superavit;
+                
+                return (
+                <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-4 pb-24">
+                    <div className="max-w-2xl mx-auto">
+                        <div className="bg-white rounded-3xl shadow-2xl p-8 mb-6">
+                            <h1 className="text-3xl font-bold text-gray-800 mb-6">💰 Mi Billetera</h1>
+                            
+                            <div className="space-y-4">
+                                <div className="bg-gradient-to-br from-green-100 to-emerald-100 rounded-2xl p-6">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <p className="text-gray-700 font-bold">MXN Disponible</p>
+                                    </div>
+                                    <p className="text-4xl font-bold text-green-700">${Math.round(mxnFisico)}</p>
+                                    <p className="text-xs text-gray-500 mt-2">Efectivo disponible real</p>
+                                </div>
+
+                                <div className="bg-gradient-to-br from-blue-100 to-cyan-100 rounded-2xl p-6">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <p className="text-gray-700 font-bold">USD</p>
+                                        <button onClick={() => { setForm({tipo: 'usd', valor: estado.billetera.usd}); setModal('editarBilletera'); }}
+                                            className="text-blue-600 hover:text-blue-800">✏️</button>
+                                    </div>
+                                    <p className="text-4xl font-bold text-blue-700">${Math.round(estado.billetera.usd)}</p>
+                                    <p className="text-sm text-gray-600 mt-2">≈ ${Math.round(estado.billetera.usd * estado.tipoCambioUSD)} MXN</p>
+                                </div>
+
+                                <div className="bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl p-6">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <p className="text-gray-700 font-bold">ARS</p>
+                                        <button onClick={() => { setForm({tipo: 'ars', valor: estado.billetera.ars}); setModal('editarBilletera'); }}
+                                            className="text-blue-600 hover:text-blue-800">✏️</button>
+                                    </div>
+                                    <p className="text-4xl font-bold text-purple-700">${Math.round(estado.billetera.ars).toLocaleString()}</p>
+                                    <p className="text-sm text-gray-600 mt-2">≈ ${Math.round(estado.billetera.ars * estado.tipoCambio)} MXN</p>
+                                </div>
+
+                                <div className="bg-gradient-to-br from-yellow-100 to-orange-100 rounded-2xl p-6">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <p className="text-gray-700 font-bold">Tanda</p>
+                                        <button onClick={() => { setForm({tipo: 'tanda', valor: estado.billetera.tanda}); setModal('editarBilletera'); }}
+                                            className="text-blue-600 hover:text-blue-800">✏️</button>
+                                    </div>
+                                    <p className="text-4xl font-bold text-orange-700">${Math.round(estado.billetera.tanda)}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                );
+            };
+
+            // Vista Calendario de Ingresos CON EDICIÓN
+            const VistaIngresos = () => {
+                const totalPropinas = estado.ingresosDiarios.reduce((sum, ing) => sum + ing.propinas, 0);
+                const totalUSD = estado.ingresosDiarios.reduce((sum, ing) => sum + ing.usd, 0);
+                const promedioDiario = estado.ingresosDiarios.length > 0 ? totalPropinas / estado.ingresosDiarios.length : 0;
+
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-4 pb-24">
+                        <div className="max-w-4xl mx-auto">
+                            <div className="bg-white rounded-3xl shadow-2xl p-6 mb-6">
+                                <h1 className="text-3xl font-bold text-gray-800 mb-4">📅 Historial de Ingresos</h1>
+                                
+                                <div className="grid grid-cols-3 gap-4 mb-6">
+                                    <div className="bg-green-100 rounded-xl p-4">
+                                        <p className="text-sm text-gray-600">💵 Total MXN</p>
+                                        <p className="text-3xl font-bold text-green-700">${Math.round(totalPropinas)}</p>
+                                    </div>
+                                    <div className="bg-blue-100 rounded-xl p-4">
+                                        <p className="text-sm text-gray-600">💲 Total USD</p>
+                                        <p className="text-3xl font-bold text-blue-700">${Math.round(totalUSD)}</p>
+                                    </div>
+                                    <div className="bg-purple-100 rounded-xl p-4">
+                                        <p className="text-sm text-gray-600">Promedio/día</p>
+                                        <p className="text-3xl font-bold text-purple-700">${Math.round(promedioDiario)}</p>
+                                    </div>
+                                </div>
+
+                                {estado.ingresosDiarios.length === 0 ? (
+                                    <div className="text-center py-12 text-gray-500">
+                                        <p className="text-5xl mb-4">📭</p>
+                                        <p>No hay ingresos registrados aún</p>
+                                        <p className="text-sm">Registrá tus ingresos diarios desde el dashboard</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                                        {[...estado.ingresosDiarios].reverse().map((ingreso, idx) => {
+                                            const fechaIngreso = new Date(estado.fechaInicio);
+                                            fechaIngreso.setDate(fechaIngreso.getDate() + ingreso.dia);
+                                            const ingresoId = estado.ingresosDiarios.length - 1 - idx;
+                                            
+                                            return (
+                                                <div key={idx} className="bg-gray-50 rounded-xl p-4 border-2 border-gray-200">
+                                                    <div className="flex justify-between items-start">
+                                                        <div className="flex-1">
+                                                            <p className="font-bold text-gray-800">Día {ingreso.dia}</p>
+                                                            <p className="text-sm text-gray-600">{formatearFecha(fechaIngreso.toISOString().split('T')[0])}</p>
+                                                            {ingreso.concepto && <p className="text-xs text-gray-500 mt-1">{ingreso.concepto}</p>}
+                                                        </div>
+                                                        <div className="text-right flex items-start gap-2">
+                                                            <div>
+                                                                {ingreso.propinas > 0 && (
+                                                                    <p className="text-green-700 font-bold">💵 ${Math.round(ingreso.propinas)}</p>
+                                                                )}
+                                                                {ingreso.usd > 0 && (
+                                                                    <p className="text-blue-700 font-bold">💲 ${Math.round(ingreso.usd)}</p>
+                                                                )}
+                                                            </div>
+                                                            <div className="flex flex-col gap-1">
+                                                                <button 
+                                                                    onClick={() => {
+                                                                        setForm({...ingreso, index: ingresoId});
+                                                                        setModal('editarIngreso');
+                                                                    }}
+                                                                    className="text-blue-600 hover:text-blue-800 text-sm">
+                                                                    ✏️
+                                                                </button>
+                                                                <button 
+                                                                    onClick={() => {
+                                                                        if (confirm('¿Eliminar este ingreso?')) {
+                                                                            const nuevosIngresos = [...estado.ingresosDiarios];
+                                                                            nuevosIngresos.splice(ingresoId, 1);
+                                                                            setEstado({...estado, ingresosDiarios: nuevosIngresos});
+                                                                        }
+                                                                    }}
+                                                                    className="text-red-600 hover:text-red-800 text-sm">
+                                                                    🗑️
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            // Vista Gastos Extras
+            const VistaGastos = () => {
+                const totalGastos = estado.gastosExtras.reduce((sum, g) => sum + g.monto, 0);
+
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-4 pb-24">
+                        <div className="max-w-4xl mx-auto">
+                            <div className="bg-white rounded-3xl shadow-2xl p-6">
+                                <div className="flex justify-between items-center mb-6">
+                                    <h1 className="text-3xl font-bold text-gray-800">🛒 Gastos Extras</h1>
+                                    <button onClick={() => { setForm({concepto: '', monto: '', categoria: 'Comida'}); setModal('nuevoGastoExtra'); }}
+                                        className="bg-red-500 hover:bg-red-600 text-white px-4 py-3 rounded-xl font-bold">
+                                        ➕ Agregar
+                                    </button>
+                                </div>
+
+                                <div className="bg-red-100 rounded-xl p-4 mb-6">
+                                    <p className="text-sm text-gray-600">Total gastado</p>
+                                    <p className="text-3xl font-bold text-red-700">${Math.round(totalGastos)}</p>
+                                </div>
+
+                                {estado.gastosExtras.length === 0 ? (
+                                    <div className="text-center py-12 text-gray-500">
+                                        <p className="text-5xl mb-4">🛍️</p>
+                                        <p>No hay gastos extras registrados</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                                        {[...estado.gastosExtras].reverse().map((gasto) => (
+                                            <div key={gasto.id} className="bg-gray-50 rounded-xl p-4 border-2 border-gray-200">
+                                                <div className="flex justify-between items-start">
+                                                    <div>
+                                                        <p className="font-bold text-gray-800">{gasto.concepto}</p>
+                                                        <p className="text-sm text-gray-600">{formatearFecha(gasto.fecha)}</p>
+                                                        <span className="inline-block px-2 py-1 mt-1 text-xs font-bold bg-purple-100 text-purple-700 rounded-full">
+                                                            {gasto.categoria}
+                                                        </span>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-2xl font-bold text-red-600">${Math.round(gasto.monto)}</p>
+                                                        <button onClick={() => {
+                                                            if (confirm('¿Eliminar este gasto?')) {
+                                                                setEstado({...estado, gastosExtras: estado.gastosExtras.filter(g => g.id !== gasto.id)});
+                                                            }
+                                                        }} className="text-sm text-red-500 hover:text-red-700 mt-1">🗑️</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            // Vista Detalle (continúa igual pero actualizada)
+            const Detalle = () => {
+                const ciclo = calcularCiclo(seleccionado);
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-4 pb-24">
+                        <div className="max-w-2xl mx-auto">
+                            <button onClick={() => setVista('dashboard')} className="mb-4 text-purple-600 font-semibold">← Volver</button>
+                            <div className="bg-white rounded-3xl shadow-2xl p-8">
+                                <div className="flex justify-between items-start mb-6">
+                                    <div>
+                                        <h1 className="text-3xl font-bold text-gray-800">{seleccionado.nombre}</h1>
+                                        <p className="text-gray-600 mt-2">📅 Inicio ciclo: {formatearFecha(ciclo.fechaInicioCiclo)}</p>
+                                        <p className="text-gray-600">📅 Vencimiento: {formatearFecha(ciclo.fechaVencimiento)}</p>
+                                        <p className="text-gray-600">📅 Duración: {ciclo.diasDelCiclo} días</p>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => { setForm(seleccionado); setModal('editar'); }} className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-bold">✏️</button>
+                                        <button onClick={() => { if(confirm('¿Eliminar?')) { setEstado({...estado, gastosFijos: estado.gastosFijos.filter(g => g.id !== seleccionado.id)}); setVista('dashboard'); }}}
+                                            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-bold">🗑️</button>
+                                    </div>
+                                </div>
+
+                                <div className="bg-blue-100 rounded-2xl p-4 mb-6">
+                                    <p className="text-sm text-gray-700 mb-2">Día de inicio del ciclo: <span className="font-bold">{seleccionado.diaInicioCiclo}</span></p>
+                                    <button onClick={() => { setForm({...seleccionado}); setModal('ajustarInicio'); }}
+                                        className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm">
+                                        🔧 Ajustar día de inicio
+                                    </button>
+                                </div>
+
+                                {ciclo.cicloCompleto && (
+                                    <div className="bg-green-100 border-l-4 border-green-500 p-6 mb-6 rounded-lg">
+                                        <h3 className="text-xl font-bold text-green-800 mb-2">✅ Ciclo Completo</h3>
+                                        <button onClick={() => { setEstado({...estado, gastosFijos: estado.gastosFijos.map(g => g.id === seleccionado.id ? {...g, diaInicioCiclo: estado.diasAcumulados, montoSueldoAsignado: 0} : g)}); setVista('dashboard'); }}
+                                            className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-bold">Confirmar y reiniciar</button>
+                                    </div>
+                                )}
+
+                                <div className="bg-gradient-to-br from-purple-100 to-indigo-100 rounded-2xl p-8 mb-6">
+                                    <p className="text-gray-600 text-sm mb-2">Acumulado total</p>
+                                    <p className="text-5xl font-bold text-purple-700">${Math.round(ciclo.montoAcumulado)}</p>
+                                    <p className="text-gray-600 mb-3">de ${Math.round(seleccionado.monto)}</p>
+                                    
+                                    <div className="grid grid-cols-2 gap-3 text-sm">
+                                        <div className="bg-white bg-opacity-60 rounded-lg p-3">
+                                            <p className="text-gray-600">💵 De propinas</p>
+                                            <p className="text-xl font-bold text-green-700">${Math.round(ciclo.montoAcumuladoPropinas)}</p>
+                                        </div>
+                                        <div className="bg-white bg-opacity-60 rounded-lg p-3">
+                                            <p className="text-gray-600">💰 De sueldo</p>
+                                            <p className="text-xl font-bold text-blue-700">${Math.round(ciclo.montoSueldoAsignado)}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4 mb-6">
+                                    <div className="bg-gray-50 rounded-xl p-4">
+                                        <p className="text-gray-500 text-sm mb-1">Monto total</p>
+                                        <p className="text-2xl font-bold text-gray-800">${Math.round(seleccionado.monto)} {seleccionado.moneda}</p>
+                                        {seleccionado.moneda === 'ARS' && (
+                                            <p className="text-sm text-gray-600 mt-1">≈ ${Math.round(seleccionado.monto * estado.tipoCambio)} MXN</p>
+                                        )}
+                                    </div>
+                                    <div className="bg-gray-50 rounded-xl p-4">
+                                        <p className="text-gray-500 text-sm mb-1">Monto diario</p>
+                                        <p className="text-2xl font-bold text-gray-800">${Math.round(ciclo.montoDiario)} {seleccionado.moneda}</p>
+                                        {seleccionado.moneda !== 'MXN' && (
+                                            <p className="text-sm text-gray-600 mt-1">≈ ${Math.round(ciclo.montoDiarioMXN)} MXN</p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="bg-gradient-to-br from-orange-50 to-yellow-50 rounded-2xl p-6">
+                                    <h3 className="text-lg font-bold text-gray-800 mb-4">💳 Cómo se cubre este gasto</h3>
+                                    <div className="grid grid-cols-2 gap-4 mb-4">
+                                        <div>
+                                            <p className="text-sm text-gray-600 mb-1">💵 Con propinas diarias</p>
+                                            <p className="text-3xl font-bold text-green-700">{ciclo.porcentajeCostoDiario}%</p>
+                                            <p className="text-sm text-gray-600">${Math.round(ciclo.montoDiarioCostoDiario)} MXN/día</p>
+                                            <p className="text-xs text-gray-500 mt-1">Total: ${Math.round(ciclo.montoDiarioCostoDiario * ciclo.diasDelCiclo)} MXN</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-gray-600 mb-1">💰 Con sueldo quincenal</p>
+                                            <p className="text-3xl font-bold text-blue-700">{100 - ciclo.porcentajeCostoDiario}%</p>
+                                            <p className="text-sm font-bold text-gray-700">${Math.round((ciclo.montoDiarioMXN * ciclo.diasDelCiclo) * ((100 - ciclo.porcentajeCostoDiario) / 100))} MXN</p>
+                                            <p className="text-xs text-gray-500 mt-1">Del sueldo de la quincena</p>
+                                        </div>
+                                    </div>
+                                    {ciclo.porcentajeCostoDiario < 100 && (
+                                        <div className="bg-blue-100 rounded-lg p-3 text-sm text-blue-800">
+                                            💡 <strong>Recordá:</strong> Cuando cobres el sueldo, asigná ${Math.round((ciclo.montoDiarioMXN * ciclo.diasDelCiclo) * ((100 - ciclo.porcentajeCostoDiario) / 100))} MXN usando "💰 Asignar Sueldo"
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            return (
+                <>
+                    {vista === 'dashboard' && <Dashboard />}
+                    {vista === 'billetera' && <VistaBilletera />}
+                    {vista === 'ingresos' && <VistaIngresos />}
+                    {vista === 'gastos' && <VistaGastos />}
+                    {vista === 'detalle' && seleccionado && <Detalle />}
+
+                    <MenuNav />
+
+                    {/* Modal: Ingreso Diario (antes Propina) */}
+                    {modal === 'ingresoDiario' && (
+                        <Modal onClose={() => setModal(null)}>
+                            <h2 className="text-2xl font-bold mb-4">💵 Ingreso Diario</h2>
+                            <form onSubmit={(e) => {
+                                e.preventDefault();
+                                const monto = parseFloat(e.target.monto.value);
+                                const concepto = e.target.concepto.value;
+                                
+                                const nuevoIngreso = {
+                                    dia: estado.diasAcumulados,
+                                    propinas: monto,
+                                    usd: 0,
+                                    concepto: concepto
+                                };
+                                
+                                setEstado({
+                                    ...estado, 
+                                    ingresosDiarios: [...estado.ingresosDiarios, nuevoIngreso]
+                                });
+                                setModal(null);
+                            }}>
+                                <input type="number" name="monto" step="0.01" required className="w-full px-4 py-3 border-2 rounded-xl mb-3" placeholder="1500" />
+                                <input type="text" name="concepto" className="w-full px-4 py-3 border-2 rounded-xl mb-3" placeholder="Concepto (opcional)" />
+                                <p className="text-sm text-gray-600 mb-4">Costo de vida hoy: ${Math.round(costoVidaDiario)}</p>
+                                <div className="flex gap-3">
+                                    <button type="button" onClick={() => setModal(null)} className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">Cancelar</button>
+                                    <button type="submit" className="flex-1 bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-bold">Registrar</button>
+                                </div>
+                            </form>
+                        </Modal>
+                    )}
+
+                    {/* Modal: Editar Ingreso */}
+                    {modal === 'editarIngreso' && (
+                        <Modal onClose={() => setModal(null)}>
+                            <h2 className="text-2xl font-bold mb-4">✏️ Editar Ingreso</h2>
+                            <form onSubmit={(e) => {
+                                e.preventDefault();
+                                const propinas = parseFloat(e.target.propinas.value) || 0;
+                                const usd = parseFloat(e.target.usd.value) || 0;
+                                const concepto = e.target.concepto.value;
+                                
+                                const nuevosIngresos = [...estado.ingresosDiarios];
+                                nuevosIngresos[form.index] = {
+                                    ...nuevosIngresos[form.index],
+                                    propinas,
+                                    usd,
+                                    concepto
+                                };
+                                
+                                setEstado({...estado, ingresosDiarios: nuevosIngresos});
+                                setModal(null);
+                            }}>
+                                <div className="mb-3">
+                                    <label className="block text-gray-700 font-bold mb-2">Propinas MXN</label>
+                                    <input type="number" name="propinas" step="0.01" defaultValue={form.propinas} className="w-full px-4 py-3 border-2 rounded-xl" />
+                                </div>
+                                <div className="mb-3">
+                                    <label className="block text-gray-700 font-bold mb-2">USD</label>
+                                    <input type="number" name="usd" step="0.01" defaultValue={form.usd} className="w-full px-4 py-3 border-2 rounded-xl" />
+                                </div>
+                                <div className="mb-4">
+                                    <label className="block text-gray-700 font-bold mb-2">Concepto</label>
+                                    <input type="text" name="concepto" defaultValue={form.concepto} className="w-full px-4 py-3 border-2 rounded-xl" />
+                                </div>
+                                <div className="flex gap-3">
+                                    <button type="button" onClick={() => setModal(null)} className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">Cancelar</button>
+                                    <button type="submit" className="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-xl font-bold">Guardar</button>
+                                </div>
+                            </form>
+                        </Modal>
+                    )}
+
+                    {/* Modal: Ingreso USD */}
+                    {modal === 'ingresoUSD' && (
+                        <Modal onClose={() => setModal(null)}>
+                            <h2 className="text-2xl font-bold mb-4">💲 Ingreso en USD</h2>
+                            <p className="text-gray-600 mb-4">Agregá dólares directamente a tu billetera</p>
+                            <form onSubmit={(e) => {
+                                e.preventDefault();
+                                const monto = parseFloat(e.target.monto.value);
+                                const concepto = e.target.concepto.value;
+                                
+                                const nuevoIngreso = {
+                                    dia: estado.diasAcumulados,
+                                    propinas: 0,
+                                    usd: monto,
+                                    concepto: concepto
+                                };
+                                
+                                setEstado({
+                                    ...estado,
+                                    billetera: {...estado.billetera, usd: estado.billetera.usd + monto},
+                                    ingresosDiarios: [...estado.ingresosDiarios, nuevoIngreso]
+                                });
+                                setModal(null);
+                            }}>
+                                <input type="number" name="monto" step="0.01" required className="w-full px-4 py-3 border-2 rounded-xl mb-3 text-2xl" placeholder="100" />
+                                <input type="text" name="concepto" className="w-full px-4 py-3 border-2 rounded-xl mb-3" placeholder="Concepto (opcional)" />
+                                <p className="text-sm text-gray-600 mb-4">TC: $1 USD = ${estado.tipoCambioUSD} MXN</p>
+                                <div className="flex gap-3">
+                                    <button type="button" onClick={() => setModal(null)} className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">Cancelar</button>
+                                    <button type="submit" className="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-xl font-bold">Agregar</button>
+                                </div>
+                            </form>
+                        </Modal>
+                    )}
+
+                    {/* Modal: Nuevo Gasto Extra */}
+                    {modal === 'nuevoGastoExtra' && (
+                        <Modal onClose={() => setModal(null)}>
+                            <h2 className="text-2xl font-bold mb-4">🛒 Nuevo gasto extra</h2>
+                            <form onSubmit={(e) => {
+                                e.preventDefault();
+                                const f = e.target;
+                                const fechaActual = calcularFechaActual().toISOString().split('T')[0];
+                                const maxId = estado.gastosExtras.length > 0 ? Math.max(...estado.gastosExtras.map(g => g.id)) : 0;
+                                
+                                const nuevoGasto = {
+                                    id: maxId + 1,
+                                    fecha: fechaActual,
+                                    concepto: f.concepto.value,
+                                    monto: parseFloat(f.monto.value),
+                                    categoria: f.categoria.value
+                                };
+                                
+                                setEstado({...estado, gastosExtras: [...estado.gastosExtras, nuevoGasto]});
+                                setModal(null);
+                            }}>
+                                <div className="space-y-3 mb-4">
+                                    <input type="text" name="concepto" required placeholder="Concepto" className="w-full px-4 py-3 border-2 rounded-xl" />
+                                    <input type="number" step="0.01" name="monto" required placeholder="Monto" className="w-full px-4 py-3 border-2 rounded-xl text-2xl" />
+                                    <select name="categoria" className="w-full px-4 py-3 border-2 rounded-xl">
+                                        <option value="Comida">🍔 Comida</option>
+                                        <option value="Transporte">🚗 Transporte</option>
+                                        <option value="Entretenimiento">🎬 Entretenimiento</option>
+                                        <option value="Salud">💊 Salud</option>
+                                        <option value="Ropa">👕 Ropa</option>
+                                        <option value="Otro">📦 Otro</option>
+                                    </select>
+                                </div>
+                                <div className="flex gap-3">
+                                    <button type="button" onClick={() => setModal(null)} className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">Cancelar</button>
+                                    <button type="submit" className="flex-1 bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl font-bold">Agregar</button>
+                                </div>
+                            </form>
+                        </Modal>
+                    )}
+
+                    {/* [Resto de modales: config, ajustarInicio, editarBilletera, ingresoSueldo, nuevo gasto fijo, editar] */}
+                    {/* Continuará en siguiente sección por límite de caracteres */}
+                    
+                    {modal === 'config' && (
+                        <Modal onClose={() => setModal(null)}>
+                            <h2 className="text-2xl font-bold mb-4">⚙️ Configuración</h2>
+                            <form onSubmit={(e) => {
+                                e.preventDefault();
+                                const nuevosDias = parseInt(e.target.dias.value);
+                                const nuevaFechaInicio = e.target.fechaInicio.value;
+                                setEstado({...estado, diasAcumulados: nuevosDias, fechaInicio: nuevaFechaInicio});
+                                setModal(null);
+                            }}>
+                                <div className="mb-4">
+                                    <label className="block text-gray-700 font-bold mb-2">Fecha de inicio</label>
+                                    <input type="date" name="fechaInicio" defaultValue={estado.fechaInicio} required className="w-full px-4 py-3 border-2 rounded-xl" />
+                                </div>
+                                <div className="mb-6">
+                                    <label className="block text-gray-700 font-bold mb-2">Día actual</label>
+                                    <input type="number" name="dias" defaultValue={estado.diasAcumulados} required className="w-full px-4 py-3 border-2 rounded-xl" />
+                                </div>
+                                <div className="mb-6">
+                                    <label className="block text-gray-700 font-bold mb-2">Tipo de cambio ARS → MXN</label>
+                                    <input type="number" step="0.001" value={estado.tipoCambio} onChange={(e) => setEstado({...estado, tipoCambio: parseFloat(e.target.value)})} className="w-full px-4 py-3 border-2 rounded-xl" />
+                                </div>
+                                <div className="mb-6">
+                                    <label className="block text-gray-700 font-bold mb-2">Tipo de cambio USD → MXN</label>
+                                    <input type="number" step="0.01" value={estado.tipoCambioUSD} onChange={(e) => setEstado({...estado, tipoCambioUSD: parseFloat(e.target.value)})} className="w-full px-4 py-3 border-2 rounded-xl" />
+                                </div>
+                                <button onClick={() => setModal('ingresoSueldo')} type="button" className="w-full bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-xl font-bold mb-3">
+                                    💰 Asignar Sueldo a Gastos
+                                </button>
+                                <button onClick={() => {
+                                    if (confirm('⚠️ ¿Estás segura? Esto borrará TODOS los datos guardados y empezarás de cero.')) {
+                                        localStorage.removeItem('finanzasAppData');
+                                        window.location.reload();
+                                    }
+                                }} type="button" className="w-full bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl font-bold mb-3">
+                                    🗑️ Borrar todos los datos
+                                </button>
+                                <div className="flex gap-3">
+                                    <button type="button" onClick={() => setModal(null)} className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">Cancelar</button>
+                                    <button type="submit" className="flex-1 bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-xl font-bold">Guardar</button>
+                                </div>
+                            </form>
+                        </Modal>
+                    )}
+
+                    {modal === 'ingresoSueldo' && (
+                        <Modal onClose={() => setModal(null)}>
+                            <h2 className="text-2xl font-bold mb-4">💰 Asignar sueldo a gastos</h2>
+                            <p className="text-gray-600 mb-4">Asigná el sueldo quincenal a cada gasto</p>
+                            
+                            <form onSubmit={(e) => {
+                                e.preventDefault();
+                                const formData = new FormData(e.target);
+                                
+                                const nuevosGastos = estado.gastosFijos.map(gasto => {
+                                    const montoAsignado = parseFloat(formData.get(`gasto_${gasto.id}`) || 0);
+                                    if (montoAsignado > 0) {
+                                        return {...gasto, montoSueldoAsignado: (gasto.montoSueldoAsignado || 0) + montoAsignado};
+                                    }
+                                    return gasto;
+                                });
+                                
+                                setEstado({...estado, gastosFijos: nuevosGastos});
+                                setModal(null);
+                            }}>
+                                <div className="space-y-3 mb-4 max-h-96 overflow-y-auto">
+                                    {estado.gastosFijos.filter(g => {
+                                        const ciclo = calcularCiclo(g);
+                                        return ciclo.porcentajeCostoDiario < 100;
+                                    }).map(gasto => {
+                                        const ciclo = calcularCiclo(gasto);
+                                        const montoNecesario = Math.round((ciclo.montoDiarioMXN * ciclo.diasDelCiclo) * ((100 - ciclo.porcentajeCostoDiario) / 100));
+                                        const yaAsignado = gasto.montoSueldoAsignado || 0;
+                                        const falta = Math.max(0, montoNecesario - yaAsignado);
+                                        
+                                        return (
+                                            <div key={gasto.id} className="bg-blue-50 rounded-xl p-4 border-2 border-blue-200">
+                                                <div className="flex justify-between items-start mb-3">
+                                                    <div>
+                                                        <h3 className="font-bold text-gray-800">{gasto.nombre}</h3>
+                                                        <p className="text-sm text-gray-600">{100 - ciclo.porcentajeCostoDiario}% = ${montoNecesario}</p>
+                                                        {yaAsignado > 0 && (
+                                                            <p className="text-xs text-green-600">✓ Asignado: ${Math.round(yaAsignado)}</p>
+                                                        )}
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-sm text-gray-600">Falta:</p>
+                                                        <p className="text-xl font-bold text-blue-700">${falta}</p>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs text-gray-600 mb-1">Asignar:</label>
+                                                    <input type="number" name={`gasto_${gasto.id}`} step="0.01" defaultValue={falta} placeholder="0" className="w-full px-3 py-2 border-2 rounded-lg text-lg font-bold" />
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                <div className="flex gap-3">
+                                    <button type="button" onClick={() => setModal(null)} className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">Cancelar</button>
+                                    <button type="submit" className="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-xl font-bold">Asignar</button>
+                                </div>
+                            </form>
+                        </Modal>
+                    )}
+
+                    {modal === 'ajustarInicio' && (
+                        <Modal onClose={() => setModal(null)}>
+                            <h2 className="text-2xl font-bold mb-4">🔧 Ajustar día de inicio</h2>
+                            <form onSubmit={(e) => {
+                                e.preventDefault();
+                                const nuevoDia = parseInt(e.target.diaInicio.value);
+                                setEstado({...estado, gastosFijos: estado.gastosFijos.map(g => g.id === form.id ? {...g, diaInicioCiclo: nuevoDia} : g)});
+                                setSeleccionado({...seleccionado, diaInicioCiclo: nuevoDia});
+                                setModal(null);
+                            }}>
+                                <input type="number" name="diaInicio" defaultValue={form.diaInicioCiclo} required className="w-full px-4 py-3 border-2 rounded-xl mb-4" />
+                                <div className="flex gap-3">
+                                    <button type="button" onClick={() => setModal(null)} className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">Cancelar</button>
+                                    <button type="submit" className="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-xl font-bold">Guardar</button>
+                                </div>
+                            </form>
+                        </Modal>
+                    )}
+
+                    {modal === 'editarBilletera' && (
+                        <Modal onClose={() => setModal(null)}>
+                            <h2 className="text-2xl font-bold mb-4">💰 Editar monto</h2>
+                            <form onSubmit={(e) => {
+                                e.preventDefault();
+                                const nuevoValor = parseFloat(e.target.valor.value);
+                                setEstado({...estado, billetera: {...estado.billetera, [form.tipo]: nuevoValor}});
+                                setModal(null);
+                            }}>
+                                <input type="number" step="0.01" name="valor" defaultValue={form.valor} required className="w-full px-4 py-3 border-2 rounded-xl text-2xl mb-4" />
+                                <div className="flex gap-3">
+                                    <button type="button" onClick={() => setModal(null)} className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">Cancelar</button>
+                                    <button type="submit" className="flex-1 bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-bold">Guardar</button>
+                                </div>
+                            </form>
+                        </Modal>
+                    )}
+
+                    {(modal === 'nuevo' || modal === 'editar') && (
+                        <Modal onClose={() => setModal(null)}>
+                            <h2 className="text-2xl font-bold mb-4">{modal === 'nuevo' ? '➕ Nuevo gasto fijo' : '✏️ Editar'}</h2>
+                            <form onSubmit={(e) => {
+                                e.preventDefault();
+                                const f = e.target;
+                                const datos = {
+                                    nombre: f.nombre.value,
+                                    monto: parseFloat(f.monto.value),
+                                    moneda: f.moneda.value,
+                                    periodicidad: f.periodicidad.value,
+                                    vencimiento: f.vencimiento.value || '-',
+                                    categoria: f.categoria.value,
+                                    porcentajeCostoDiario: parseInt(f.porcentaje.value)
+                                };
+                                if (modal === 'nuevo') {
+                                    const maxId = estado.gastosFijos.length > 0 ? Math.max(...estado.gastosFijos.map(g => g.id)) : 0;
+                                    setEstado({...estado, gastosFijos: [...estado.gastosFijos, {...datos, id: maxId + 1, diaInicioCiclo: estado.diasAcumulados, montoSueldoAsignado: 0}]});
+                                } else {
+                                    setEstado({...estado, gastosFijos: estado.gastosFijos.map(g => g.id === form.id ? {...g, ...datos} : g)});
+                                    setVista('dashboard');
+                                }
+                                setModal(null);
+                            }}>
+                                <div className="space-y-3 mb-4">
+                                    <input type="text" name="nombre" defaultValue={form.nombre} required placeholder="Nombre" className="w-full px-4 py-3 border-2 rounded-xl" />
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <input type="number" step="0.01" name="monto" defaultValue={form.monto} required placeholder="Monto" className="w-full px-4 py-3 border-2 rounded-xl" />
+                                        <select name="moneda" defaultValue={form.moneda} className="w-full px-4 py-3 border-2 rounded-xl">
+                                            <option value="MXN">MXN</option>
+                                            <option value="USD">USD</option>
+                                            <option value="ARS">ARS</option>
+                                        </select>
+                                    </div>
+                                    <input type="text" name="periodicidad" defaultValue={form.periodicidad} required placeholder="Mensual" className="w-full px-4 py-3 border-2 rounded-xl" />
+                                    <div>
+                                        <label className="block text-gray-700 font-bold mb-2">Fecha vencimiento</label>
+                                        <input type="date" name="vencimiento" defaultValue={form.vencimiento !== '-' ? form.vencimiento : ''} required className="w-full px-4 py-3 border-2 rounded-xl" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-gray-700 font-bold mb-2">% Cubierto con propinas</label>
+                                        <div className="flex items-center gap-3">
+                                            <input type="range" name="porcentaje" min="0" max="100" step="10" defaultValue={form.porcentajeCostoDiario || 100} className="flex-1" onChange={(e) => document.getElementById('porcentajeLabel').textContent = e.target.value + '%'} />
+                                            <span id="porcentajeLabel" className="text-2xl font-bold text-purple-600 w-16">{form.porcentajeCostoDiario || 100}%</span>
+                                        </div>
+                                        <div className="flex justify-between text-xs text-gray-600 mt-1">
+                                            <span>0% = Todo sueldo</span>
+                                            <span>100% = Todo propinas</span>
+                                        </div>
+                                    </div>
+                                    <select name="categoria" defaultValue={form.categoria} className="w-full px-4 py-3 border-2 rounded-xl">
+                                        <option value="Fijo">Fijo</option>
+                                        <option value="No Negociable">No Negociable</option>
+                                    </select>
+                                </div>
+                                <div className="flex gap-3">
+                                    <button type="button" onClick={() => setModal(null)} className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">Cancelar</button>
+                                    <button type="submit" className="flex-1 bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-xl font-bold">Guardar</button>
+                                </div>
+                            </form>
+                        </Modal>
+                    )}
+                </>
+            );
+        }
+
+        ReactDOM.render(<FinanzasApp />, document.getElementById('app'));
+    </script>
+</body>
+</html>
