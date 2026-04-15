@@ -32,13 +32,20 @@
             const estadoInicial = () => {
                 const guardado = localStorage.getItem('finanzasAppData');
                 if (guardado) {
-                    return JSON.parse(guardado);
+                    const parsed = JSON.parse(guardado);
+                    // Migrar tipoCambio (ARS→MXN) al nuevo esquema tipoCambioARS (ARS por 1 USD)
+                    if (parsed.tipoCambio !== undefined && parsed.tipoCambioARS === undefined) {
+                        parsed.tipoCambioARS = Math.round(parsed.tipoCambioUSD / parsed.tipoCambio);
+                        delete parsed.tipoCambio;
+                    }
+                    if (!parsed.categoriasExtra) parsed.categoriasExtra = [];
+                    return parsed;
                 }
                 return {
                     fechaInicio: '2026-02-07',
                     diasAcumulados: 36,
-                    tipoCambio: 0.011,
                     tipoCambioUSD: 17.16,
+                    tipoCambioARS: 1560,
                     gastosFijos: [
                         { id: 1, nombre: 'Renta', monto: 7500, moneda: 'MXN', periodicidad: 'Mensual', vencimiento: '2026-03-07', diaInicioCiclo: 0, categoria: 'Fijo', porcentajeCostoDiario: 50, montoSueldoAsignado: 0 },
                         { id: 2, nombre: 'Universidad', monto: 320000, moneda: 'ARS', periodicidad: 'Mensual', vencimiento: '2026-03-03', diaInicioCiclo: 0, categoria: 'Fijo', porcentajeCostoDiario: 0, montoSueldoAsignado: 0 },
@@ -48,6 +55,7 @@
                     ],
                     ingresosDiarios: [],
                     gastosExtras: [],
+                    categoriasExtra: [],
                     billetera: { mxnFisico: 8740, mxnDigital: 0, usd: 1325, ars: 15000, tanda: 9000, secciones: [] }
                 };
             };
@@ -57,6 +65,11 @@
             const [seleccionado, setSeleccionado] = useState(null);
             const [modal, setModal] = useState(null);
             const [form, setForm] = useState({});
+            const [reportePeriodo, setReportePeriodo] = useState('mensual');
+
+            // TC ARS→MXN auto-calculado: (MXN por USD) / (ARS por USD)
+            // TC ARS→MXN auto-calculado: (MXN por USD) / (ARS por USD)
+            const tipoCambioMXNARS = estado.tipoCambioUSD / (estado.tipoCambioARS || 1560);
 
             // Guardar en localStorage cada vez que cambia el estado
             useEffect(() => {
@@ -84,7 +97,7 @@
                 if (!gasto.vencimiento || gasto.vencimiento === '-') {
                     let montoDiarioMXN = gasto.monto;
                     if (gasto.moneda === 'ARS') {
-                        montoDiarioMXN = gasto.monto * estado.tipoCambio;
+                        montoDiarioMXN = gasto.monto * tipoCambioMXNARS;
                     } else if (gasto.moneda === 'USD') {
                         montoDiarioMXN = gasto.monto * estado.tipoCambioUSD;
                     }
@@ -121,7 +134,7 @@
                 
                 let montoDiarioMXN = montoDiario;
                 if (gasto.moneda === 'ARS') {
-                    montoDiarioMXN = montoDiario * estado.tipoCambio;
+                    montoDiarioMXN = montoDiario * tipoCambioMXNARS;
                 } else if (gasto.moneda === 'USD') {
                     montoDiarioMXN = montoDiario * estado.tipoCambioUSD;
                 }
@@ -167,7 +180,7 @@
                     // Convertir el monto a MXN si es necesario
                     let montoTotalMXN = g.monto;
                     if (g.moneda === 'ARS') {
-                        montoTotalMXN = g.monto * estado.tipoCambio;
+                        montoTotalMXN = g.monto * tipoCambioMXNARS;
                     } else if (g.moneda === 'USD') {
                         montoTotalMXN = g.monto * estado.tipoCambioUSD;
                     }
@@ -200,25 +213,29 @@
 
             const MenuNav = () => (
                 <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 shadow-lg">
-                    <div className="max-w-6xl mx-auto grid grid-cols-5 gap-1 p-2">
+                    <div className="max-w-6xl mx-auto grid grid-cols-6 gap-0 p-1">
                         <button onClick={() => setVista('dashboard')} className={`flex flex-col items-center py-2 rounded-xl ${vista === 'dashboard' ? 'bg-purple-100 text-purple-600' : 'text-gray-600'}`}>
-                            <span className="text-xl">📊</span>
-                            <span className="text-xs font-semibold">Gastos</span>
+                            <span className="text-lg">🏠</span>
+                            <span className="text-xs font-semibold">Inicio</span>
                         </button>
                         <button onClick={() => setVista('billetera')} className={`flex flex-col items-center py-2 rounded-xl ${vista === 'billetera' ? 'bg-purple-100 text-purple-600' : 'text-gray-600'}`}>
-                            <span className="text-xl">💰</span>
+                            <span className="text-lg">💰</span>
                             <span className="text-xs font-semibold">Billetera</span>
                         </button>
                         <button onClick={() => setVista('ingresos')} className={`flex flex-col items-center py-2 rounded-xl ${vista === 'ingresos' ? 'bg-purple-100 text-purple-600' : 'text-gray-600'}`}>
-                            <span className="text-xl">📅</span>
+                            <span className="text-lg">📥</span>
                             <span className="text-xs font-semibold">Ingresos</span>
                         </button>
                         <button onClick={() => setVista('gastos')} className={`flex flex-col items-center py-2 rounded-xl ${vista === 'gastos' ? 'bg-purple-100 text-purple-600' : 'text-gray-600'}`}>
-                            <span className="text-xl">🛒</span>
+                            <span className="text-lg">🛒</span>
                             <span className="text-xs font-semibold">Gastos</span>
                         </button>
+                        <button onClick={() => setVista('reporte')} className={`flex flex-col items-center py-2 rounded-xl ${vista === 'reporte' ? 'bg-purple-100 text-purple-600' : 'text-gray-600'}`}>
+                            <span className="text-lg">📊</span>
+                            <span className="text-xs font-semibold">Reporte</span>
+                        </button>
                         <button onClick={() => setModal('config')} className="flex flex-col items-center py-2 rounded-xl text-gray-600">
-                            <span className="text-xl">⚙️</span>
+                            <span className="text-lg">⚙️</span>
                             <span className="text-xs font-semibold">Config</span>
                         </button>
                     </div>
@@ -262,7 +279,7 @@
                                 </div>
                                 <div onClick={() => setVista('billetera')} className="bg-gradient-to-br from-orange-500 to-red-600 rounded-3xl shadow-xl p-6 text-white cursor-pointer hover:scale-105 transition-all">
                                     <p className="text-sm opacity-90 mb-2">Billetera Total</p>
-                                    <p className="text-4xl font-bold">${Math.round(superavit + (estado.billetera.usd * estado.tipoCambioUSD) + (estado.billetera.ars * estado.tipoCambio) + estado.billetera.tanda)}</p>
+                                    <p className="text-4xl font-bold">${Math.round(superavit + (estado.billetera.usd * estado.tipoCambioUSD) + (estado.billetera.ars * tipoCambioMXNARS) + estado.billetera.tanda)}</p>
                                     <p className="text-xs opacity-75 mt-1">Disponible + USD + ARS + Tanda</p>
                                 </div>
                             </div>
@@ -383,7 +400,7 @@
                                             className="text-blue-600 hover:text-blue-800">✏️</button>
                                     </div>
                                     <p className="text-4xl font-bold text-purple-700">{Math.round(estado.billetera.ars).toLocaleString()}</p>
-                                    <p className="text-sm text-gray-600 mt-2">≈ ${Math.round(estado.billetera.ars * estado.tipoCambio)} MXN</p>
+                                    <p className="text-sm text-gray-600 mt-2">≈ ${Math.round(estado.billetera.ars * tipoCambioMXNARS)} MXN</p>
                                 </div>
 
                                 <div className="bg-gradient-to-br from-yellow-100 to-orange-100 rounded-2xl p-6">
@@ -489,16 +506,16 @@
                                 ) : (
                                     <div className="space-y-3 max-h-96 overflow-y-auto">
                                         {[...estado.ingresosDiarios].reverse().map((ingreso, idx) => {
-                                            const fechaIngreso = new Date(estado.fechaInicio);
-                                            fechaIngreso.setDate(fechaIngreso.getDate() + ingreso.dia);
+                                            const fechaIngreso = ingreso.fecha
+                                                ? new Date(ingreso.fecha + 'T12:00:00')
+                                                : (() => { const f = new Date(estado.fechaInicio); f.setDate(f.getDate() + ingreso.dia); return f; })();
                                             const ingresoId = estado.ingresosDiarios.length - 1 - idx;
 
                                             return (
                                                 <div key={idx} className="bg-gray-50 rounded-xl p-4 border-2 border-gray-200">
                                                     <div className="flex justify-between items-start">
                                                         <div className="flex-1">
-                                                            <p className="font-bold text-gray-800">Día {ingreso.dia}</p>
-                                                            <p className="text-sm text-gray-600">{formatearFecha(fechaIngreso.toISOString().split('T')[0])}</p>
+                                                            <p className="font-bold text-gray-800">{formatearFecha(fechaIngreso.toISOString().split('T')[0])}</p>
                                                             {ingreso.concepto && <p className="text-xs text-gray-500 mt-1">{ingreso.concepto}</p>}
                                                         </div>
                                                         <div className="text-right flex items-start gap-2">
@@ -556,7 +573,8 @@
                     if (fuente === 'usd') return '💲 USD';
                     if (fuente === 'ars') return '🇦🇷 ARS';
                     if (fuente === 'tanda') return '🏆 Tanda';
-                    const seccion = (estado.billetera.secciones || []).find(s => s.id === fuente);
+                    if (fuente === 'sueldo') return '💰 Salario';
+                    const seccion = (estado.billetera.secciones || []).find(s => s.id === fuente || s.id === parseInt(fuente));
                     return seccion ? `${seccion.icono || '💼'} ${seccion.nombre}` : fuente;
                 };
 
@@ -680,8 +698,33 @@
                                 {ciclo.cicloCompleto && (
                                     <div className="bg-green-100 border-l-4 border-green-500 p-6 mb-6 rounded-lg">
                                         <h3 className="text-xl font-bold text-green-800 mb-2">✅ Ciclo Completo</h3>
-                                        <button onClick={() => { setEstado({...estado, gastosFijos: estado.gastosFijos.map(g => g.id === seleccionado.id ? {...g, diaInicioCiclo: estado.diasAcumulados, montoSueldoAsignado: 0} : g)}); setVista('dashboard'); }}
-                                            className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-bold">Confirmar y reiniciar</button>
+                                        <p className="text-sm text-green-700 mb-3">
+                                            Propinas: ${Math.round(ciclo.montoAcumuladoPropinas)} · Sueldo: ${Math.round(ciclo.montoSueldoAsignado)}
+                                            · <strong>Total: ${Math.round(ciclo.montoAcumulado)}</strong>
+                                        </p>
+                                        <button onClick={() => {
+                                            const fechaActual = calcularFechaActual().toISOString().split('T')[0];
+                                            const maxId = estado.gastosExtras.length > 0 ? Math.max(...estado.gastosExtras.map(g => g.id)) : 0;
+                                            let nuevoEstado = {
+                                                ...estado,
+                                                gastosFijos: estado.gastosFijos.map(g =>
+                                                    g.id === seleccionado.id ? {...g, diaInicioCiclo: estado.diasAcumulados, montoSueldoAsignado: 0} : g
+                                                )
+                                            };
+                                            // Registrar la parte de sueldo como gasto en el historial
+                                            if (ciclo.montoSueldoAsignado > 0) {
+                                                nuevoEstado.gastosExtras = [...estado.gastosExtras, {
+                                                    id: maxId + 1,
+                                                    fecha: fechaActual,
+                                                    concepto: `${seleccionado.nombre} (salario asignado)`,
+                                                    monto: Math.round(ciclo.montoSueldoAsignado),
+                                                    categoria: 'Gasto Fijo',
+                                                    fuente: 'sueldo'
+                                                }];
+                                            }
+                                            setEstado(nuevoEstado);
+                                            setVista('dashboard');
+                                        }} className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-bold">Confirmar y reiniciar</button>
                                     </div>
                                 )}
 
@@ -707,7 +750,7 @@
                                         <p className="text-gray-500 text-sm mb-1">Monto total</p>
                                         <p className="text-2xl font-bold text-gray-800">${Math.round(seleccionado.monto)} {seleccionado.moneda}</p>
                                         {seleccionado.moneda === 'ARS' && (
-                                            <p className="text-sm text-gray-600 mt-1">≈ ${Math.round(seleccionado.monto * estado.tipoCambio)} MXN</p>
+                                            <p className="text-sm text-gray-600 mt-1">≈ ${Math.round(seleccionado.monto * tipoCambioMXNARS)} MXN</p>
                                         )}
                                     </div>
                                     <div className="bg-gray-50 rounded-xl p-4">
@@ -747,12 +790,149 @@
                 );
             };
 
+            // Vista Reporte
+            const VistaReporte = () => {
+                const fechaHoy = calcularFechaActual();
+
+                const filtrar = (fechaStr) => {
+                    if (!fechaStr) return false;
+                    const f = new Date(fechaStr + 'T12:00:00');
+                    const diffMs = fechaHoy - f;
+                    const dias = diffMs / (1000 * 60 * 60 * 24);
+                    if (reportePeriodo === 'diario')   return dias < 1;
+                    if (reportePeriodo === 'semanal')  return dias < 7;
+                    if (reportePeriodo === 'mensual')  return dias < 30;
+                    if (reportePeriodo === 'anual')    return dias < 365;
+                    return true;
+                };
+
+                const gastosFilt = estado.gastosExtras.filter(g => filtrar(g.fecha));
+                const totalGastado = gastosFilt.reduce((s, g) => s + g.monto, 0);
+
+                const porCategoria = gastosFilt.reduce((acc, g) => {
+                    const cat = g.categoria || 'Sin categoría';
+                    acc[cat] = (acc[cat] || 0) + g.monto;
+                    return acc;
+                }, {});
+
+                const getNF = (fuente) => {
+                    if (!fuente || fuente === 'mxn') return '💵 MXN';
+                    if (fuente === 'usd') return '💲 USD';
+                    if (fuente === 'ars') return '🇦🇷 ARS';
+                    if (fuente === 'tanda') return '🏆 Tanda';
+                    if (fuente === 'sueldo') return '💰 Salario';
+                    const s = (estado.billetera.secciones || []).find(s => s.id === parseInt(fuente));
+                    return s ? `${s.icono || '💼'} ${s.nombre}` : fuente;
+                };
+
+                const porFuente = gastosFilt.reduce((acc, g) => {
+                    const f = getNF(g.fuente);
+                    acc[f] = (acc[f] || 0) + g.monto;
+                    return acc;
+                }, {});
+
+                const ingresosFilt = estado.ingresosDiarios.filter(ing => {
+                    const fechaStr = ing.fecha || (() => {
+                        const f = new Date(estado.fechaInicio); f.setDate(f.getDate() + ing.dia);
+                        return f.toISOString().split('T')[0];
+                    })();
+                    return filtrar(fechaStr);
+                });
+                const totalIngMXN = ingresosFilt.reduce((s, i) => s + (i.propinas || 0), 0);
+                const totalIngUSD = ingresosFilt.reduce((s, i) => s + (i.usd || 0), 0);
+                const totalIngARS = ingresosFilt.reduce((s, i) => s + (i.ars || 0), 0);
+
+                const labels = {diario: 'Hoy', semanal: 'Últimos 7 días', mensual: 'Últimos 30 días', anual: 'Último año'};
+
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-4 pb-24">
+                        <div className="max-w-2xl mx-auto">
+                            <div className="bg-white rounded-3xl shadow-2xl p-6 mb-4">
+                                <h1 className="text-2xl font-bold text-gray-800 mb-4">📊 Reporte</h1>
+                                <div className="grid grid-cols-4 gap-2 mb-3">
+                                    {['diario','semanal','mensual','anual'].map(p => (
+                                        <button key={p} onClick={() => setReportePeriodo(p)}
+                                            className={`py-2 rounded-xl text-xs font-bold capitalize ${reportePeriodo === p ? 'bg-purple-500 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                                            {p.charAt(0).toUpperCase() + p.slice(1)}
+                                        </button>
+                                    ))}
+                                </div>
+                                <p className="text-xs text-gray-400 text-center mb-4">{labels[reportePeriodo]}</p>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="bg-red-50 rounded-xl p-4">
+                                        <p className="text-xs text-gray-500">Total gastado</p>
+                                        <p className="text-2xl font-bold text-red-600">${Math.round(totalGastado).toLocaleString()}</p>
+                                        <p className="text-xs text-gray-400">{gastosFilt.length} gastos</p>
+                                    </div>
+                                    <div className="bg-green-50 rounded-xl p-4">
+                                        <p className="text-xs text-gray-500">Ingresos</p>
+                                        <p className="text-xl font-bold text-green-600">${Math.round(totalIngMXN).toLocaleString()}</p>
+                                        {totalIngUSD > 0 && <p className="text-xs text-blue-600">+${totalIngUSD} USD</p>}
+                                        {totalIngARS > 0 && <p className="text-xs text-sky-600">+{Math.round(totalIngARS).toLocaleString()} ARS</p>}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {gastosFilt.length === 0 ? (
+                                <div className="bg-white rounded-3xl shadow-2xl p-12 text-center">
+                                    <p className="text-5xl mb-3">📭</p>
+                                    <p className="text-gray-400">No hay gastos en este período</p>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="bg-white rounded-3xl shadow-2xl p-6 mb-4">
+                                        <h2 className="text-base font-bold text-gray-700 mb-4">🏷️ Por categoría</h2>
+                                        <div className="space-y-3">
+                                            {Object.entries(porCategoria).sort((a,b) => b[1]-a[1]).map(([cat, total]) => {
+                                                const pct = totalGastado > 0 ? Math.round((total/totalGastado)*100) : 0;
+                                                return (
+                                                    <div key={cat}>
+                                                        <div className="flex justify-between text-sm mb-1">
+                                                            <span className="font-medium text-gray-700">{cat}</span>
+                                                            <span className="font-bold text-red-600">${Math.round(total).toLocaleString()} <span className="text-gray-400 font-normal">({pct}%)</span></span>
+                                                        </div>
+                                                        <div className="w-full bg-gray-100 rounded-full h-2">
+                                                            <div className="bg-gradient-to-r from-red-400 to-orange-400 h-2 rounded-full" style={{width:`${pct}%`}}></div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-white rounded-3xl shadow-2xl p-6 mb-4">
+                                        <h2 className="text-base font-bold text-gray-700 mb-4">💳 Por sección de billetera</h2>
+                                        <div className="space-y-3">
+                                            {Object.entries(porFuente).sort((a,b) => b[1]-a[1]).map(([fuente, total]) => {
+                                                const pct = totalGastado > 0 ? Math.round((total/totalGastado)*100) : 0;
+                                                return (
+                                                    <div key={fuente}>
+                                                        <div className="flex justify-between text-sm mb-1">
+                                                            <span className="font-medium text-gray-700">{fuente}</span>
+                                                            <span className="font-bold text-purple-600">${Math.round(total).toLocaleString()} <span className="text-gray-400 font-normal">({pct}%)</span></span>
+                                                        </div>
+                                                        <div className="w-full bg-gray-100 rounded-full h-2">
+                                                            <div className="bg-gradient-to-r from-purple-400 to-indigo-400 h-2 rounded-full" style={{width:`${pct}%`}}></div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                );
+            };
+
             return (
                 <>
                     {vista === 'dashboard' && <Dashboard />}
                     {vista === 'billetera' && <VistaBilletera />}
                     {vista === 'ingresos' && <VistaIngresos />}
                     {vista === 'gastos' && <VistaGastos />}
+                    {vista === 'reporte' && <VistaReporte />}
                     {vista === 'detalle' && seleccionado && <Detalle />}
 
                     <MenuNav />
@@ -768,6 +948,7 @@
                                 
                                 const nuevoIngreso = {
                                     dia: estado.diasAcumulados,
+                                    fecha: calcularFechaActual().toISOString().split('T')[0],
                                     propinas: monto,
                                     usd: 0,
                                     concepto: concepto
@@ -841,28 +1022,43 @@
                     {modal === 'ingresoUSD' && (
                         <Modal onClose={() => setModal(null)}>
                             <h2 className="text-2xl font-bold mb-4">💲 Ingreso en USD</h2>
-                            <p className="text-gray-600 mb-4">Agregá dólares directamente a tu billetera</p>
                             <form onSubmit={(e) => {
                                 e.preventDefault();
                                 const monto = parseFloat(e.target.monto.value);
                                 const concepto = e.target.concepto.value;
-                                
+                                const destino = e.target.destino.value;
+
                                 const nuevoIngreso = {
                                     dia: estado.diasAcumulados,
-                                    propinas: 0,
-                                    usd: monto,
-                                    concepto: concepto
+                                    fecha: calcularFechaActual().toISOString().split('T')[0],
+                                    propinas: 0, usd: monto, concepto, destino
                                 };
-                                
-                                setEstado({
-                                    ...estado,
-                                    billetera: {...estado.billetera, usd: estado.billetera.usd + monto},
-                                    ingresosDiarios: [...estado.ingresosDiarios, nuevoIngreso]
-                                });
+
+                                let nuevaBilletera = {...estado.billetera};
+                                if (destino === 'usd') {
+                                    nuevaBilletera.usd += monto;
+                                } else if (destino === 'tanda') {
+                                    nuevaBilletera.tanda += monto;
+                                } else {
+                                    nuevaBilletera.secciones = (nuevaBilletera.secciones || []).map(s =>
+                                        s.id === parseInt(destino) ? {...s, monto: s.monto + monto} : s
+                                    );
+                                }
+                                setEstado({...estado, billetera: nuevaBilletera, ingresosDiarios: [...estado.ingresosDiarios, nuevoIngreso]});
                                 setModal(null);
                             }}>
                                 <input type="number" name="monto" step="0.01" required className="w-full px-4 py-3 border-2 rounded-xl mb-3 text-2xl" placeholder="100" />
                                 <input type="text" name="concepto" className="w-full px-4 py-3 border-2 rounded-xl mb-3" placeholder="Concepto (opcional)" />
+                                <div className="mb-4">
+                                    <label className="block text-gray-700 font-bold mb-2">Agregar a:</label>
+                                    <select name="destino" className="w-full px-4 py-3 border-2 rounded-xl">
+                                        <option value="usd">💲 USD (billetera)</option>
+                                        <option value="tanda">🏆 Tanda</option>
+                                        {(estado.billetera.secciones || []).map(s => (
+                                            <option key={s.id} value={s.id}>{s.icono || '💼'} {s.nombre}</option>
+                                        ))}
+                                    </select>
+                                </div>
                                 <p className="text-sm text-gray-600 mb-4">TC: $1 USD = ${estado.tipoCambioUSD} MXN</p>
                                 <div className="flex gap-3">
                                     <button type="button" onClick={() => setModal(null)} className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">Cancelar</button>
@@ -876,30 +1072,44 @@
                     {modal === 'ingresoARS' && (
                         <Modal onClose={() => setModal(null)}>
                             <h2 className="text-2xl font-bold mb-4">🇦🇷 Ingreso en ARS</h2>
-                            <p className="text-gray-600 mb-4">Agregá pesos argentinos a tu billetera</p>
                             <form onSubmit={(e) => {
                                 e.preventDefault();
                                 const monto = parseFloat(e.target.monto.value);
                                 const concepto = e.target.concepto.value;
+                                const destino = e.target.destino.value;
 
                                 const nuevoIngreso = {
                                     dia: estado.diasAcumulados,
-                                    propinas: 0,
-                                    usd: 0,
-                                    ars: monto,
-                                    concepto: concepto
+                                    fecha: calcularFechaActual().toISOString().split('T')[0],
+                                    propinas: 0, usd: 0, ars: monto, concepto, destino
                                 };
 
-                                setEstado({
-                                    ...estado,
-                                    billetera: {...estado.billetera, ars: estado.billetera.ars + monto},
-                                    ingresosDiarios: [...estado.ingresosDiarios, nuevoIngreso]
-                                });
+                                let nuevaBilletera = {...estado.billetera};
+                                if (destino === 'ars') {
+                                    nuevaBilletera.ars += monto;
+                                } else if (destino === 'tanda') {
+                                    nuevaBilletera.tanda += monto;
+                                } else {
+                                    nuevaBilletera.secciones = (nuevaBilletera.secciones || []).map(s =>
+                                        s.id === parseInt(destino) ? {...s, monto: s.monto + monto} : s
+                                    );
+                                }
+                                setEstado({...estado, billetera: nuevaBilletera, ingresosDiarios: [...estado.ingresosDiarios, nuevoIngreso]});
                                 setModal(null);
                             }}>
                                 <input type="number" name="monto" step="0.01" required className="w-full px-4 py-3 border-2 rounded-xl mb-3 text-2xl" placeholder="50000" />
                                 <input type="text" name="concepto" className="w-full px-4 py-3 border-2 rounded-xl mb-3" placeholder="Concepto (opcional)" />
-                                <p className="text-sm text-gray-600 mb-4">TC: $1 ARS = ${estado.tipoCambio} MXN</p>
+                                <div className="mb-4">
+                                    <label className="block text-gray-700 font-bold mb-2">Agregar a:</label>
+                                    <select name="destino" className="w-full px-4 py-3 border-2 rounded-xl">
+                                        <option value="ars">🇦🇷 ARS (billetera)</option>
+                                        <option value="tanda">🏆 Tanda</option>
+                                        {(estado.billetera.secciones || []).map(s => (
+                                            <option key={s.id} value={s.id}>{s.icono || '💼'} {s.nombre}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <p className="text-sm text-gray-600 mb-4">TC: 1 ARS = ${tipoCambioMXNARS.toFixed(5)} MXN</p>
                                 <div className="flex gap-3">
                                     <button type="button" onClick={() => setModal(null)} className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">Cancelar</button>
                                     <button type="submit" className="flex-1 bg-sky-500 hover:bg-sky-600 text-white px-6 py-3 rounded-xl font-bold">Agregar</button>
@@ -960,14 +1170,30 @@
                                             ))}
                                         </select>
                                     </div>
-                                    <select name="categoria" className="w-full px-4 py-3 border-2 rounded-xl">
-                                        <option value="Comida">🍔 Comida</option>
-                                        <option value="Transporte">🚗 Transporte</option>
-                                        <option value="Entretenimiento">🎬 Entretenimiento</option>
-                                        <option value="Salud">💊 Salud</option>
-                                        <option value="Ropa">👕 Ropa</option>
-                                        <option value="Otro">📦 Otro</option>
-                                    </select>
+                                    <div>
+                                        <label className="block text-gray-700 font-bold mb-2">Categoría</label>
+                                        <select name="categoria" className="w-full px-4 py-3 border-2 rounded-xl mb-2">
+                                            <option value="Comida">🍔 Comida</option>
+                                            <option value="Transporte">🚗 Transporte</option>
+                                            <option value="Entretenimiento">🎬 Entretenimiento</option>
+                                            <option value="Salud">💊 Salud</option>
+                                            <option value="Ropa">👕 Ropa</option>
+                                            {(estado.categoriasExtra || []).map(cat => (
+                                                <option key={cat} value={cat}>{cat}</option>
+                                            ))}
+                                            <option value="Otro">📦 Otro</option>
+                                        </select>
+                                        <div className="flex gap-2">
+                                            <input type="text" id="nuevaCatInput" placeholder="+ Nueva categoría" className="flex-1 px-3 py-2 border-2 rounded-xl text-sm" />
+                                            <button type="button" onClick={() => {
+                                                const val = document.getElementById('nuevaCatInput').value.trim();
+                                                if (val && !(estado.categoriasExtra || []).includes(val)) {
+                                                    setEstado({...estado, categoriasExtra: [...(estado.categoriasExtra || []), val]});
+                                                    document.getElementById('nuevaCatInput').value = '';
+                                                }
+                                            }} className="bg-gray-200 hover:bg-gray-300 px-3 py-2 rounded-xl text-sm font-bold">➕</button>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div className="flex gap-3">
                                     <button type="button" onClick={() => setModal(null)} className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">Cancelar</button>
@@ -998,17 +1224,19 @@
                                     <label className="block text-gray-700 font-bold mb-2">Día actual</label>
                                     <input type="number" name="dias" defaultValue={estado.diasAcumulados} required className="w-full px-4 py-3 border-2 rounded-xl" />
                                 </div>
-                                <div className="mb-6">
-                                    <label className="block text-gray-700 font-bold mb-2">Tipo de cambio ARS → MXN</label>
-                                    <input type="number" step="0.001" value={estado.tipoCambio} onChange={(e) => setEstado({...estado, tipoCambio: parseFloat(e.target.value)})} className="w-full px-4 py-3 border-2 rounded-xl" />
+                                <div className="mb-4">
+                                    <label className="block text-gray-700 font-bold mb-1">USD → MXN</label>
+                                    <p className="text-xs text-gray-500 mb-2">Cuántos pesos mexicanos vale 1 USD (ej: 17.16)</p>
+                                    <input type="number" step="0.01" value={estado.tipoCambioUSD} onChange={(e) => setEstado({...estado, tipoCambioUSD: parseFloat(e.target.value) || 0})} className="w-full px-4 py-3 border-2 rounded-xl" />
                                 </div>
-                                <div className="mb-6">
-                                    <label className="block text-gray-700 font-bold mb-2">Tipo de cambio USD → MXN</label>
-                                    <input type="number" step="0.01" value={estado.tipoCambioUSD} onChange={(e) => setEstado({...estado, tipoCambioUSD: parseFloat(e.target.value)})} className="w-full px-4 py-3 border-2 rounded-xl" />
+                                <div className="mb-4">
+                                    <label className="block text-gray-700 font-bold mb-1">USD → ARS</label>
+                                    <p className="text-xs text-gray-500 mb-2">Cuántos pesos argentinos vale 1 USD (ej: 1560)</p>
+                                    <input type="number" step="1" value={estado.tipoCambioARS} onChange={(e) => setEstado({...estado, tipoCambioARS: parseFloat(e.target.value) || 1})} className="w-full px-4 py-3 border-2 rounded-xl" />
                                 </div>
-                                <button onClick={() => setModal('ingresoSueldo')} type="button" className="w-full bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-xl font-bold mb-3">
-                                    💰 Asignar Sueldo a Gastos
-                                </button>
+                                <div className="bg-blue-50 rounded-xl p-3 mb-6 text-sm text-blue-800">
+                                    ARS → MXN (auto): 1 ARS = ${(estado.tipoCambioUSD / (estado.tipoCambioARS || 1)).toFixed(5)} MXN
+                                </div>
                                 <button onClick={() => {
                                     if (confirm('⚠️ ¿Estás segura? Esto borrará TODOS los datos guardados y empezarás de cero.')) {
                                         localStorage.removeItem('finanzasAppData');
@@ -1027,60 +1255,71 @@
 
                     {modal === 'ingresoSueldo' && (
                         <Modal onClose={() => setModal(null)}>
-                            <h2 className="text-2xl font-bold mb-4">💰 Asignar sueldo a gastos</h2>
-                            <p className="text-gray-600 mb-4">Asigná el sueldo quincenal a cada gasto</p>
-                            
+                            <h2 className="text-2xl font-bold mb-1">💰 Ingresar Salario</h2>
+                            <p className="text-gray-500 text-sm mb-4">Asigná a gastos fijos y el sobrante va a MXN disponibles</p>
+
                             <form onSubmit={(e) => {
                                 e.preventDefault();
-                                const formData = new FormData(e.target);
-                                
+                                const f = e.target;
+                                const totalSalario = parseFloat(f.totalSalario.value) || 0;
+                                const formData = new FormData(f);
+
+                                let totalAsignado = 0;
                                 const nuevosGastos = estado.gastosFijos.map(gasto => {
                                     const montoAsignado = parseFloat(formData.get(`gasto_${gasto.id}`) || 0);
+                                    totalAsignado += montoAsignado;
                                     if (montoAsignado > 0) {
                                         return {...gasto, montoSueldoAsignado: (gasto.montoSueldoAsignado || 0) + montoAsignado};
                                     }
                                     return gasto;
                                 });
-                                
-                                setEstado({...estado, gastosFijos: nuevosGastos});
+
+                                const sobrante = totalSalario - totalAsignado;
+                                let nuevosIngresos = [...estado.ingresosDiarios];
+                                if (sobrante > 0) {
+                                    nuevosIngresos.push({
+                                        dia: estado.diasAcumulados,
+                                        fecha: calcularFechaActual().toISOString().split('T')[0],
+                                        propinas: sobrante,
+                                        usd: 0,
+                                        concepto: 'Sobrante de salario'
+                                    });
+                                }
+
+                                setEstado({...estado, gastosFijos: nuevosGastos, ingresosDiarios: nuevosIngresos});
                                 setModal(null);
                             }}>
-                                <div className="space-y-3 mb-4 max-h-96 overflow-y-auto">
-                                    {estado.gastosFijos.filter(g => {
-                                        const ciclo = calcularCiclo(g);
-                                        return ciclo.porcentajeCostoDiario < 100;
-                                    }).map(gasto => {
+                                <div className="mb-4">
+                                    <label className="block text-gray-700 font-bold mb-2">Total salario recibido ($)</label>
+                                    <input type="number" name="totalSalario" step="0.01" required placeholder="0" className="w-full px-4 py-3 border-2 rounded-xl text-2xl font-bold" />
+                                </div>
+
+                                <div className="space-y-3 mb-4 max-h-64 overflow-y-auto">
+                                    {estado.gastosFijos.filter(g => calcularCiclo(g).porcentajeCostoDiario < 100).map(gasto => {
                                         const ciclo = calcularCiclo(gasto);
                                         const montoNecesario = Math.round((ciclo.montoDiarioMXN * ciclo.diasDelCiclo) * ((100 - ciclo.porcentajeCostoDiario) / 100));
                                         const yaAsignado = gasto.montoSueldoAsignado || 0;
                                         const falta = Math.max(0, montoNecesario - yaAsignado);
-                                        
                                         return (
-                                            <div key={gasto.id} className="bg-blue-50 rounded-xl p-4 border-2 border-blue-200">
-                                                <div className="flex justify-between items-start mb-3">
-                                                    <div>
-                                                        <h3 className="font-bold text-gray-800">{gasto.nombre}</h3>
-                                                        <p className="text-sm text-gray-600">{100 - ciclo.porcentajeCostoDiario}% = ${montoNecesario}</p>
-                                                        {yaAsignado > 0 && (
-                                                            <p className="text-xs text-green-600">✓ Asignado: ${Math.round(yaAsignado)}</p>
-                                                        )}
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <p className="text-sm text-gray-600">Falta:</p>
-                                                        <p className="text-xl font-bold text-blue-700">${falta}</p>
-                                                    </div>
+                                            <div key={gasto.id} className="bg-blue-50 rounded-xl p-3 border border-blue-200">
+                                                <div className="flex justify-between items-center mb-2">
+                                                    <span className="font-bold text-gray-800 text-sm">{gasto.nombre}</span>
+                                                    <span className="text-xs text-blue-700">{100 - ciclo.porcentajeCostoDiario}% sueldo · necesita ${montoNecesario}</span>
                                                 </div>
-                                                <div>
-                                                    <label className="block text-xs text-gray-600 mb-1">Asignar:</label>
-                                                    <input type="number" name={`gasto_${gasto.id}`} step="0.01" defaultValue={falta} placeholder="0" className="w-full px-3 py-2 border-2 rounded-lg text-lg font-bold" />
-                                                </div>
+                                                {yaAsignado > 0 && <p className="text-xs text-green-600 mb-1">✓ Ya asignado: ${Math.round(yaAsignado)}</p>}
+                                                <input type="number" name={`gasto_${gasto.id}`} step="0.01" defaultValue={falta} placeholder="0" className="w-full px-3 py-2 border-2 rounded-lg text-base font-bold" />
                                             </div>
                                         );
                                     })}
                                 </div>
+
+                                <div className="bg-gray-50 rounded-xl p-3 mb-4 text-sm text-gray-600">
+                                    El sobrante (salario − asignado a gastos) se enviará automáticamente a MXN disponibles.
+                                </div>
+
                                 <div className="flex gap-3">
                                     <button type="button" onClick={() => setModal(null)} className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">Cancelar</button>
-                                    <button type="submit" className="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-xl font-bold">Asignar</button>
+                                    <button type="submit" className="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-xl font-bold">Aplicar</button>
                                 </div>
                             </form>
                         </Modal>
