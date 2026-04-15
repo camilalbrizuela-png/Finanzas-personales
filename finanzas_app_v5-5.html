@@ -448,27 +448,27 @@
                     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-4 pb-24">
                         <div className="max-w-4xl mx-auto">
 
-                            {/* Botones de acción */}
+                            {/* Secciones de billetera */}
                             <div className="bg-white rounded-3xl shadow-2xl p-6 mb-6">
-                                <h1 className="text-2xl font-bold text-gray-800 mb-4">➕ Registrar ingreso</h1>
+                                <h1 className="text-2xl font-bold text-gray-800 mb-4">📥 ¿Dónde ingresa el dinero?</h1>
                                 <div className="grid grid-cols-2 gap-3">
-                                    <button onClick={() => setModal('ingresoDiario')}
+                                    <button onClick={() => { setForm({ seccionIngreso: 'mxn' }); setModal('modalIngreso'); }}
                                         className="flex flex-col items-center bg-gradient-to-br from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 text-white rounded-2xl p-5 shadow-md transition-all">
                                         <span className="text-3xl mb-2">💵</span>
-                                        <span className="font-bold text-lg">Ingreso Diario</span>
+                                        <span className="font-bold text-lg">MXN</span>
                                         <span className="text-xs opacity-80 mt-1">Pesos mexicanos</span>
                                     </button>
-                                    <button onClick={() => setModal('ingresoUSD')}
+                                    <button onClick={() => { setForm({ seccionIngreso: 'usd' }); setModal('modalIngreso'); }}
                                         className="flex flex-col items-center bg-gradient-to-br from-blue-400 to-cyan-500 hover:from-blue-500 hover:to-cyan-600 text-white rounded-2xl p-5 shadow-md transition-all">
                                         <span className="text-3xl mb-2">💲</span>
-                                        <span className="font-bold text-lg">Dólares</span>
-                                        <span className="text-xs opacity-80 mt-1">USD a billetera</span>
+                                        <span className="font-bold text-lg">USD</span>
+                                        <span className="text-xs opacity-80 mt-1">${Math.round(estado.billetera.usd)} disp.</span>
                                     </button>
-                                    <button onClick={() => setModal('ingresoARS')}
+                                    <button onClick={() => { setForm({ seccionIngreso: 'ars' }); setModal('modalIngreso'); }}
                                         className="flex flex-col items-center bg-gradient-to-br from-sky-400 to-blue-500 hover:from-sky-500 hover:to-blue-600 text-white rounded-2xl p-5 shadow-md transition-all">
                                         <span className="text-3xl mb-2">🇦🇷</span>
-                                        <span className="font-bold text-lg">Pesos Arg.</span>
-                                        <span className="text-xs opacity-80 mt-1">ARS a billetera</span>
+                                        <span className="font-bold text-lg">ARS</span>
+                                        <span className="text-xs opacity-80 mt-1">{Math.round(estado.billetera.ars).toLocaleString()} disp.</span>
                                     </button>
                                     <button onClick={() => setModal('ingresoSueldo')}
                                         className="flex flex-col items-center bg-gradient-to-br from-purple-400 to-indigo-500 hover:from-purple-500 hover:to-indigo-600 text-white rounded-2xl p-5 shadow-md transition-all">
@@ -476,6 +476,20 @@
                                         <span className="font-bold text-lg">Salario</span>
                                         <span className="text-xs opacity-80 mt-1">Asignar a gastos</span>
                                     </button>
+                                    <button onClick={() => { setForm({ seccionIngreso: 'tanda' }); setModal('modalIngreso'); }}
+                                        className="flex flex-col items-center bg-gradient-to-br from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white rounded-2xl p-5 shadow-md transition-all">
+                                        <span className="text-3xl mb-2">🏆</span>
+                                        <span className="font-bold text-lg">Tanda</span>
+                                        <span className="text-xs opacity-80 mt-1">${Math.round(estado.billetera.tanda)} disp.</span>
+                                    </button>
+                                    {(estado.billetera.secciones || []).map(seccion => (
+                                        <button key={seccion.id} onClick={() => { setForm({ seccionIngreso: seccion.id }); setModal('modalIngreso'); }}
+                                            className="flex flex-col items-center bg-gradient-to-br from-gray-400 to-slate-500 hover:from-gray-500 hover:to-slate-600 text-white rounded-2xl p-5 shadow-md transition-all">
+                                            <span className="text-3xl mb-2">{seccion.icono || '💼'}</span>
+                                            <span className="font-bold text-lg">{seccion.nombre}</span>
+                                            <span className="text-xs opacity-80 mt-1">{Math.round(seccion.monto).toLocaleString()} disp.</span>
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
 
@@ -592,7 +606,7 @@
                                         <span className="font-bold text-lg">Gasto Fijo</span>
                                         <span className="text-xs opacity-80 mt-1">Agrega a gastos fijos</span>
                                     </button>
-                                    <button onClick={() => { setForm({concepto: '', monto: '', fuente: 'mxn', categoria: 'Comida'}); setModal('nuevoGastoOtro'); }}
+                                    <button onClick={() => { setForm({}); setModal('seleccionarFuenteGasto'); }}
                                         className="flex flex-col items-center bg-gradient-to-br from-red-400 to-orange-500 hover:from-red-500 hover:to-orange-600 text-white rounded-2xl p-5 shadow-md transition-all">
                                         <span className="text-3xl mb-2">🛍️</span>
                                         <span className="font-bold text-lg">Otros</span>
@@ -636,6 +650,10 @@
                                                     </div>
                                                     <div className="text-right flex items-start gap-2">
                                                         <p className="text-2xl font-bold text-red-600">${Math.round(gasto.monto)}</p>
+                                                        <button onClick={() => {
+                                                            setForm({...gasto});
+                                                            setModal('editarGastoExtra');
+                                                        }} className="text-sm text-blue-500 hover:text-blue-700 mt-1">✏️</button>
                                                         <button onClick={() => {
                                                             if (confirm('¿Eliminar este gasto?')) {
                                                                 let nuevaBilletera = {...estado.billetera};
@@ -1118,9 +1136,126 @@
                         </Modal>
                     )}
 
+                    {/* Modal: Ingreso Unificado */}
+                    {modal === 'modalIngreso' && (() => {
+                        const sec = form.seccionIngreso;
+                        const seccionCustom = (estado.billetera.secciones || []).find(s => s.id === sec || s.id === parseInt(sec));
+                        let titulo, placeholder, tcInfo;
+                        if (sec === 'usd') {
+                            titulo = '💲 Ingreso en USD';
+                            placeholder = '100';
+                            tcInfo = `TC: $1 USD = ${estado.tipoCambioUSD} MXN`;
+                        } else if (sec === 'ars') {
+                            titulo = '🇦🇷 Ingreso en ARS';
+                            placeholder = '50000';
+                            tcInfo = `TC: 1 ARS = ${tipoCambioMXNARS.toFixed(5)} MXN`;
+                        } else if (sec === 'tanda') {
+                            titulo = '🏆 Ingreso Tanda';
+                            placeholder = '1000';
+                            tcInfo = null;
+                        } else if (seccionCustom) {
+                            titulo = `${seccionCustom.icono || '💼'} Ingreso ${seccionCustom.nombre}`;
+                            placeholder = '0';
+                            tcInfo = null;
+                        } else {
+                            titulo = '💵 Ingreso MXN';
+                            placeholder = '1500';
+                            tcInfo = null;
+                        }
+                        return (
+                            <Modal onClose={() => setModal(null)}>
+                                <h2 className="text-2xl font-bold mb-4">{titulo}</h2>
+                                <form onSubmit={(e) => {
+                                    e.preventDefault();
+                                    const monto = parseFloat(e.target.monto.value);
+                                    const concepto = e.target.concepto.value;
+                                    const fecha = calcularFechaActual().toISOString().split('T')[0];
+                                    let nuevoIngreso = {
+                                        dia: estado.diasAcumulados,
+                                        fecha,
+                                        propinas: 0, usd: 0, ars: 0,
+                                        concepto: concepto || titulo
+                                    };
+                                    let nuevaBilletera = {...estado.billetera};
+                                    if (sec === 'mxn') {
+                                        nuevoIngreso.propinas = monto;
+                                    } else if (sec === 'usd') {
+                                        nuevoIngreso.usd = monto;
+                                        nuevaBilletera.usd = nuevaBilletera.usd + monto;
+                                    } else if (sec === 'ars') {
+                                        nuevoIngreso.ars = monto;
+                                        nuevaBilletera.ars = nuevaBilletera.ars + monto;
+                                    } else if (sec === 'tanda') {
+                                        nuevaBilletera.tanda = nuevaBilletera.tanda + monto;
+                                    } else if (seccionCustom) {
+                                        nuevaBilletera.secciones = (nuevaBilletera.secciones || []).map(s =>
+                                            (s.id === sec || s.id === parseInt(sec)) ? {...s, monto: s.monto + monto} : s
+                                        );
+                                    }
+                                    setEstado({...estado, billetera: nuevaBilletera, ingresosDiarios: [...estado.ingresosDiarios, nuevoIngreso]});
+                                    setModal(null);
+                                }}>
+                                    <input type="number" name="monto" step="0.01" required className="w-full px-4 py-3 border-2 rounded-xl mb-3 text-2xl" placeholder={placeholder} />
+                                    <input type="text" name="concepto" className="w-full px-4 py-3 border-2 rounded-xl mb-3" placeholder="Concepto (opcional)" />
+                                    {tcInfo && <p className="text-sm text-gray-600 mb-4">{tcInfo}</p>}
+                                    {sec === 'mxn' && <p className="text-sm text-gray-600 mb-4">Costo de vida hoy: ${Math.round(costoVidaDiario)}</p>}
+                                    <div className="flex gap-3">
+                                        <button type="button" onClick={() => setModal(null)} className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">Cancelar</button>
+                                        <button type="submit" className="flex-1 bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-bold">Registrar</button>
+                                    </div>
+                                </form>
+                            </Modal>
+                        );
+                    })()}
+
+                    {/* Modal: Seleccionar fuente de gasto */}
+                    {modal === 'seleccionarFuenteGasto' && (
+                        <Modal onClose={() => setModal(null)}>
+                            <h2 className="text-2xl font-bold mb-4">🛍️ ¿De dónde sale el dinero?</h2>
+                            <div className="grid grid-cols-2 gap-3">
+                                {[
+                                    { id: 'mxn', icono: '💵', nombre: 'MXN', sub: `$${Math.round(estado.billetera.mxnFisico + estado.billetera.mxnDigital)} disp.`, color: 'from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600' },
+                                    { id: 'usd', icono: '💲', nombre: 'USD', sub: `$${Math.round(estado.billetera.usd)} disp.`, color: 'from-blue-400 to-cyan-500 hover:from-blue-500 hover:to-cyan-600' },
+                                    { id: 'ars', icono: '🇦🇷', nombre: 'ARS', sub: `${Math.round(estado.billetera.ars).toLocaleString()} disp.`, color: 'from-sky-400 to-blue-500 hover:from-sky-500 hover:to-blue-600' },
+                                    { id: 'tanda', icono: '🏆', nombre: 'Tanda', sub: `$${Math.round(estado.billetera.tanda)} disp.`, color: 'from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600' },
+                                    ...(estado.billetera.secciones || []).map(s => ({
+                                        id: s.id, icono: s.icono || '💼', nombre: s.nombre,
+                                        sub: `${Math.round(s.monto).toLocaleString()} disp.`,
+                                        color: 'from-gray-400 to-slate-500 hover:from-gray-500 hover:to-slate-600'
+                                    }))
+                                ].map(sec => (
+                                    <button key={sec.id} onClick={() => {
+                                        setForm({ concepto: '', monto: '', fuente: sec.id, categoria: 'Comida' });
+                                        setModal('nuevoGastoOtro');
+                                    }} className={`flex flex-col items-center bg-gradient-to-br ${sec.color} text-white rounded-2xl p-5 shadow-md transition-all`}>
+                                        <span className="text-3xl mb-2">{sec.icono}</span>
+                                        <span className="font-bold text-lg">{sec.nombre}</span>
+                                        <span className="text-xs opacity-80 mt-1">{sec.sub}</span>
+                                    </button>
+                                ))}
+                            </div>
+                            <button type="button" onClick={() => setModal(null)} className="w-full mt-4 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">Cancelar</button>
+                        </Modal>
+                    )}
+
                     {/* Modal: Nuevo Gasto Otro */}
                     {modal === 'nuevoGastoOtro' && (
                         <Modal onClose={() => setModal(null)}>
+                            {(() => {
+                                const getNombreFuenteLocal = (fuente) => {
+                                    if (!fuente || fuente === 'mxn') return '💵 MXN Disponible';
+                                    if (fuente === 'usd') return '💲 USD';
+                                    if (fuente === 'ars') return '🇦🇷 ARS';
+                                    if (fuente === 'tanda') return '🏆 Tanda';
+                                    const s = (estado.billetera.secciones || []).find(s => s.id === fuente || s.id === parseInt(fuente));
+                                    return s ? `${s.icono || '💼'} ${s.nombre}` : String(fuente);
+                                };
+                                return (
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <span className="bg-gray-100 text-gray-600 text-xs font-bold px-3 py-1 rounded-full">De: {getNombreFuenteLocal(form.fuente)}</span>
+                                    </div>
+                                );
+                            })()}
                             <h2 className="text-2xl font-bold mb-4">🛍️ Nuevo gasto</h2>
                             <form onSubmit={(e) => {
                                 e.preventDefault();
@@ -1155,21 +1290,10 @@
                                 setEstado({...estado, gastosExtras: [...estado.gastosExtras, nuevoGasto], billetera: nuevaBilletera});
                                 setModal(null);
                             }}>
+                                <input type="hidden" name="fuente" value={form.fuente || 'mxn'} />
                                 <div className="space-y-3 mb-4">
                                     <input type="text" name="concepto" required placeholder="Concepto" className="w-full px-4 py-3 border-2 rounded-xl" />
                                     <input type="number" step="0.01" name="monto" required placeholder="Monto" className="w-full px-4 py-3 border-2 rounded-xl text-2xl" />
-                                    <div>
-                                        <label className="block text-gray-700 font-bold mb-2">Descontar de:</label>
-                                        <select name="fuente" className="w-full px-4 py-3 border-2 rounded-xl">
-                                            <option value="mxn">💵 MXN Disponible</option>
-                                            <option value="usd">💲 USD (${Math.round(estado.billetera.usd)} disp.)</option>
-                                            <option value="ars">🇦🇷 ARS ({Math.round(estado.billetera.ars).toLocaleString()} disp.)</option>
-                                            <option value="tanda">🏆 Tanda (${Math.round(estado.billetera.tanda)} disp.)</option>
-                                            {(estado.billetera.secciones || []).map(s => (
-                                                <option key={s.id} value={s.id}>{s.icono || '💼'} {s.nombre} ({Math.round(s.monto).toLocaleString()} disp.)</option>
-                                            ))}
-                                        </select>
-                                    </div>
                                     <div>
                                         <label className="block text-gray-700 font-bold mb-2">Categoría</label>
                                         <select name="categoria" className="w-full px-4 py-3 border-2 rounded-xl mb-2">
@@ -1203,9 +1327,67 @@
                         </Modal>
                     )}
 
-                    {/* [Resto de modales: config, ajustarInicio, editarBilletera, ingresoSueldo, nuevo gasto fijo, editar] */}
-                    {/* Continuará en siguiente sección por límite de caracteres */}
-                    
+                    {/* Modal: Editar Gasto Extra */}
+                    {modal === 'editarGastoExtra' && (
+                        <Modal onClose={() => setModal(null)}>
+                            <h2 className="text-2xl font-bold mb-4">✏️ Editar gasto</h2>
+                            <form onSubmit={(e) => {
+                                e.preventDefault();
+                                const f = e.target;
+                                const nuevoMonto = parseFloat(f.monto.value);
+                                const diff = nuevoMonto - form.monto;
+                                const fuente = form.fuente;
+                                let nuevaBilletera = {...estado.billetera};
+                                if (fuente === 'usd') {
+                                    nuevaBilletera.usd = nuevaBilletera.usd - diff;
+                                } else if (fuente === 'ars') {
+                                    nuevaBilletera.ars = nuevaBilletera.ars - diff;
+                                } else if (fuente === 'tanda') {
+                                    nuevaBilletera.tanda = nuevaBilletera.tanda - diff;
+                                } else if (fuente && fuente !== 'mxn' && fuente !== 'sueldo') {
+                                    nuevaBilletera.secciones = (nuevaBilletera.secciones || []).map(s =>
+                                        (s.id === fuente || s.id === parseInt(fuente)) ? {...s, monto: s.monto - diff} : s
+                                    );
+                                }
+                                const nuevosGastos = estado.gastosExtras.map(g =>
+                                    g.id === form.id ? {...g, concepto: f.concepto.value, monto: nuevoMonto, categoria: f.categoria.value} : g
+                                );
+                                setEstado({...estado, gastosExtras: nuevosGastos, billetera: nuevaBilletera});
+                                setModal(null);
+                            }}>
+                                <div className="space-y-3 mb-4">
+                                    <div>
+                                        <label className="block text-gray-700 font-bold mb-2">Concepto</label>
+                                        <input type="text" name="concepto" defaultValue={form.concepto} required className="w-full px-4 py-3 border-2 rounded-xl" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-gray-700 font-bold mb-2">Monto</label>
+                                        <input type="number" name="monto" step="0.01" defaultValue={form.monto} required className="w-full px-4 py-3 border-2 rounded-xl text-2xl" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-gray-700 font-bold mb-2">Categoría</label>
+                                        <select name="categoria" defaultValue={form.categoria} className="w-full px-4 py-3 border-2 rounded-xl">
+                                            <option value="Comida">🍔 Comida</option>
+                                            <option value="Transporte">🚗 Transporte</option>
+                                            <option value="Entretenimiento">🎬 Entretenimiento</option>
+                                            <option value="Salud">💊 Salud</option>
+                                            <option value="Ropa">👕 Ropa</option>
+                                            {(estado.categoriasExtra || []).map(cat => (
+                                                <option key={cat} value={cat}>{cat}</option>
+                                            ))}
+                                            <option value="Gasto Fijo">📋 Gasto Fijo</option>
+                                            <option value="Otro">📦 Otro</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div className="flex gap-3">
+                                    <button type="button" onClick={() => setModal(null)} className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">Cancelar</button>
+                                    <button type="submit" className="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-xl font-bold">Guardar</button>
+                                </div>
+                            </form>
+                        </Modal>
+                    )}
+
                     {modal === 'config' && (
                         <Modal onClose={() => setModal(null)}>
                             <h2 className="text-2xl font-bold mb-4">⚙️ Configuración</h2>
