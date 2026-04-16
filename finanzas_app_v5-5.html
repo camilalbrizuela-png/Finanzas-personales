@@ -41,6 +41,9 @@
                         }
                         if (!parsed.categoriasExtra) parsed.categoriasExtra = [];
                         if (!parsed.coloresCategorias) parsed.coloresCategorias = {};
+                        if (parsed.isPremium === undefined) parsed.isPremium = false;
+                        if (parsed.premiumCode === undefined) parsed.premiumCode = null;
+                        if (parsed.premiumActivadoEn === undefined) parsed.premiumActivadoEn = null;
                         return parsed;
                     }
                 } catch(e) {
@@ -62,6 +65,9 @@
                     gastosExtras: [],
                     categoriasExtra: [],
                     coloresCategorias: {},
+                    isPremium: false,
+                    premiumCode: null,
+                    premiumActivadoEn: null,
                     billetera: { mxnFisico: 8740, mxnDigital: 0, usd: 1325, ars: 15000, tanda: 9000, secciones: [] }
                 };
             };
@@ -74,8 +80,14 @@
             const [reportePeriodo, setReportePeriodo] = useState('mensual');
 
             // TC ARS→MXN auto-calculado: (MXN por USD) / (ARS por USD)
-            // TC ARS→MXN auto-calculado: (MXN por USD) / (ARS por USD)
             const tipoCambioMXNARS = estado.tipoCambioUSD / (estado.tipoCambioARS || 1560);
+
+            const LIMITES = {
+                gastosFijos: estado.isPremium ? 999 : 3,
+                secciones: estado.isPremium ? 999 : 2,
+                categoriasExtra: estado.isPremium ? 999 : 5,
+                historialDias: estado.isPremium ? 9999 : 30
+            };
 
             // Guardar en localStorage cada vez que cambia el estado
             useEffect(() => {
@@ -269,6 +281,22 @@
                                 </div>
                                             </div>
 
+                            {!estado.isPremium && (
+                                <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl p-4 mb-6 text-white cursor-pointer hover:scale-[1.02] transition-all"
+                                     onClick={() => { setModal('upgradePremium'); setForm({ razon: 'banner' }); }}>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-2xl">💎</span>
+                                            <div>
+                                                <p className="font-bold">Upgrade a Premium</p>
+                                                <p className="text-sm opacity-90">Desbloquea funciones ilimitadas</p>
+                                            </div>
+                                        </div>
+                                        <span className="text-2xl">→</span>
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="grid md:grid-cols-3 gap-6 mb-6">
                                 <div className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-3xl shadow-xl p-6 text-white">
                                     <p className="text-sm opacity-90 mb-2">Costo de vida diario</p>
@@ -374,7 +402,15 @@
                         <div className="bg-white rounded-3xl shadow-2xl p-8 mb-6">
                             <div className="flex justify-between items-center mb-6">
                                 <h1 className="text-3xl font-bold text-gray-800">💰 Mi Billetera</h1>
-                                <button onClick={() => { setForm({nombre: '', monto: '', icono: ''}); setModal('nuevaSeccion'); }}
+                                <button onClick={() => {
+                                    if ((estado.billetera.secciones || []).length >= LIMITES.secciones) {
+                                        setForm({ razon: 'secciones', actual: (estado.billetera.secciones || []).length, limite: LIMITES.secciones });
+                                        setModal('upgradePremium');
+                                        return;
+                                    }
+                                    setForm({nombre: '', monto: '', icono: ''});
+                                    setModal('nuevaSeccion');
+                                }}
                                     className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-xl font-bold text-sm">
                                     ➕ Sección
                                 </button>
@@ -606,7 +642,15 @@
                             <div className="bg-white rounded-3xl shadow-2xl p-6 mb-6">
                                 <h1 className="text-2xl font-bold text-gray-800 mb-4">🛒 Registrar gasto</h1>
                                 <div className="grid grid-cols-2 gap-3">
-                                    <button onClick={() => { setForm({nombre:'', monto:'', moneda:'MXN', periodicidad:'Mensual', vencimiento:'', categoria:'Fijo', porcentajeCostoDiario: 100}); setModal('nuevo'); }}
+                                    <button onClick={() => {
+                                        if (estado.gastosFijos.length >= LIMITES.gastosFijos) {
+                                            setForm({ razon: 'gastos_fijos', actual: estado.gastosFijos.length, limite: LIMITES.gastosFijos });
+                                            setModal('upgradePremium');
+                                            return;
+                                        }
+                                        setForm({nombre:'', monto:'', moneda:'MXN', periodicidad:'Mensual', vencimiento:'', categoria:'Fijo', porcentajeCostoDiario: 100});
+                                        setModal('nuevo');
+                                    }}
                                         className="flex flex-col items-center bg-gradient-to-br from-purple-400 to-indigo-500 hover:from-purple-500 hover:to-indigo-600 text-white rounded-2xl p-5 shadow-md transition-all">
                                         <span className="text-3xl mb-2">📋</span>
                                         <span className="font-bold text-lg">Gasto Fijo</span>
@@ -1442,6 +1486,12 @@
                                             <input type="text" id="nuevaCatInput" placeholder="+ Nueva categoría" className="flex-1 px-3 py-2 border-2 rounded-xl text-sm" />
                                             <button type="button" onClick={() => {
                                                 const val = document.getElementById('nuevaCatInput').value.trim();
+                                                if (!val) return;
+                                                if ((estado.categoriasExtra || []).length >= LIMITES.categoriasExtra && !(estado.categoriasExtra || []).includes(val)) {
+                                                    setForm({ razon: 'categorias', actual: (estado.categoriasExtra || []).length, limite: LIMITES.categoriasExtra });
+                                                    setModal('upgradePremium');
+                                                    return;
+                                                }
                                                 if (val && !(estado.categoriasExtra || []).includes(val)) {
                                                     setEstado({...estado, categoriasExtra: [...(estado.categoriasExtra || []), val]});
                                                     document.getElementById('nuevaCatInput').value = '';
@@ -1519,6 +1569,100 @@
                         </Modal>
                     )}
 
+                    {/* Modal: Upgrade Premium */}
+                    {modal === 'upgradePremium' && (
+                        <Modal onClose={() => setModal(null)}>
+                            <div className="text-center">
+                                <div className="text-6xl mb-4">🔒</div>
+                                <h2 className="text-2xl font-bold mb-2">
+                                    {form.razon === 'banner' || form.razon === 'config' ? '💎 Premium' : 'Límite alcanzado'}
+                                </h2>
+                                {form.razon !== 'banner' && form.razon !== 'config' && (
+                                    <p className="text-gray-600 mb-4">
+                                        Has alcanzado el límite de {form.limite} {form.razon === 'gastos_fijos' ? 'gastos fijos' : form.razon === 'secciones' ? 'secciones de billetera' : 'categorías personalizadas'} en la versión gratuita.
+                                    </p>
+                                )}
+                                <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl p-6 mb-6 text-left">
+                                    <h3 className="font-bold text-lg mb-3 text-center">💎 Con Premium obtienes:</h3>
+                                    <div className="space-y-2">
+                                        <p className="flex items-center gap-2"><span className="text-green-600">✓</span> Gastos fijos ilimitados</p>
+                                        <p className="flex items-center gap-2"><span className="text-green-600">✓</span> Secciones de billetera ilimitadas</p>
+                                        <p className="flex items-center gap-2"><span className="text-green-600">✓</span> Categorías personalizadas ilimitadas</p>
+                                        <p className="flex items-center gap-2"><span className="text-green-600">✓</span> Exportar datos a Excel/CSV</p>
+                                        <p className="flex items-center gap-2"><span className="text-green-600">✓</span> Reportes avanzados</p>
+                                        <p className="flex items-center gap-2"><span className="text-green-600">✓</span> Soporte prioritario</p>
+                                    </div>
+                                </div>
+                                <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-4 mb-4">
+                                    <p className="font-bold text-2xl text-yellow-800">$299 MXN</p>
+                                    <p className="text-sm text-yellow-700">Pago único • Sin suscripciones</p>
+                                </div>
+                                <div className="flex gap-3">
+                                    <button onClick={() => setModal(null)}
+                                        className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">
+                                        Continuar con Basic
+                                    </button>
+                                    <button onClick={() => { setModal('activarPremium'); setForm({}); }}
+                                        className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl font-bold">
+                                        💎 Activar Premium
+                                    </button>
+                                </div>
+                            </div>
+                        </Modal>
+                    )}
+
+                    {/* Modal: Activar Premium con código */}
+                    {modal === 'activarPremium' && (
+                        <Modal onClose={() => setModal(null)}>
+                            <h2 className="text-2xl font-bold mb-4">💎 Activar Premium</h2>
+                            <p className="text-gray-600 mb-4">Ingresa tu código de activación:</p>
+                            <form onSubmit={(e) => {
+                                e.preventDefault();
+                                const codigo = e.target.codigo.value.trim().toUpperCase();
+                                const CODIGOS_VALIDOS = { 'PREMIUM2025': true, 'EARLYBIRD': true, 'TESTCODE': true, 'BETA': true };
+                                if (CODIGOS_VALIDOS[codigo]) {
+                                    setEstado({...estado, isPremium: true, premiumCode: codigo, premiumActivadoEn: new Date().toISOString()});
+                                    setModal('premiumActivado');
+                                } else {
+                                    alert('❌ Código inválido. Verifica e intenta de nuevo.');
+                                }
+                            }}>
+                                <input type="text" name="codigo" required
+                                    placeholder="EJEMPLO: PREMIUM2025"
+                                    className="w-full px-4 py-3 border-2 rounded-xl mb-4 text-center text-lg font-bold uppercase"
+                                    style={{letterSpacing: '2px'}} />
+                                <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4 text-sm">
+                                    <p className="font-semibold mb-1">¿Dónde consigo un código?</p>
+                                    <p className="text-gray-600">Visita: <span className="text-blue-600">tudominio.com/premium</span></p>
+                                </div>
+                                <div className="flex gap-3">
+                                    <button type="button" onClick={() => setModal(null)}
+                                        className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">Cancelar</button>
+                                    <button type="submit"
+                                        className="flex-1 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-bold">Activar</button>
+                                </div>
+                            </form>
+                        </Modal>
+                    )}
+
+                    {/* Modal: Premium Activado ✓ */}
+                    {modal === 'premiumActivado' && (
+                        <Modal onClose={() => setModal(null)}>
+                            <div className="text-center">
+                                <div className="text-6xl mb-4">🎉</div>
+                                <h2 className="text-3xl font-bold mb-2">¡Premium Activado!</h2>
+                                <p className="text-gray-600 mb-6">Ahora tienes acceso completo a todas las funciones premium.</p>
+                                <div className="bg-green-50 border-2 border-green-200 rounded-xl p-4 mb-6">
+                                    <p className="font-semibold text-green-800">✓ Funciones desbloqueadas</p>
+                                </div>
+                                <button onClick={() => setModal(null)}
+                                    className="w-full bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-bold">
+                                    Empezar a usar
+                                </button>
+                            </div>
+                        </Modal>
+                    )}
+
                     {modal === 'config' && (
                         <Modal onClose={() => setModal(null)}>
                             <h2 className="text-2xl font-bold mb-4">⚙️ Configuración</h2>
@@ -1550,6 +1694,36 @@
                                 <div className="bg-blue-50 rounded-xl p-3 mb-6 text-sm text-blue-800">
                                     ARS → MXN (auto): 1 ARS = ${(estado.tipoCambioUSD / (estado.tipoCambioARS || 1)).toFixed(5)} MXN
                                 </div>
+
+                                <div className="mb-6">
+                                    <h3 className="text-xl font-bold mb-3">💎 Premium</h3>
+                                    {estado.isPremium ? (
+                                        <div className="bg-green-50 border-2 border-green-200 rounded-xl p-4">
+                                            <p className="font-bold text-green-800 mb-1">✓ Premium Activado</p>
+                                            <p className="text-sm text-gray-600">Código: {estado.premiumCode}</p>
+                                            <p className="text-xs text-gray-500 mt-1">
+                                                Activado el {new Date(estado.premiumActivadoEn).toLocaleDateString('es-MX')}
+                                            </p>
+                                        </div>
+                                    ) : (
+                                        <div className="bg-gray-50 border-2 border-gray-200 rounded-xl p-4">
+                                            <p className="font-semibold mb-2">Versión: Basic (Gratis)</p>
+                                            <div className="flex gap-2">
+                                                <button type="button"
+                                                    onClick={() => { setModal('upgradePremium'); setForm({ razon: 'config' }); }}
+                                                    className="flex-1 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-bold text-sm">
+                                                    Ver Premium
+                                                </button>
+                                                <button type="button"
+                                                    onClick={() => setModal('activarPremium')}
+                                                    className="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-bold text-sm">
+                                                    Activar código
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
                                 <button onClick={() => {
                                     if (confirm('⚠️ ¿Estás segura? Esto borrará TODOS los datos guardados y empezarás de cero.')) {
                                         localStorage.removeItem('finanzasAppData');
