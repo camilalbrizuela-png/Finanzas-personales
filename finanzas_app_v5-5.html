@@ -7,6 +7,21 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         #loading { display: flex; align-items: center; justify-content: center; min-height: 100vh; font-size: 1.5rem; color: #6b7280; font-family: sans-serif; }
+        /* Dark theme overrides */
+        .t-dark { background-color: #0f172a; color: #f8fafc; }
+        .t-dark .bg-white { background-color: #1e293b !important; }
+        .t-dark .bg-gray-50 { background-color: #1e293b !important; }
+        .t-dark .bg-gray-100 { background-color: #273549 !important; }
+        .t-dark .rounded-2xl.bg-gradient-to-br { border: 1px solid #334155; }
+        .t-dark .text-gray-800 { color: #f1f5f9 !important; }
+        .t-dark .text-gray-700 { color: #e2e8f0 !important; }
+        .t-dark .text-gray-600 { color: #cbd5e1 !important; }
+        .t-dark .text-gray-500 { color: #94a3b8 !important; }
+        .t-dark .border-gray-200 { border-color: #334155 !important; }
+        .t-dark .border-t-2 { border-color: #334155 !important; }
+        .t-dark input, .t-dark select, .t-dark textarea { background-color: #1e293b !important; color: #f1f5f9 !important; border-color: #475569 !important; }
+        .t-dark .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7) !important; }
+        .t-dark .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5) !important; }
     </style>
 </head>
 <body>
@@ -44,6 +59,7 @@
                         if (parsed.isPremium === undefined) parsed.isPremium = false;
                         if (parsed.premiumCode === undefined) parsed.premiumCode = null;
                         if (parsed.premiumActivadoEn === undefined) parsed.premiumActivadoEn = null;
+                        if (!parsed.tema) parsed.tema = 'classic';
                         // Onboarding: usuarios con datos existentes lo omiten
                         if (parsed.onboardingCompleto === undefined) {
                             parsed.onboardingCompleto = true;
@@ -78,6 +94,7 @@
                     isPremium: false,
                     premiumCode: null,
                     premiumActivadoEn: null,
+                    tema: 'classic',
                     billetera: { mxnFisico: 0, mxnDigital: 0, usd: 0, ars: 0, tanda: 0, secciones: [] }
                 };
             };
@@ -98,6 +115,15 @@
                 categoriasExtra: estado.isPremium ? 999 : 5,
                 historialDias: estado.isPremium ? 9999 : 30
             };
+
+            const TEMAS = {
+                classic: { nombre: 'Classic 🎨', bg: 'from-indigo-50 via-purple-50 to-pink-50',      card1: 'from-purple-500 to-indigo-600',  navActive: 'bg-purple-100 text-purple-600',    bannerGrad: 'from-purple-600 to-indigo-600',  previewGrad: 'from-purple-500 to-indigo-600',  libre: true  },
+                dark:    { nombre: 'Dark 🌙',    bg: 'from-gray-900 via-gray-800 to-gray-700',        card1: 'from-gray-700 to-gray-600',      navActive: 'bg-gray-700 text-gray-100',        bannerGrad: 'from-gray-700 to-gray-600',      previewGrad: 'from-gray-900 to-gray-600',      libre: false },
+                ocean:   { nombre: 'Ocean 🌊',   bg: 'from-blue-50 via-cyan-50 to-teal-50',           card1: 'from-blue-500 to-cyan-600',      navActive: 'bg-blue-100 text-blue-700',        bannerGrad: 'from-blue-600 to-cyan-500',      previewGrad: 'from-blue-600 to-cyan-500',      libre: false },
+                sunset:  { nombre: 'Sunset 🌅',  bg: 'from-orange-50 via-rose-50 to-pink-50',         card1: 'from-orange-500 to-pink-600',    navActive: 'bg-orange-100 text-orange-600',    bannerGrad: 'from-orange-500 to-pink-500',    previewGrad: 'from-orange-500 to-pink-500',    libre: false },
+                forest:  { nombre: 'Forest 🌿',  bg: 'from-green-50 via-emerald-50 to-teal-50',       card1: 'from-emerald-500 to-green-600',  navActive: 'bg-emerald-100 text-emerald-700',  bannerGrad: 'from-emerald-600 to-green-700',  previewGrad: 'from-emerald-600 to-green-700',  libre: false },
+            };
+            const t = TEMAS[estado.tema] || TEMAS.classic;
 
             // Guardar en localStorage cada vez que cambia el estado
             useEffect(() => {
@@ -242,23 +268,23 @@
             const MenuNav = () => (
                 <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 shadow-lg">
                     <div className="max-w-6xl mx-auto grid grid-cols-6 gap-0 p-1">
-                        <button onClick={() => setVista('dashboard')} className={`flex flex-col items-center py-2 rounded-xl ${vista === 'dashboard' ? 'bg-purple-100 text-purple-600' : 'text-gray-600'}`}>
+                        <button onClick={() => setVista('dashboard')} className={`flex flex-col items-center py-2 rounded-xl ${vista === 'dashboard' ? t.navActive : 'text-gray-600'}`}>
                             <span className="text-lg">🏠</span>
                             <span className="text-xs font-semibold">Inicio</span>
                         </button>
-                        <button onClick={() => setVista('billetera')} className={`flex flex-col items-center py-2 rounded-xl ${vista === 'billetera' ? 'bg-purple-100 text-purple-600' : 'text-gray-600'}`}>
+                        <button onClick={() => setVista('billetera')} className={`flex flex-col items-center py-2 rounded-xl ${vista === 'billetera' ? t.navActive : 'text-gray-600'}`}>
                             <span className="text-lg">💰</span>
                             <span className="text-xs font-semibold">Billetera</span>
                         </button>
-                        <button onClick={() => setVista('ingresos')} className={`flex flex-col items-center py-2 rounded-xl ${vista === 'ingresos' ? 'bg-purple-100 text-purple-600' : 'text-gray-600'}`}>
+                        <button onClick={() => setVista('ingresos')} className={`flex flex-col items-center py-2 rounded-xl ${vista === 'ingresos' ? t.navActive : 'text-gray-600'}`}>
                             <span className="text-lg">📥</span>
                             <span className="text-xs font-semibold">Ingresos</span>
                         </button>
-                        <button onClick={() => setVista('gastos')} className={`flex flex-col items-center py-2 rounded-xl ${vista === 'gastos' ? 'bg-purple-100 text-purple-600' : 'text-gray-600'}`}>
+                        <button onClick={() => setVista('gastos')} className={`flex flex-col items-center py-2 rounded-xl ${vista === 'gastos' ? t.navActive : 'text-gray-600'}`}>
                             <span className="text-lg">🛒</span>
                             <span className="text-xs font-semibold">Gastos</span>
                         </button>
-                        <button onClick={() => setVista('reporte')} className={`flex flex-col items-center py-2 rounded-xl ${vista === 'reporte' ? 'bg-purple-100 text-purple-600' : 'text-gray-600'}`}>
+                        <button onClick={() => setVista('reporte')} className={`flex flex-col items-center py-2 rounded-xl ${vista === 'reporte' ? t.navActive : 'text-gray-600'}`}>
                             <span className="text-lg">📊</span>
                             <span className="text-xs font-semibold">Reporte</span>
                         </button>
@@ -275,7 +301,7 @@
                 const fechaActual = calcularFechaActual();
                 
                 return (
-                    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-4 pb-24">
+                    <div className={`min-h-screen bg-gradient-to-br ${t.bg} p-4 pb-24`}>
                         <div className="max-w-6xl mx-auto">
                             <div className="bg-white rounded-3xl shadow-2xl p-6 mb-6">
                                 <div className="flex justify-between items-center mb-4">
@@ -292,7 +318,7 @@
                                             </div>
 
                             {!estado.isPremium && (
-                                <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl p-4 mb-6 text-white cursor-pointer hover:scale-[1.02] transition-all"
+                                <div className={`bg-gradient-to-r ${t.bannerGrad} rounded-2xl p-4 mb-6 text-white cursor-pointer hover:scale-[1.02] transition-all`}
                                      onClick={() => { setModal('upgradePremium'); setForm({ razon: 'banner' }); }}>
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-3">
@@ -308,7 +334,7 @@
                             )}
 
                             <div className="grid md:grid-cols-3 gap-6 mb-6">
-                                <div className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-3xl shadow-xl p-6 text-white">
+                                <div className={`bg-gradient-to-br ${t.card1} rounded-3xl shadow-xl p-6 text-white`}>
                                     <p className="text-sm opacity-90 mb-2">Costo de vida diario</p>
                                     <p className="text-4xl font-bold">${Math.round(costoVidaDiario)}</p>
                                     <div className="mt-3 pt-3 border-t border-white border-opacity-30">
@@ -407,7 +433,7 @@
                 const mxnFisico = superavit;
 
                 return (
-                <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-4 pb-24">
+                <div className={`min-h-screen bg-gradient-to-br ${t.bg} p-4 pb-24`}>
                     <div className="max-w-2xl mx-auto">
                         <div className="bg-white rounded-3xl shadow-2xl p-8 mb-6">
                             <div className="flex justify-between items-center mb-6">
@@ -452,7 +478,9 @@
                                             className="text-blue-600 hover:text-blue-800">✏️</button>
                                     </div>
                                     <p className="text-4xl font-bold text-purple-700">{Math.round(estado.billetera.ars).toLocaleString()}</p>
-                                    <p className="text-sm text-gray-600 mt-2">≈ ${Math.round(estado.billetera.ars * tipoCambioMXNARS)} MXN</p>
+                                    <p className="text-xs text-gray-500 mt-2">
+                                        ≈ ${(estado.billetera.ars / (estado.tipoCambioARS || 1)).toFixed(2)} USD → ${Math.round(estado.billetera.ars * tipoCambioMXNARS)} MXN
+                                    </p>
                                 </div>
 
                                 <div className="bg-gradient-to-br from-yellow-100 to-orange-100 rounded-2xl p-6">
@@ -497,7 +525,7 @@
                 const promedioDiario = estado.ingresosDiarios.length > 0 ? totalPropinas / estado.ingresosDiarios.length : 0;
 
                 return (
-                    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-4 pb-24">
+                    <div className={`min-h-screen bg-gradient-to-br ${t.bg} p-4 pb-24`}>
                         <div className="max-w-4xl mx-auto">
 
                             {/* Secciones de billetera */}
@@ -645,7 +673,7 @@
                 };
 
                 return (
-                    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-4 pb-24">
+                    <div className={`min-h-screen bg-gradient-to-br ${t.bg} p-4 pb-24`}>
                         <div className="max-w-4xl mx-auto">
 
                             {/* Botones de acción */}
@@ -747,7 +775,7 @@
             const Detalle = () => {
                 const ciclo = calcularCiclo(seleccionado);
                 return (
-                    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-4 pb-24">
+                    <div className={`min-h-screen bg-gradient-to-br ${t.bg} p-4 pb-24`}>
                         <div className="max-w-2xl mx-auto">
                             <button onClick={() => setVista('dashboard')} className="mb-4 text-purple-600 font-semibold">← Volver</button>
                             <div className="bg-white rounded-3xl shadow-2xl p-8">
@@ -828,7 +856,9 @@
                                         <p className="text-gray-500 text-sm mb-1">Monto total</p>
                                         <p className="text-2xl font-bold text-gray-800">${Math.round(seleccionado.monto)} {seleccionado.moneda}</p>
                                         {seleccionado.moneda === 'ARS' && (
-                                            <p className="text-sm text-gray-600 mt-1">≈ ${Math.round(seleccionado.monto * tipoCambioMXNARS)} MXN</p>
+                                            <p className="text-xs text-gray-500 mt-1">
+                                                ≈ ${(seleccionado.monto / (estado.tipoCambioARS || 1)).toFixed(2)} USD → ${Math.round(seleccionado.monto * tipoCambioMXNARS)} MXN
+                                            </p>
                                         )}
                                     </div>
                                     <div className="bg-gray-50 rounded-xl p-4">
@@ -935,7 +965,7 @@
                 const labels = {diario: 'Hoy', semanal: 'Últimos 7 días', mensual: 'Últimos 30 días', anual: 'Último año'};
 
                 return (
-                    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-4 pb-24">
+                    <div className={`min-h-screen bg-gradient-to-br ${t.bg} p-4 pb-24`}>
                         <div className="max-w-2xl mx-auto">
 
                             {/* Cabecera: período + tabs */}
@@ -1202,242 +1232,337 @@
                 );
             };
 
-            // Wizard de onboarding para nuevos usuarios
-            const OnboardingWizard = () => {
+            // Tutorial interactivo para nuevos usuarios (8 pasos)
+            const Tutorial = () => {
                 const [paso, setPaso] = useState(1);
                 const [datos, setDatos] = useState({
                     nombre: '',
                     fechaInicio: new Date().toISOString().split('T')[0],
-                    diasAcumulados: 1,
-                    monedaPrincipal: 'MXN',
-                    monedasSecundarias: [],
-                    tiposCambio: {}
+                    tcUSD: '17.16',
+                    arsporUSD: '1430',
+                    mxnFisico: '0',
+                    usd: '0',
+                    ars: '0',
+                    tanda: '0',
+                    agregarGasto: false,
+                    gastoNombre: '',
+                    gastoMonto: '',
+                    gastoMoneda: 'MXN',
+                    gastoVencimiento: '',
                 });
+                const totalPasos = 8;
 
-                const MONEDAS = [
-                    { codigo: 'MXN', nombre: 'Peso Mexicano', pais: '🇲🇽' },
-                    { codigo: 'USD', nombre: 'Dólar Estadounidense', pais: '🇺🇸' },
-                    { codigo: 'ARS', nombre: 'Peso Argentino', pais: '🇦🇷' },
-                    { codigo: 'EUR', nombre: 'Euro', pais: '🇪🇺' },
-                    { codigo: 'COP', nombre: 'Peso Colombiano', pais: '🇨🇴' },
-                    { codigo: 'CLP', nombre: 'Peso Chileno', pais: '🇨🇱' },
-                    { codigo: 'BRL', nombre: 'Real Brasileño', pais: '🇧🇷' },
-                    { codigo: 'PEN', nombre: 'Sol Peruano', pais: '🇵🇪' },
-                    { codigo: 'UYU', nombre: 'Peso Uruguayo', pais: '🇺🇾' }
-                ];
-                const limiteMonedas = estado.isPremium ? 999 : 2;
-
-                const BarraPasos = () => (
-                    <div className="flex gap-2 mb-6">
-                        {[1,2,3,4].map(n => (
-                            <div key={n} className={`flex-1 h-2 rounded-full transition-all ${n <= paso ? 'bg-purple-500' : 'bg-gray-200'}`} />
-                        ))}
-                    </div>
-                );
-
-                const finalizarOnboarding = () => {
-                    const tcUSD = datos.tiposCambio['USD'] || 17.16;
-                    const tcARSraw = datos.tiposCambio['ARS'] || 0;
-                    const nuevoEstado = {
+                const finalizarTutorial = () => {
+                    const gastoInicial = datos.agregarGasto && datos.gastoNombre ? [{
+                        id: Date.now(),
+                        nombre: datos.gastoNombre,
+                        monto: parseFloat(datos.gastoMonto) || 0,
+                        moneda: datos.gastoMoneda || 'MXN',
+                        vencimiento: datos.gastoVencimiento || '-',
+                        periodicidad: 'Mensual',
+                        categoria: 'Fijo',
+                        porcentajeCostoDiario: 100,
+                        montoSueldoAsignado: 0,
+                    }] : [];
+                    setEstado({
                         onboardingCompleto: true,
-                        nombreUsuario: datos.nombre,
+                        nombreUsuario: datos.nombre || '',
                         fechaInicio: datos.fechaInicio,
-                        diasAcumulados: datos.diasAcumulados,
-                        monedaPrincipal: datos.monedaPrincipal,
-                        monedasSecundarias: datos.monedasSecundarias,
-                        tipoCambioUSD: tcUSD,
-                        tipoCambioARS: (datos.monedasSecundarias.includes('ARS') && tcARSraw > 0)
-                            ? Math.round(tcUSD / tcARSraw)
-                            : 1560,
-                        gastosFijos: [],
+                        diasAcumulados: 1,
+                        monedaPrincipal: 'MXN',
+                        monedasSecundarias: parseFloat(datos.ars) > 0 ? ['ARS'] : (parseFloat(datos.usd) > 0 ? ['USD'] : []),
+                        tipoCambioUSD: parseFloat(datos.tcUSD) || 17.16,
+                        tipoCambioARS: parseFloat(datos.arsporUSD) || 1430,
+                        gastosFijos: gastoInicial,
                         ingresosDiarios: [],
                         gastosExtras: [],
                         categoriasExtra: [],
                         coloresCategorias: {},
-                        billetera: { mxnFisico: 0, mxnDigital: 0, usd: 0, ars: 0, tanda: 0, secciones: [] },
+                        billetera: {
+                            mxnFisico: parseFloat(datos.mxnFisico) || 0,
+                            mxnDigital: 0,
+                            usd: parseFloat(datos.usd) || 0,
+                            ars: parseFloat(datos.ars) || 0,
+                            tanda: parseFloat(datos.tanda) || 0,
+                            secciones: [],
+                        },
                         isPremium: false,
                         premiumCode: null,
-                        premiumActivadoEn: null
-                    };
-                    setEstado(nuevoEstado);
+                        premiumActivadoEn: null,
+                        tema: 'classic',
+                    });
+                    localStorage.setItem('tutorialCompletado', 'true');
                 };
+
+                const Progreso = () => (
+                    <div className="mb-6">
+                        <div className="flex justify-between text-xs text-gray-500 mb-2">
+                            <span>Paso {paso} de {totalPasos}</span>
+                            {paso > 3 && (
+                                <button type="button" onClick={() => {
+                                    if (confirm('¿Saltar el tutorial? Puedes verlo de nuevo borrando tus datos desde Config.')) finalizarTutorial();
+                                }} className="text-purple-400 hover:text-purple-600 underline">
+                                    Saltar tutorial
+                                </button>
+                            )}
+                        </div>
+                        <div className="flex gap-1">
+                            {Array.from({length: totalPasos}, (_, i) => (
+                                <div key={i} className={`flex-1 h-2 rounded-full transition-all ${i < paso ? 'bg-purple-500' : 'bg-gray-200'}`} />
+                            ))}
+                        </div>
+                    </div>
+                );
 
                 const bg = "min-h-screen bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center p-4";
                 const card = "bg-white rounded-3xl shadow-2xl max-w-lg w-full p-8";
-                const cardWide = "bg-white rounded-3xl shadow-2xl max-w-2xl w-full p-8";
+                const inp = "w-full px-4 py-3 border-2 rounded-xl focus:border-purple-500 outline-none";
+                const btnP = "flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold";
+                const btnN = "flex-1 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-bold";
 
                 return (
-                    <div>
+                    <div className={bg}>
                         {/* PASO 1: Bienvenida */}
                         {paso === 1 && (
-                            <div className={bg}>
-                                <div className={`${card} text-center`}>
-                                    <BarraPasos />
-                                    <div className="text-6xl mb-6">💰</div>
-                                    <h1 className="text-4xl font-bold text-gray-800 mb-4">¡Bienvenido a Finanzas App!</h1>
-                                    <p className="text-gray-600 mb-8">
-                                        Vamos a configurar tu app en 4 pasos rápidos para que empieces a gestionar tus finanzas de manera inteligente.
-                                    </p>
-                                    <div className="mb-6 text-left">
-                                        <label className="block text-gray-700 font-bold mb-2">¿Cómo te llamas? (opcional)</label>
-                                        <input type="text" value={datos.nombre}
-                                            onChange={(e) => setDatos({...datos, nombre: e.target.value})}
-                                            placeholder="Tu nombre"
-                                            className="w-full px-4 py-3 border-2 rounded-xl focus:border-purple-500 outline-none" />
-                                    </div>
-                                    <button onClick={() => setPaso(2)}
-                                        className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-6 py-4 rounded-xl font-bold text-lg">
-                                        Empezar →
-                                    </button>
+                            <div className={`${card} text-center`}>
+                                <Progreso />
+                                <div className="text-6xl mb-4">💰</div>
+                                <h1 className="text-3xl font-bold text-gray-800 mb-3">¡Bienvenido a Finanzas App!</h1>
+                                <p className="text-gray-600 mb-6">Te ayudaremos a gestionar tus gastos de forma inteligente. El tutorial dura solo 2 minutos.</p>
+                                <div className="mb-6 text-left">
+                                    <label className="block text-gray-700 font-bold mb-2">¿Cómo te llamas? (opcional)</label>
+                                    <input type="text" value={datos.nombre}
+                                        onChange={(e) => setDatos({...datos, nombre: e.target.value})}
+                                        placeholder="Tu nombre"
+                                        className={inp} />
                                 </div>
+                                <button onClick={() => setPaso(2)}
+                                    className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-6 py-4 rounded-xl font-bold text-lg">
+                                    Comenzar →
+                                </button>
                             </div>
                         )}
 
-                        {/* PASO 2: Fecha y día actual */}
+                        {/* PASO 2: Configuración Inicial (OBLIGATORIO) */}
                         {paso === 2 && (
-                            <div className={bg}>
-                                <div className={card}>
-                                    <BarraPasos />
-                                    <div className="flex justify-between items-center mb-6">
-                                        <h2 className="text-2xl font-bold text-gray-800">Configuración Inicial</h2>
-                                        <span className="text-sm text-gray-500">Paso 2 de 4</span>
+                            <div className={card}>
+                                <Progreso />
+                                <h2 className="text-2xl font-bold text-gray-800 mb-2">⚙️ Configuración Inicial</h2>
+                                <p className="text-gray-600 mb-5">Primero, configuremos tu información básica</p>
+                                <div className="space-y-5 mb-6">
+                                    <div>
+                                        <label className="block text-gray-700 font-bold mb-2">📅 ¿Desde cuándo quieres empezar a contar?</label>
+                                        <input type="date" value={datos.fechaInicio}
+                                            onChange={(e) => setDatos({...datos, fechaInicio: e.target.value})}
+                                            className={inp} required />
                                     </div>
-                                    <div className="space-y-6 mb-8">
-                                        <div>
-                                            <label className="block text-gray-700 font-bold mb-2">📅 Fecha de inicio</label>
-                                            <input type="date" value={datos.fechaInicio}
-                                                onChange={(e) => setDatos({...datos, fechaInicio: e.target.value})}
-                                                className="w-full px-4 py-3 border-2 rounded-xl focus:border-purple-500 outline-none" required />
-                                            <p className="text-sm text-gray-500 mt-1">¿Desde qué día quieres empezar a trackear tus finanzas?</p>
-                                        </div>
-                                        <div>
-                                            <label className="block text-gray-700 font-bold mb-2">🔢 Día actual</label>
-                                            <input type="number" min="1" value={datos.diasAcumulados}
-                                                onChange={(e) => setDatos({...datos, diasAcumulados: parseInt(e.target.value) || 1})}
-                                                className="w-full px-4 py-3 border-2 rounded-xl focus:border-purple-500 outline-none" />
-                                            <p className="text-sm text-gray-500 mt-1">Por defecto es 1 (hoy es el primer día)</p>
-                                        </div>
+                                    <div>
+                                        <label className="block text-gray-700 font-bold mb-2">💵 Tipo de cambio USD → MXN</label>
+                                        <input type="number" step="0.01" value={datos.tcUSD}
+                                            onChange={(e) => setDatos({...datos, tcUSD: e.target.value})}
+                                            placeholder="ej: 17.16" className={inp} />
+                                        <p className="text-xs text-gray-500 mt-1">¿Cuántos pesos mexicanos vale 1 dólar?</p>
                                     </div>
-                                    <div className="flex gap-3">
-                                        <button onClick={() => setPaso(1)} className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">← Atrás</button>
-                                        <button onClick={() => { if (!datos.fechaInicio) { alert('Por favor ingresa una fecha de inicio'); return; } setPaso(3); }}
-                                            className="flex-1 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-bold">Siguiente →</button>
+                                    <div>
+                                        <label className="block text-gray-700 font-bold mb-2">🇦🇷 ¿Cuántos ARS equivalen a 1 USD?</label>
+                                        <input type="number" step="1" value={datos.arsporUSD}
+                                            onChange={(e) => setDatos({...datos, arsporUSD: e.target.value})}
+                                            placeholder="ej: 1430" className={inp} />
+                                        <p className="text-xs text-gray-500 mt-1">Tipo de cambio ARS/USD · 1 USD = {datos.arsporUSD || '1430'} ARS</p>
                                     </div>
+                                </div>
+                                <div className="flex gap-3">
+                                    <button onClick={() => setPaso(1)} className={btnP}>← Atrás</button>
+                                    <button onClick={() => {
+                                        if (!datos.fechaInicio) { alert('Por favor ingresa una fecha de inicio'); return; }
+                                        setPaso(3);
+                                    }} className={btnN}>Siguiente →</button>
                                 </div>
                             </div>
                         )}
 
-                        {/* PASO 3: Selección de monedas */}
+                        {/* PASO 3: Tu Billetera (OBLIGATORIO) */}
                         {paso === 3 && (
-                            <div className={bg}>
-                                <div className={`${cardWide} overflow-y-auto max-h-screen`}>
-                                    <BarraPasos />
-                                    <div className="flex justify-between items-center mb-6">
-                                        <h2 className="text-2xl font-bold text-gray-800">Monedas que usas</h2>
-                                        <span className="text-sm text-gray-500">Paso 3 de 4</span>
+                            <div className={card}>
+                                <Progreso />
+                                <h2 className="text-2xl font-bold text-gray-800 mb-2">💰 Tu Billetera</h2>
+                                <p className="text-gray-600 mb-5">¿Cuánto dinero tienes ahora en cada moneda?</p>
+                                <div className="space-y-4 mb-6">
+                                    <div>
+                                        <label className="block text-gray-700 font-semibold mb-1">💵 MXN Físico</label>
+                                        <input type="number" step="0.01" value={datos.mxnFisico}
+                                            onChange={(e) => setDatos({...datos, mxnFisico: e.target.value})}
+                                            placeholder="0" className={inp} />
                                     </div>
-                                    <div className="mb-6">
-                                        <label className="block text-gray-700 font-bold mb-3">💵 Moneda principal (tus ingresos)</label>
-                                        <div className="grid grid-cols-3 gap-3">
-                                            {MONEDAS.map(m => (
-                                                <button key={m.codigo} onClick={() => setDatos({...datos, monedaPrincipal: m.codigo, monedasSecundarias: datos.monedasSecundarias.filter(c => c !== m.codigo)})}
-                                                    className={`p-4 rounded-xl border-2 transition-all ${datos.monedaPrincipal === m.codigo ? 'border-purple-500 bg-purple-50 shadow-lg' : 'border-gray-200 hover:border-purple-300'}`}>
-                                                    <div className="text-3xl mb-1">{m.pais}</div>
-                                                    <div className="font-bold text-sm">{m.codigo}</div>
-                                                </button>
-                                            ))}
-                                        </div>
+                                    <div>
+                                        <label className="block text-gray-700 font-semibold mb-1">💲 USD</label>
+                                        <input type="number" step="0.01" value={datos.usd}
+                                            onChange={(e) => setDatos({...datos, usd: e.target.value})}
+                                            placeholder="0" className={inp} />
                                     </div>
-                                    <div className="mb-6">
-                                        <div className="flex justify-between items-center mb-3">
-                                            <label className="text-gray-700 font-bold">💰 Otras monedas que manejas</label>
-                                            {!estado.isPremium && (
-                                                <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">Máx. {limiteMonedas} en Basic</span>
-                                            )}
-                                        </div>
-                                        <div className="grid grid-cols-3 gap-3">
-                                            {MONEDAS.filter(m => m.codigo !== datos.monedaPrincipal).map(m => {
-                                                const sel = datos.monedasSecundarias.includes(m.codigo);
-                                                const puede = estado.isPremium || datos.monedasSecundarias.length < limiteMonedas;
-                                                return (
-                                                    <button key={m.codigo} onClick={() => {
-                                                        if (sel) {
-                                                            setDatos({...datos, monedasSecundarias: datos.monedasSecundarias.filter(c => c !== m.codigo)});
-                                                        } else if (puede) {
-                                                            setDatos({...datos, monedasSecundarias: [...datos.monedasSecundarias, m.codigo]});
-                                                        } else {
-                                                            alert('Límite alcanzado. Activa Premium para agregar más monedas.');
-                                                        }
-                                                    }}
-                                                    className={`p-4 rounded-xl border-2 transition-all ${sel ? 'border-green-500 bg-green-50 shadow-lg' : 'border-gray-200 hover:border-green-300'} ${!puede && !sel ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                                                        <div className="text-3xl mb-1">{m.pais}</div>
-                                                        <div className="font-bold text-sm">{m.codigo}</div>
-                                                        {sel && <div className="text-xs text-green-600 mt-1">✓</div>}
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                        <p className="text-sm text-gray-500 mt-3">Selecciona las monedas que usas o en las que guardas dinero</p>
+                                    <div>
+                                        <label className="block text-gray-700 font-semibold mb-1">🇦🇷 ARS</label>
+                                        <input type="number" step="1" value={datos.ars}
+                                            onChange={(e) => setDatos({...datos, ars: e.target.value})}
+                                            placeholder="0" className={inp} />
                                     </div>
-                                    <div className="flex gap-3">
-                                        <button onClick={() => setPaso(2)} className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">← Atrás</button>
-                                        <button onClick={() => { if (!datos.monedaPrincipal) { alert('Selecciona tu moneda principal'); return; } setPaso(4); }}
-                                            className="flex-1 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-bold">Siguiente →</button>
+                                    <div>
+                                        <label className="block text-gray-700 font-semibold mb-1">🏆 Tanda</label>
+                                        <input type="number" step="0.01" value={datos.tanda}
+                                            onChange={(e) => setDatos({...datos, tanda: e.target.value})}
+                                            placeholder="0" className={inp} />
                                     </div>
+                                </div>
+                                <div className="flex gap-3">
+                                    <button onClick={() => setPaso(2)} className={btnP}>← Atrás</button>
+                                    <button onClick={() => setPaso(4)} className={btnN}>Siguiente →</button>
                                 </div>
                             </div>
                         )}
 
-                        {/* PASO 4: Tipos de cambio */}
+                        {/* PASO 4: Gastos Fijos (opcional) */}
                         {paso === 4 && (
-                            <div className={bg}>
-                                <div className={card}>
-                                    <BarraPasos />
-                                    <div className="flex justify-between items-center mb-4">
-                                        <h2 className="text-2xl font-bold text-gray-800">Tipos de Cambio</h2>
-                                        <span className="text-sm text-gray-500">Paso 4 de 4</span>
-                                    </div>
-                                    {datos.monedasSecundarias.length === 0 ? (
-                                        <div className="text-center text-gray-500 py-8 mb-6">
-                                            No seleccionaste monedas secundarias.<br />
-                                            <span className="text-sm">¡Puedes agregarlas después desde Config!</span>
-                                        </div>
-                                    ) : (
-                                        <>
-                                            <p className="text-gray-600 mb-4">Ingresa el tipo de cambio actual a {datos.monedaPrincipal}:</p>
-                                            <div className="space-y-4 mb-6">
-                                                {datos.monedasSecundarias.map(codigo => {
-                                                    const m = MONEDAS.find(x => x.codigo === codigo);
-                                                    const ph = codigo === 'USD' ? '17.16' : codigo === 'ARS' ? '0.011' : codigo === 'EUR' ? '18.5' : '1.0';
-                                                    return (
-                                                        <div key={codigo} className="bg-gray-50 p-4 rounded-xl">
-                                                            <label className="block text-gray-700 font-bold mb-2">{m.pais} 1 {codigo} = ? {datos.monedaPrincipal}</label>
-                                                            <input type="number" step="0.0001" placeholder={ph}
-                                                                defaultValue={datos.tiposCambio[codigo] || ''}
-                                                                onChange={(e) => setDatos({...datos, tiposCambio: {...datos.tiposCambio, [codigo]: parseFloat(e.target.value) || 0}})}
-                                                                className="w-full px-4 py-3 border-2 rounded-xl focus:border-purple-500 outline-none text-lg" />
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </>
-                                    )}
-                                    <div className="flex gap-3">
-                                        <button onClick={() => setPaso(3)} className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">← Atrás</button>
-                                        <button onClick={() => {
-                                            for (const codigo of datos.monedasSecundarias) {
-                                                if (!datos.tiposCambio[codigo] || datos.tiposCambio[codigo] <= 0) {
-                                                    alert(`Por favor ingresa el tipo de cambio de ${codigo}`);
-                                                    return;
-                                                }
-                                            }
-                                            finalizarOnboarding();
-                                        }}
-                                        className="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-6 py-3 rounded-xl font-bold">
-                                            Finalizar ✓
+                            <div className={card}>
+                                <Progreso />
+                                <h2 className="text-2xl font-bold text-gray-800 mb-2">📋 Gastos Fijos</h2>
+                                <p className="text-gray-600 mb-3">Los gastos fijos son pagos recurrentes (renta, universidad, servicios, etc.)</p>
+                                <div className="bg-purple-50 rounded-xl p-3 mb-5 text-sm text-purple-800">
+                                    💡 Puedes agregar todos tus gastos después, o empezar con uno ahora
+                                </div>
+                                {!datos.agregarGasto ? (
+                                    <div className="flex flex-col gap-3 mb-4">
+                                        <button onClick={() => setDatos({...datos, agregarGasto: true})}
+                                            className="w-full bg-purple-100 hover:bg-purple-200 text-purple-800 px-6 py-4 rounded-xl font-bold text-left">
+                                            ➕ Agregar mi primer gasto ahora
+                                        </button>
+                                        <button onClick={() => setPaso(5)}
+                                            className="w-full bg-gray-100 hover:bg-gray-200 text-gray-600 px-6 py-3 rounded-xl font-bold">
+                                            Hacerlo después →
                                         </button>
                                     </div>
+                                ) : (
+                                    <div className="space-y-3 mb-4">
+                                        <input type="text" value={datos.gastoNombre}
+                                            onChange={(e) => setDatos({...datos, gastoNombre: e.target.value})}
+                                            placeholder="Nombre del gasto (ej: Renta)" className={inp} />
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <input type="number" value={datos.gastoMonto}
+                                                onChange={(e) => setDatos({...datos, gastoMonto: e.target.value})}
+                                                placeholder="Monto" className={inp} />
+                                            <select value={datos.gastoMoneda}
+                                                onChange={(e) => setDatos({...datos, gastoMoneda: e.target.value})}
+                                                className={inp}>
+                                                <option value="MXN">MXN</option>
+                                                <option value="USD">USD</option>
+                                                <option value="ARS">ARS</option>
+                                            </select>
+                                        </div>
+                                        <input type="date" value={datos.gastoVencimiento}
+                                            onChange={(e) => setDatos({...datos, gastoVencimiento: e.target.value})}
+                                            className={inp} />
+                                        <button onClick={() => setPaso(5)} className={`w-full ${btnN}`}>Siguiente →</button>
+                                        <button onClick={() => setDatos({...datos, agregarGasto: false})} className="w-full text-sm text-gray-500 underline">Cancelar</button>
+                                    </div>
+                                )}
+                                {!datos.agregarGasto && (
+                                    <button onClick={() => setPaso(3)} className="text-sm text-gray-500 underline">← Atrás</button>
+                                )}
+                            </div>
+                        )}
+
+                        {/* PASO 5: Cómo Funciona */}
+                        {paso === 5 && (
+                            <div className={card}>
+                                <Progreso />
+                                <h2 className="text-2xl font-bold text-gray-800 mb-5">📱 Cómo Funciona la App</h2>
+                                <div className="space-y-3 mb-6">
+                                    {[
+                                        { icono: '🏠', titulo: 'Dashboard', desc: 'Ve tus gastos fijos, costo de vida diario y progreso' },
+                                        { icono: '💰', titulo: 'Billetera', desc: 'Tu dinero disponible en todas las monedas' },
+                                        { icono: '📥', titulo: 'Ingresos', desc: 'Registra tus propinas e ingresos diarios' },
+                                        { icono: '🛒', titulo: 'Gastos Extra', desc: 'Gastos fuera de tu presupuesto fijo' },
+                                        { icono: '📊', titulo: 'Reporte', desc: 'Análisis gráfico de tus finanzas' },
+                                        { icono: '⚙️', titulo: 'Config', desc: 'Ajusta tipos de cambio y preferencias' },
+                                    ].map(item => (
+                                        <div key={item.titulo} className="flex items-center gap-3 bg-gray-50 rounded-xl p-3">
+                                            <span className="text-2xl">{item.icono}</span>
+                                            <div>
+                                                <p className="font-bold text-gray-800 text-sm">{item.titulo}</p>
+                                                <p className="text-xs text-gray-600">{item.desc}</p>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
+                                <div className="flex gap-3">
+                                    <button onClick={() => setPaso(4)} className={btnP}>← Atrás</button>
+                                    <button onClick={() => setPaso(6)} className={btnN}>Siguiente →</button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* PASO 6: Registrar Ingresos */}
+                        {paso === 6 && (
+                            <div className={card}>
+                                <Progreso />
+                                <div className="text-5xl mb-4 text-center">💵</div>
+                                <h2 className="text-2xl font-bold text-gray-800 mb-3">Registrar Ingresos</h2>
+                                <p className="text-gray-600 mb-5">Cada día que trabajes, registra tus propinas o ingresos en la sección de Ingresos.</p>
+                                <div className="bg-green-50 rounded-xl p-4 mb-5">
+                                    <p className="font-semibold text-green-800 mb-2">✓ El sistema calcula automáticamente:</p>
+                                    <ul className="text-sm text-green-700 space-y-1">
+                                        <li>• Cuánto te queda después de tus gastos fijos</li>
+                                        <li>• Tu progreso mensual</li>
+                                        <li>• Comparativa entre monedas</li>
+                                    </ul>
+                                </div>
+                                <div className="flex gap-3">
+                                    <button onClick={() => setPaso(5)} className={btnP}>← Atrás</button>
+                                    <button onClick={() => setPaso(7)} className={btnN}>Siguiente →</button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* PASO 7: Avanzar Días */}
+                        {paso === 7 && (
+                            <div className={card}>
+                                <Progreso />
+                                <div className="text-5xl mb-4 text-center">⏭️</div>
+                                <h2 className="text-2xl font-bold text-gray-800 mb-3">Avanzar Días</h2>
+                                <p className="text-gray-600 mb-4">Usa el botón "⏭️ Avanzar" en el Dashboard para pasar al siguiente día.</p>
+                                <div className="bg-blue-50 rounded-xl p-4 mb-4">
+                                    <p className="font-semibold text-blue-800 mb-1">💡 Úsalo cuando:</p>
+                                    <p className="text-sm text-blue-700">Llegues a casa del trabajo o al final de cada día laborado.</p>
+                                </div>
+                                <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-5">
+                                    <p className="font-semibold text-red-800">⚠️ Importante:</p>
+                                    <p className="text-sm text-red-700">No puedes retroceder días. ¡Registra tus ingresos antes de avanzar!</p>
+                                </div>
+                                <div className="flex gap-3">
+                                    <button onClick={() => setPaso(6)} className={btnP}>← Atrás</button>
+                                    <button onClick={() => setPaso(8)} className={btnN}>Siguiente →</button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* PASO 8: ¡Listo! */}
+                        {paso === 8 && (
+                            <div className={`${card} text-center`}>
+                                <Progreso />
+                                <div className="text-6xl mb-4">🎉</div>
+                                <h2 className="text-3xl font-bold text-gray-800 mb-3">¡Todo listo para comenzar!</h2>
+                                <p className="text-gray-600 mb-5">Ya puedes empezar a usar Finanzas App</p>
+                                <div className="bg-yellow-50 rounded-xl p-4 mb-6 text-left">
+                                    <p className="font-semibold mb-2">💡 Tips para empezar:</p>
+                                    <div className="space-y-1 text-sm text-gray-700">
+                                        <p>💡 Registra tus ingresos cada día que trabajes</p>
+                                        <p>💡 Revisa tu progreso en el Reporte cada semana</p>
+                                        <p>💡 Ajusta los tipos de cambio en Config cuando cambien</p>
+                                    </div>
+                                </div>
+                                <button onClick={finalizarTutorial}
+                                    className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-6 py-4 rounded-xl font-bold text-lg">
+                                    🚀 Comenzar a usar la app
+                                </button>
                             </div>
                         )}
                     </div>
@@ -1445,9 +1570,9 @@
             };
 
             return (
-                <>
+                <div className={estado.tema === 'dark' ? 't-dark' : ''}>
                     {!estado.onboardingCompleto ? (
-                        <OnboardingWizard />
+                        <Tutorial />
                     ) : (
                     <>
                     {vista === 'dashboard' && <Dashboard />}
@@ -1631,7 +1756,7 @@
                                         ))}
                                     </select>
                                 </div>
-                                <p className="text-sm text-gray-600 mb-4">TC: 1 ARS = ${tipoCambioMXNARS.toFixed(5)} MXN</p>
+                                <p className="text-xs text-gray-500 mb-4">TC: 1 USD = {estado.tipoCambioARS} ARS · 1 ARS = ${tipoCambioMXNARS.toFixed(5)} MXN</p>
                                 <div className="flex gap-3">
                                     <button type="button" onClick={() => setModal(null)} className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">Cancelar</button>
                                     <button type="submit" className="flex-1 bg-sky-500 hover:bg-sky-600 text-white px-6 py-3 rounded-xl font-bold">Agregar</button>
@@ -1938,44 +2063,74 @@
                                     <input type="number" name="dias" defaultValue={estado.diasAcumulados} required className="w-full px-4 py-3 border-2 rounded-xl" />
                                 </div>
                                 <div className="mb-4">
-                                    <label className="block text-gray-700 font-bold mb-1">USD → MXN</label>
-                                    <p className="text-xs text-gray-500 mb-2">Cuántos pesos mexicanos vale 1 USD (ej: 17.16)</p>
+                                    <label className="block text-gray-700 font-bold mb-1">💵 USD → MXN</label>
+                                    <p className="text-xs text-gray-500 mb-2">¿Cuántos pesos mexicanos vale 1 USD? (ej: 17.16)</p>
                                     <input type="number" step="0.01" value={estado.tipoCambioUSD} onChange={(e) => setEstado({...estado, tipoCambioUSD: parseFloat(e.target.value) || 0})} className="w-full px-4 py-3 border-2 rounded-xl" />
                                 </div>
                                 <div className="mb-4">
-                                    <label className="block text-gray-700 font-bold mb-1">USD → ARS</label>
-                                    <p className="text-xs text-gray-500 mb-2">Cuántos pesos argentinos vale 1 USD (ej: 1560)</p>
+                                    <label className="block text-gray-700 font-bold mb-1">🇦🇷 ARS por 1 USD</label>
+                                    <p className="text-xs text-gray-500 mb-2">¿Cuántos pesos argentinos vale 1 USD? (ej: 1430)</p>
                                     <input type="number" step="1" value={estado.tipoCambioARS} onChange={(e) => setEstado({...estado, tipoCambioARS: parseFloat(e.target.value) || 1})} className="w-full px-4 py-3 border-2 rounded-xl" />
                                 </div>
                                 <div className="bg-blue-50 rounded-xl p-3 mb-6 text-sm text-blue-800">
-                                    ARS → MXN (auto): 1 ARS = ${(estado.tipoCambioUSD / (estado.tipoCambioARS || 1)).toFixed(5)} MXN
+                                    Conversión: ARS → USD → MXN · 1 ARS = ${(1 / (estado.tipoCambioARS || 1)).toFixed(5)} USD = ${(estado.tipoCambioUSD / (estado.tipoCambioARS || 1)).toFixed(5)} MXN
+                                </div>
+
+                                {/* Selector de Temas */}
+                                <div className="mb-6">
+                                    <h3 className="text-xl font-bold mb-3">🎨 Tema</h3>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {Object.entries(TEMAS).map(([key, tema]) => (
+                                            <button key={key} type="button"
+                                                onClick={() => {
+                                                    if (!tema.libre && !estado.isPremium) {
+                                                        alert('Esta función es solo para usuarios Premium. Activa Premium para desbloquear todos los temas.');
+                                                        return;
+                                                    }
+                                                    setEstado({...estado, tema: key});
+                                                }}
+                                                className={`relative p-3 rounded-xl border-2 text-left transition-all ${estado.tema === key ? 'border-purple-500 shadow-lg' : 'border-gray-200 hover:border-purple-300'}`}>
+                                                {!tema.libre && !estado.isPremium && (
+                                                    <span className="absolute top-2 right-2 text-base">🔒</span>
+                                                )}
+                                                <div className={`h-5 rounded-lg bg-gradient-to-r ${tema.previewGrad} mb-2`} />
+                                                <p className="font-bold text-sm">{tema.nombre}</p>
+                                                {estado.tema === key && <p className="text-xs text-purple-600">✓ Activo</p>}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
 
                                 <div className="mb-6">
                                     <h3 className="text-xl font-bold mb-3">💎 Premium</h3>
                                     {estado.isPremium ? (
                                         <div className="bg-green-50 border-2 border-green-200 rounded-xl p-4">
-                                            <p className="font-bold text-green-800 mb-1">✓ Premium Activado</p>
-                                            <p className="text-sm text-gray-600">Código: {estado.premiumCode}</p>
-                                            <p className="text-xs text-gray-500 mt-1">
-                                                Activado el {new Date(estado.premiumActivadoEn).toLocaleDateString('es-MX')}
-                                            </p>
+                                            <p className="font-bold text-green-800 mb-1">⭐ Premium Activo</p>
+                                            {estado.premiumCode && <p className="text-sm text-gray-600">Código: {estado.premiumCode}</p>}
+                                            {estado.premiumActivadoEn && (
+                                                <p className="text-xs text-gray-500 mt-1">
+                                                    Activado el {new Date(estado.premiumActivadoEn).toLocaleDateString('es-MX')}
+                                                </p>
+                                            )}
                                         </div>
                                     ) : (
                                         <div className="bg-gray-50 border-2 border-gray-200 rounded-xl p-4">
-                                            <p className="font-semibold mb-2">Versión: Basic (Gratis)</p>
-                                            <div className="flex gap-2">
-                                                <button type="button"
-                                                    onClick={() => { setModal('upgradePremium'); setForm({ razon: 'config' }); }}
-                                                    className="flex-1 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-bold text-sm">
-                                                    Ver Premium
-                                                </button>
-                                                <button type="button"
-                                                    onClick={() => setModal('activarPremium')}
-                                                    className="flex-1 bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-bold text-sm">
-                                                    Activar código
-                                                </button>
-                                            </div>
+                                            <p className="font-semibold mb-3">Versión: Basic (Gratis)</p>
+                                            <button type="button"
+                                                onClick={() => {
+                                                    if (confirm('¿Activar Premium?\n\nDesbloquea 4 temas exclusivos y futuras funciones premium.\n\n✓ 4 temas de colores exclusivos\n✓ Más funciones próximamente')) {
+                                                        setEstado({...estado, isPremium: true, premiumActivadoEn: new Date().toISOString()});
+                                                        setModal(null);
+                                                    }
+                                                }}
+                                                className="w-full bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-500 hover:to-orange-500 text-white px-4 py-3 rounded-xl font-bold mb-2">
+                                                🌟 Activar Premium (Gratis por ahora)
+                                            </button>
+                                            <button type="button"
+                                                onClick={() => setModal('activarPremium')}
+                                                className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-xl font-bold text-sm">
+                                                Usar código de activación
+                                            </button>
                                         </div>
                                     )}
                                 </div>
@@ -1983,6 +2138,7 @@
                                 <button onClick={() => {
                                     if (confirm('⚠️ ¿Estás segura? Esto borrará TODOS los datos guardados y empezarás de cero.')) {
                                         localStorage.removeItem('finanzasAppData');
+                                        localStorage.removeItem('tutorialCompletado');
                                         window.location.reload();
                                     }
                                 }} type="button" className="w-full bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl font-bold mb-3">
@@ -2244,7 +2400,7 @@
                     )}
                     </>
                     )}
-                </>
+                </div>
             );
         }
 
