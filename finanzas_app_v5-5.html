@@ -113,6 +113,7 @@
             const [vista, setVista] = useState('dashboard');
             const [seleccionado, setSeleccionado] = useState(null);
             const [modal, setModal] = useState(null);
+            const [codigoError, setCodigoError] = useState('');
             const [form, setForm] = useState({});
             const [reportePeriodo, setReportePeriodo] = useState('mensual');
 
@@ -163,7 +164,7 @@
                 },
                 ocean: {
                     nombre: 'Ocean 🌊', libre: false,
-                    bg: 'from-blue-50 via-cyan-50 to-teal-50',
+                    bg: 'from-slate-900 via-blue-900 to-cyan-900',
                     card1: 'from-blue-500 to-cyan-600',
                     navActive: 'bg-blue-100 text-blue-700',
                     bannerGrad: 'from-blue-600 to-cyan-500',
@@ -396,7 +397,7 @@
                             <div className="bg-white rounded-3xl shadow-2xl p-6 mb-6">
                                 <div className="flex justify-between items-center mb-4">
                                     <div>
-                                        <h1 className="text-3xl font-bold text-gray-800">💰 Finanzas App</h1>
+                                        <h1 className="text-3xl font-bold text-gray-800">💰 Finanzas App {estado.isPremium && <span className="text-yellow-500 text-2xl">⭐</span>}</h1>
                                         <p className="text-gray-600">Día {estado.diasAcumulados} • {formatearFecha(fechaActual.toISOString().split('T')[0])}</p>
                                         <p className="text-xs text-gray-500">Inicio: {formatearFecha(estado.fechaInicio)}</p>
                                     </div>
@@ -1661,6 +1662,10 @@
                                         <p>💡 Ajusta los tipos de cambio en Config cuando cambien</p>
                                     </div>
                                 </div>
+                                <button onClick={() => { finalizarTutorial(); setTimeout(() => setModal('activarPremium'), 300); }}
+                                    className="w-full bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-500 hover:to-orange-500 text-white px-6 py-3 rounded-xl font-bold text-base mb-3">
+                                    🌟 Activar Premium
+                                </button>
                                 <button onClick={finalizarTutorial}
                                     className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-6 py-4 rounded-xl font-bold text-lg">
                                     🚀 Comenzar a usar la app
@@ -2096,30 +2101,36 @@
 
                     {/* Modal: Activar Premium con código */}
                     {modal === 'activarPremium' && (
-                        <Modal onClose={() => setModal(null)}>
+                        <Modal onClose={() => { setModal(null); setCodigoError(''); }}>
                             <h2 className="text-2xl font-bold mb-4">💎 Activar Premium</h2>
                             <p className="text-gray-600 mb-4">Ingresa tu código de activación:</p>
                             <form onSubmit={(e) => {
                                 e.preventDefault();
                                 const codigo = e.target.codigo.value.trim().toUpperCase();
-                                const CODIGOS_VALIDOS = { 'PREMIUM2025': true, 'EARLYBIRD': true, 'TESTCODE': true, 'BETA': true };
+                                const CODIGOS_VALIDOS = { 'PREMIUM2026': true, 'UNLOCK': true, 'VIP': true };
                                 if (CODIGOS_VALIDOS[codigo]) {
+                                    setCodigoError('');
                                     setEstado({...estado, isPremium: true, premiumCode: codigo, premiumActivadoEn: new Date().toISOString()});
                                     setModal('premiumActivado');
                                 } else {
-                                    alert('❌ Código inválido. Verifica e intenta de nuevo.');
+                                    setCodigoError('❌ Código inválido. Verifica e intenta de nuevo.');
                                 }
                             }}>
                                 <input type="text" name="codigo" required
-                                    placeholder="EJEMPLO: PREMIUM2025"
-                                    className="w-full px-4 py-3 border-2 rounded-xl mb-4 text-center text-lg font-bold uppercase"
+                                    placeholder="EJEMPLO: PREMIUM2026"
+                                    onChange={() => setCodigoError('')}
+                                    className={`w-full px-4 py-3 border-2 rounded-xl mb-2 text-center text-lg font-bold uppercase ${codigoError ? 'border-red-400' : ''}`}
                                     style={{letterSpacing: '2px'}} />
+                                {codigoError && (
+                                    <p className="text-red-500 text-sm font-semibold text-center mb-3">{codigoError}</p>
+                                )}
+                                {!codigoError && <div className="mb-2" />}
                                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4 text-sm">
                                     <p className="font-semibold mb-1">¿Dónde consigo un código?</p>
                                     <p className="text-gray-600">Visita: <span className="text-blue-600">tudominio.com/premium</span></p>
                                 </div>
                                 <div className="flex gap-3">
-                                    <button type="button" onClick={() => setModal(null)}
+                                    <button type="button" onClick={() => { setModal(null); setCodigoError(''); }}
                                         className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">Cancelar</button>
                                     <button type="submit"
                                         className={`flex-1 ${t.btn} text-white px-6 py-3 rounded-xl font-bold`}>Activar</button>
@@ -2219,19 +2230,9 @@
                                         <div className="bg-gray-50 border-2 border-gray-200 rounded-xl p-4">
                                             <p className="font-semibold mb-3">Versión: Basic (Gratis)</p>
                                             <button type="button"
-                                                onClick={() => {
-                                                    if (confirm('¿Activar Premium?\n\nDesbloquea 4 temas exclusivos y futuras funciones premium.\n\n✓ 4 temas de colores exclusivos\n✓ Más funciones próximamente')) {
-                                                        setEstado({...estado, isPremium: true, premiumActivadoEn: new Date().toISOString()});
-                                                        setModal(null);
-                                                    }
-                                                }}
-                                                className="w-full bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-500 hover:to-orange-500 text-white px-4 py-3 rounded-xl font-bold mb-2">
-                                                🌟 Activar Premium (Gratis por ahora)
-                                            </button>
-                                            <button type="button"
                                                 onClick={() => setModal('activarPremium')}
-                                                className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-xl font-bold text-sm">
-                                                Usar código de activación
+                                                className="w-full bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-500 hover:to-orange-500 text-white px-4 py-3 rounded-xl font-bold">
+                                                🌟 Activar Premium
                                             </button>
                                         </div>
                                     )}
@@ -2501,13 +2502,15 @@
                                                 {['#EF4444','#F97316','#EAB308','#10B981','#3B82F6','#6366F1','#8B5CF6','#EC4899','#6B7280','#1F2937'].map(c => (
                                                     <button key={c} type="button"
                                                         onClick={() => setForm({...form, color: form.color === c ? null : c})}
-                                                        className="w-8 h-8 rounded-full transition-all"
+                                                        className="w-8 h-8 rounded-full transition-all relative flex items-center justify-center"
                                                         style={{
                                                             backgroundColor: c,
                                                             outline: form.color === c ? `3px solid ${c}` : '3px solid transparent',
                                                             outlineOffset: '2px',
                                                             transform: form.color === c ? 'scale(1.15)' : 'scale(1)',
-                                                        }} />
+                                                        }}>
+                                                        {form.color === c && <span className="text-white font-bold text-sm leading-none">✓</span>}
+                                                    </button>
                                                 ))}
                                             </div>
                                             {form.color && (
