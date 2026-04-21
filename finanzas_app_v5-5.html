@@ -10,18 +10,28 @@
         /* Dark theme overrides */
         .t-dark { background-color: #0f172a; color: #f8fafc; }
         .t-dark .bg-white { background-color: #1e293b !important; }
-        .t-dark .bg-gray-50 { background-color: #1e293b !important; }
-        .t-dark .bg-gray-100 { background-color: #273549 !important; }
-        .t-dark .rounded-2xl.bg-gradient-to-br { border: 1px solid #334155; }
+        .t-dark .bg-gray-50, .t-dark .bg-slate-50 { background-color: #111827 !important; }
+        .t-dark .bg-gray-100 { background-color: #1e293b !important; }
+        .t-dark .bg-green-50, .t-dark .bg-yellow-50, .t-dark .bg-orange-50,
+        .t-dark .bg-blue-50, .t-dark .bg-red-50, .t-dark .bg-purple-50 { background-color: #1e293b !important; }
+        .t-dark .bg-green-100 { background-color: #1e3a2e !important; }
+        .t-dark .bg-blue-100 { background-color: #1e2d3d !important; }
         .t-dark .text-gray-800 { color: #f1f5f9 !important; }
         .t-dark .text-gray-700 { color: #e2e8f0 !important; }
         .t-dark .text-gray-600 { color: #cbd5e1 !important; }
         .t-dark .text-gray-500 { color: #94a3b8 !important; }
-        .t-dark .border-gray-200 { border-color: #334155 !important; }
-        .t-dark .border-t-2 { border-color: #334155 !important; }
+        .t-dark .border-gray-200 { border-color: #374151 !important; }
+        .t-dark .border-t-2 { border-color: #374151 !important; }
+        .t-dark .border-2 { border-color: #374151; }
         .t-dark input, .t-dark select, .t-dark textarea { background-color: #1e293b !important; color: #f1f5f9 !important; border-color: #475569 !important; }
         .t-dark .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7) !important; }
         .t-dark .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5) !important; }
+        .t-dark .shadow-xl { box-shadow: 0 20px 25px -5px rgba(0,0,0,0.6) !important; }
+        .t-dark .bg-gray-200 { background-color: #374151 !important; }
+        .t-dark .text-green-700 { color: #34d399 !important; }
+        .t-dark .text-green-800 { color: #6ee7b7 !important; }
+        .t-dark .text-blue-700 { color: #60a5fa !important; }
+        .t-dark .text-blue-800 { color: #93c5fd !important; }
     </style>
 </head>
 <body>
@@ -117,11 +127,91 @@
             };
 
             const TEMAS = {
-                classic: { nombre: 'Classic 🎨', bg: 'from-indigo-50 via-purple-50 to-pink-50',      card1: 'from-purple-500 to-indigo-600',  navActive: 'bg-purple-100 text-purple-600',    bannerGrad: 'from-purple-600 to-indigo-600',  previewGrad: 'from-purple-500 to-indigo-600',  libre: true  },
-                dark:    { nombre: 'Dark 🌙',    bg: 'from-gray-900 via-gray-800 to-gray-700',        card1: 'from-gray-700 to-gray-600',      navActive: 'bg-gray-700 text-gray-100',        bannerGrad: 'from-gray-700 to-gray-600',      previewGrad: 'from-gray-900 to-gray-600',      libre: false },
-                ocean:   { nombre: 'Ocean 🌊',   bg: 'from-blue-50 via-cyan-50 to-teal-50',           card1: 'from-blue-500 to-cyan-600',      navActive: 'bg-blue-100 text-blue-700',        bannerGrad: 'from-blue-600 to-cyan-500',      previewGrad: 'from-blue-600 to-cyan-500',      libre: false },
-                sunset:  { nombre: 'Sunset 🌅',  bg: 'from-orange-50 via-rose-50 to-pink-50',         card1: 'from-orange-500 to-pink-600',    navActive: 'bg-orange-100 text-orange-600',    bannerGrad: 'from-orange-500 to-pink-500',    previewGrad: 'from-orange-500 to-pink-500',    libre: false },
-                forest:  { nombre: 'Forest 🌿',  bg: 'from-green-50 via-emerald-50 to-teal-50',       card1: 'from-emerald-500 to-green-600',  navActive: 'bg-emerald-100 text-emerald-700',  bannerGrad: 'from-emerald-600 to-green-700',  previewGrad: 'from-emerald-600 to-green-700',  libre: false },
+                classic: {
+                    nombre: 'Classic 🎨', libre: true,
+                    bg: 'from-indigo-50 via-purple-50 to-pink-50',
+                    card1: 'from-purple-500 to-indigo-600',
+                    navActive: 'bg-purple-100 text-purple-600',
+                    bannerGrad: 'from-purple-600 to-indigo-600',
+                    previewGrad: 'from-purple-500 to-indigo-600',
+                    btn: 'bg-purple-600 hover:bg-purple-700',
+                    btnGrad: 'from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700',
+                    progressBar: 'from-purple-500 to-indigo-500',
+                    badge: 'bg-purple-100 text-purple-700',
+                    accentText: 'text-purple-600',
+                    accentTextDark: 'text-purple-700',
+                    cardHover: 'hover:border-purple-400',
+                    primary: '#8B5CF6',
+                    secondary: '#6366F1',
+                },
+                dark: {
+                    nombre: 'Dark 🌙', libre: false,
+                    bg: 'from-gray-900 via-gray-800 to-gray-700',
+                    card1: 'from-gray-700 to-gray-600',
+                    navActive: 'bg-gray-700 text-gray-100',
+                    bannerGrad: 'from-gray-700 to-gray-600',
+                    previewGrad: 'from-gray-900 to-gray-600',
+                    btn: 'bg-gray-600 hover:bg-gray-500',
+                    btnGrad: 'from-gray-700 to-gray-600 hover:from-gray-600 hover:to-gray-500',
+                    progressBar: 'from-gray-500 to-gray-400',
+                    badge: 'bg-gray-600 text-gray-100',
+                    accentText: 'text-gray-300',
+                    accentTextDark: 'text-gray-200',
+                    cardHover: 'hover:border-gray-400',
+                    primary: '#374151',
+                    secondary: '#1F2937',
+                },
+                ocean: {
+                    nombre: 'Ocean 🌊', libre: false,
+                    bg: 'from-blue-50 via-cyan-50 to-teal-50',
+                    card1: 'from-blue-500 to-cyan-600',
+                    navActive: 'bg-blue-100 text-blue-700',
+                    bannerGrad: 'from-blue-600 to-cyan-500',
+                    previewGrad: 'from-blue-600 to-cyan-500',
+                    btn: 'bg-blue-600 hover:bg-blue-700',
+                    btnGrad: 'from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600',
+                    progressBar: 'from-blue-500 to-cyan-400',
+                    badge: 'bg-blue-100 text-blue-700',
+                    accentText: 'text-blue-600',
+                    accentTextDark: 'text-blue-700',
+                    cardHover: 'hover:border-blue-400',
+                    primary: '#2563EB',
+                    secondary: '#0891B2',
+                },
+                sunset: {
+                    nombre: 'Sunset 🌅', libre: false,
+                    bg: 'from-orange-50 via-rose-50 to-pink-50',
+                    card1: 'from-orange-500 to-pink-600',
+                    navActive: 'bg-orange-100 text-orange-600',
+                    bannerGrad: 'from-orange-500 to-pink-500',
+                    previewGrad: 'from-orange-500 to-pink-500',
+                    btn: 'bg-orange-500 hover:bg-orange-600',
+                    btnGrad: 'from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600',
+                    progressBar: 'from-orange-500 to-pink-400',
+                    badge: 'bg-orange-100 text-orange-700',
+                    accentText: 'text-orange-500',
+                    accentTextDark: 'text-orange-600',
+                    cardHover: 'hover:border-orange-400',
+                    primary: '#F97316',
+                    secondary: '#EC4899',
+                },
+                forest: {
+                    nombre: 'Forest 🌿', libre: false,
+                    bg: 'from-green-50 via-emerald-50 to-teal-50',
+                    card1: 'from-emerald-500 to-green-600',
+                    navActive: 'bg-emerald-100 text-emerald-700',
+                    bannerGrad: 'from-emerald-600 to-green-700',
+                    previewGrad: 'from-emerald-600 to-green-700',
+                    btn: 'bg-emerald-600 hover:bg-emerald-700',
+                    btnGrad: 'from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700',
+                    progressBar: 'from-emerald-500 to-green-400',
+                    badge: 'bg-emerald-100 text-emerald-700',
+                    accentText: 'text-emerald-600',
+                    accentTextDark: 'text-emerald-700',
+                    cardHover: 'hover:border-emerald-400',
+                    primary: '#059669',
+                    secondary: '#10B981',
+                },
             };
             const t = TEMAS[estado.tema] || TEMAS.classic;
 
@@ -311,7 +401,7 @@
                                         <p className="text-xs text-gray-500">Inicio: {formatearFecha(estado.fechaInicio)}</p>
                                     </div>
                                     <button onClick={() => setEstado({...estado, diasAcumulados: estado.diasAcumulados + 1})}
-                                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold">
+                                        className={`${t.btn} text-white px-6 py-3 rounded-xl font-bold`}>
                                         ⏭️ Avanzar
                                     </button>
                                 </div>
@@ -361,7 +451,11 @@
                                         const ciclo = calcularCiclo(gasto);
                                         return (
                                             <div key={gasto.id} onClick={() => { setSeleccionado(gasto); setVista('detalle'); }}
-                                                className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-5 cursor-pointer hover:shadow-lg transition-all border-2 border-gray-200 hover:border-purple-400">
+                                                className={`rounded-2xl p-5 cursor-pointer hover:shadow-lg transition-all border-2 ${t.cardHover}`}
+                                                style={{
+                                                    background: (estado.isPremium && gasto.color) ? `linear-gradient(135deg, ${gasto.color}18, ${gasto.color}08)` : undefined,
+                                                    borderColor: (estado.isPremium && gasto.color) ? `${gasto.color}50` : '#E5E7EB',
+                                                }}>
                                                 <div className="flex justify-between items-start mb-3">
                                                     <div>
                                                         <h3 className="text-lg font-bold text-gray-800">{gasto.nombre}</h3>
@@ -369,7 +463,8 @@
                                                         <p className="text-xs text-gray-500">📅 {formatearFecha(ciclo.fechaInicioCiclo)} → {formatearFecha(ciclo.fechaVencimiento)}</p>
                                                     </div>
                                                     <div className="flex flex-col gap-1 items-end">
-                                                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${gasto.categoria === 'Fijo' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
+                                                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${t.badge}`}
+                                                            style={(estado.isPremium && gasto.color) ? {background: `${gasto.color}22`, color: gasto.color} : undefined}>
                                                             {gasto.categoria}
                                                         </span>
                                                         {ciclo.porcentajeCostoDiario < 100 && (
@@ -387,10 +482,17 @@
                                                 <div className="mb-3">
                                                     <div className="flex justify-between text-sm mb-1">
                                                         <span className="text-gray-600">Día {ciclo.residuo}/{ciclo.diasDelCiclo}</span>
-                                                        <span className="font-bold text-purple-600">${Math.round(ciclo.montoAcumulado)}</span>
+                                                        <span className={`font-bold ${t.accentText}`}
+                                                            style={(estado.isPremium && gasto.color) ? {color: gasto.color} : undefined}>
+                                                            ${Math.round(ciclo.montoAcumulado)}
+                                                        </span>
                                                     </div>
                                                     <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
-                                                        <div className="bg-gradient-to-r from-purple-500 to-indigo-500 h-3 rounded-full" style={{width: `${Math.min(100, ciclo.progreso)}%`}}></div>
+                                                        <div className={`bg-gradient-to-r ${t.progressBar} h-3 rounded-full`}
+                                                            style={{
+                                                                width: `${Math.min(100, ciclo.progreso)}%`,
+                                                                ...(estado.isPremium && gasto.color ? {background: gasto.color} : {})
+                                                            }}></div>
                                                     </div>
                                                     <div className="flex justify-between text-xs text-gray-600">
                                                         <span>💵 Propinas: ${Math.round(ciclo.montoAcumuladoPropinas)}</span>
@@ -447,7 +549,7 @@
                                     setForm({nombre: '', monto: '', icono: ''});
                                     setModal('nuevaSeccion');
                                 }}
-                                    className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-xl font-bold text-sm">
+                                    className={`${t.btn} text-white px-4 py-2 rounded-xl font-bold text-sm`}>
                                     ➕ Sección
                                 </button>
                             </div>
@@ -477,7 +579,7 @@
                                         <button onClick={() => { setForm({tipo: 'ars', valor: estado.billetera.ars}); setModal('editarBilletera'); }}
                                             className="text-blue-600 hover:text-blue-800">✏️</button>
                                     </div>
-                                    <p className="text-4xl font-bold text-purple-700">{Math.round(estado.billetera.ars).toLocaleString()}</p>
+                                    <p className={`text-4xl font-bold ${t.accentTextDark}`}>{Math.round(estado.billetera.ars).toLocaleString()}</p>
                                     <p className="text-xs text-gray-500 mt-2">
                                         ≈ ${(estado.billetera.ars / (estado.tipoCambioARS || 1)).toFixed(2)} USD → ${Math.round(estado.billetera.ars * tipoCambioMXNARS)} MXN
                                     </p>
@@ -551,7 +653,7 @@
                                         <span className="text-xs opacity-80 mt-1">{Math.round(estado.billetera.ars).toLocaleString()} disp.</span>
                                     </button>
                                     <button onClick={() => setModal('ingresoSueldo')}
-                                        className="flex flex-col items-center bg-gradient-to-br from-purple-400 to-indigo-500 hover:from-purple-500 hover:to-indigo-600 text-white rounded-2xl p-5 shadow-md transition-all">
+                                        className={`flex flex-col items-center bg-gradient-to-br ${t.card1} text-white rounded-2xl p-5 shadow-md transition-all hover:scale-[1.02]`}>
                                         <span className="text-3xl mb-2">💰</span>
                                         <span className="font-bold text-lg">Salario</span>
                                         <span className="text-xs opacity-80 mt-1">Asignar a gastos</span>
@@ -686,10 +788,10 @@
                                             setModal('upgradePremium');
                                             return;
                                         }
-                                        setForm({nombre:'', monto:'', moneda:'MXN', periodicidad:'Mensual', vencimiento:'', categoria:'Fijo', porcentajeCostoDiario: 100});
+                                        setForm({nombre:'', monto:'', moneda:'MXN', periodicidad:'Mensual', vencimiento:'', categoria:'Fijo', porcentajeCostoDiario: 100, color: null});
                                         setModal('nuevo');
                                     }}
-                                        className="flex flex-col items-center bg-gradient-to-br from-purple-400 to-indigo-500 hover:from-purple-500 hover:to-indigo-600 text-white rounded-2xl p-5 shadow-md transition-all">
+                                        className={`flex flex-col items-center bg-gradient-to-br ${t.card1} text-white rounded-2xl p-5 shadow-md transition-all hover:scale-[1.02]`}>
                                         <span className="text-3xl mb-2">📋</span>
                                         <span className="font-bold text-lg">Gasto Fijo</span>
                                         <span className="text-xs opacity-80 mt-1">Agrega a gastos fijos</span>
@@ -727,7 +829,7 @@
                                                         <p className="text-sm text-gray-600">{formatearFecha(gasto.fecha)}</p>
                                                         <div className="flex gap-2 mt-1 flex-wrap">
                                                             {gasto.categoria && (
-                                                                <span className="inline-block px-2 py-1 text-xs font-bold bg-purple-100 text-purple-700 rounded-full">
+                                                                <span className={`inline-block px-2 py-1 text-xs font-bold ${t.badge} rounded-full`}>
                                                                     {gasto.categoria}
                                                                 </span>
                                                             )}
@@ -777,7 +879,7 @@
                 return (
                     <div className={`min-h-screen bg-gradient-to-br ${t.bg} p-4 pb-24`}>
                         <div className="max-w-2xl mx-auto">
-                            <button onClick={() => setVista('dashboard')} className="mb-4 text-purple-600 font-semibold">← Volver</button>
+                            <button onClick={() => setVista('dashboard')} className={`mb-4 ${t.accentText} font-semibold`}>← Volver</button>
                             <div className="bg-white rounded-3xl shadow-2xl p-8">
                                 <div className="flex justify-between items-start mb-6">
                                     <div>
@@ -836,7 +938,7 @@
 
                                 <div className="bg-gradient-to-br from-purple-100 to-indigo-100 rounded-2xl p-8 mb-6">
                                     <p className="text-gray-600 text-sm mb-2">Acumulado total</p>
-                                    <p className="text-5xl font-bold text-purple-700">${Math.round(ciclo.montoAcumulado)}</p>
+                                    <p className={`text-5xl font-bold ${t.accentTextDark}`}>${Math.round(ciclo.montoAcumulado)}</p>
                                     <p className="text-gray-600 mb-3">de ${Math.round(seleccionado.monto)}</p>
                                     
                                     <div className="grid grid-cols-2 gap-3 text-sm">
@@ -1069,7 +1171,7 @@
                                                         <div key={fuente}>
                                                             <div className="flex justify-between text-sm mb-1">
                                                                 <span className="font-medium text-gray-700">{fuente}</span>
-                                                                <span className="font-bold text-purple-600">
+                                                                <span className={`font-bold ${t.accentText}`}>
                                                                     ${Math.round(total).toLocaleString()} <span className="text-gray-400 font-normal">({pct}%)</span>
                                                                 </span>
                                                             </div>
@@ -1318,7 +1420,7 @@
                 const card = "bg-white rounded-3xl shadow-2xl max-w-lg w-full p-8";
                 const inp = "w-full px-4 py-3 border-2 rounded-xl focus:border-purple-500 outline-none";
                 const btnP = "flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold";
-                const btnN = "flex-1 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-bold";
+                const btnN = `flex-1 ${t.btn} text-white px-6 py-3 rounded-xl font-bold`;
 
                 return (
                     <div className={bg}>
@@ -1337,7 +1439,7 @@
                                         className={inp} />
                                 </div>
                                 <button onClick={() => setPaso(2)}
-                                    className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-6 py-4 rounded-xl font-bold text-lg">
+                                    className={`w-full bg-gradient-to-r ${t.btnGrad} text-white px-6 py-4 rounded-xl font-bold text-lg`}>
                                     Comenzar →
                                 </button>
                             </div>
@@ -1984,7 +2086,7 @@
                                         Continuar con Basic
                                     </button>
                                     <button onClick={() => { setModal('activarPremium'); setForm({}); }}
-                                        className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl font-bold">
+                                        className={`flex-1 bg-gradient-to-r ${t.btnGrad} text-white px-6 py-3 rounded-xl font-bold`}>
                                         💎 Activar Premium
                                     </button>
                                 </div>
@@ -2020,7 +2122,7 @@
                                     <button type="button" onClick={() => setModal(null)}
                                         className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">Cancelar</button>
                                     <button type="submit"
-                                        className="flex-1 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-bold">Activar</button>
+                                        className={`flex-1 ${t.btn} text-white px-6 py-3 rounded-xl font-bold`}>Activar</button>
                                 </div>
                             </form>
                         </Modal>
@@ -2037,7 +2139,7 @@
                                     <p className="font-semibold text-green-800">✓ Funciones desbloqueadas</p>
                                 </div>
                                 <button onClick={() => setModal(null)}
-                                    className="w-full bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-bold">
+                                    className={`w-full ${t.btn} text-white px-6 py-3 rounded-xl font-bold`}>
                                     Empezar a usar
                                 </button>
                             </div>
@@ -2095,7 +2197,7 @@
                                                 )}
                                                 <div className={`h-5 rounded-lg bg-gradient-to-r ${tema.previewGrad} mb-2`} />
                                                 <p className="font-bold text-sm">{tema.nombre}</p>
-                                                {estado.tema === key && <p className="text-xs text-purple-600">✓ Activo</p>}
+                                                {estado.tema === key && <p className={`text-xs ${t.accentText}`}>✓ Activo</p>}
                                             </button>
                                         ))}
                                     </div>
@@ -2146,7 +2248,7 @@
                                 </button>
                                 <div className="flex gap-3">
                                     <button type="button" onClick={() => setModal(null)} className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">Cancelar</button>
-                                    <button type="submit" className="flex-1 bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-xl font-bold">Guardar</button>
+                                    <button type="submit" className={`flex-1 ${t.btn} text-white px-6 py-3 rounded-xl font-bold`}>Guardar</button>
                                 </div>
                             </form>
                         </Modal>
@@ -2295,7 +2397,7 @@
                                 </div>
                                 <div className="flex gap-3">
                                     <button type="button" onClick={() => setModal(null)} className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">Cancelar</button>
-                                    <button type="submit" className="flex-1 bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-xl font-bold">Crear</button>
+                                    <button type="submit" className={`flex-1 ${t.btn} text-white px-6 py-3 rounded-xl font-bold`}>Crear</button>
                                 </div>
                             </form>
                         </Modal>
@@ -2349,7 +2451,8 @@
                                     periodicidad: f.periodicidad.value,
                                     vencimiento: f.vencimiento.value || '-',
                                     categoria: f.categoria.value,
-                                    porcentajeCostoDiario: parseInt(f.porcentaje.value)
+                                    porcentajeCostoDiario: parseInt(f.porcentaje.value),
+                                    color: form.color || null,
                                 };
                                 if (modal === 'nuevo') {
                                     const maxId = estado.gastosFijos.length > 0 ? Math.max(...estado.gastosFijos.map(g => g.id)) : 0;
@@ -2379,7 +2482,7 @@
                                         <label className="block text-gray-700 font-bold mb-2">% Cubierto con propinas</label>
                                         <div className="flex items-center gap-3">
                                             <input type="range" name="porcentaje" min="0" max="100" step="10" defaultValue={form.porcentajeCostoDiario || 100} className="flex-1" onChange={(e) => document.getElementById('porcentajeLabel').textContent = e.target.value + '%'} />
-                                            <span id="porcentajeLabel" className="text-2xl font-bold text-purple-600 w-16">{form.porcentajeCostoDiario || 100}%</span>
+                                            <span id="porcentajeLabel" className={`text-2xl font-bold ${t.accentText} w-16`}>{form.porcentajeCostoDiario || 100}%</span>
                                         </div>
                                         <div className="flex justify-between text-xs text-gray-600 mt-1">
                                             <span>0% = Todo sueldo</span>
@@ -2390,10 +2493,37 @@
                                         <option value="Fijo">Fijo</option>
                                         <option value="No Negociable">No Negociable</option>
                                     </select>
+                                    {/* Color personalizado - Solo Premium */}
+                                    {estado.isPremium && (
+                                        <div>
+                                            <label className="block text-gray-700 font-bold mb-2">🎨 Color del gasto</label>
+                                            <div className="flex flex-wrap gap-2 mb-2">
+                                                {['#EF4444','#F97316','#EAB308','#10B981','#3B82F6','#6366F1','#8B5CF6','#EC4899','#6B7280','#1F2937'].map(c => (
+                                                    <button key={c} type="button"
+                                                        onClick={() => setForm({...form, color: form.color === c ? null : c})}
+                                                        className="w-8 h-8 rounded-full transition-all"
+                                                        style={{
+                                                            backgroundColor: c,
+                                                            outline: form.color === c ? `3px solid ${c}` : '3px solid transparent',
+                                                            outlineOffset: '2px',
+                                                            transform: form.color === c ? 'scale(1.15)' : 'scale(1)',
+                                                        }} />
+                                                ))}
+                                            </div>
+                                            {form.color && (
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-5 h-5 rounded-full" style={{backgroundColor: form.color}} />
+                                                    <span className="text-sm font-bold" style={{color: form.color}}>{form.color}</span>
+                                                    <button type="button" onClick={() => setForm({...form, color: null})}
+                                                        className="text-xs text-gray-400 hover:text-gray-600 underline ml-1">Quitar</button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="flex gap-3">
                                     <button type="button" onClick={() => setModal(null)} className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">Cancelar</button>
-                                    <button type="submit" className="flex-1 bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-xl font-bold">Guardar</button>
+                                    <button type="submit" className={`flex-1 ${t.btn} text-white px-6 py-3 rounded-xl font-bold`}>Guardar</button>
                                 </div>
                             </form>
                         </Modal>
