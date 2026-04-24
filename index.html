@@ -71,6 +71,17 @@
                             parsed.tipoCambioARS = Math.round(parsed.tipoCambioUSD / parsed.tipoCambio);
                             delete parsed.tipoCambio;
                         }
+                        // Migrar al nuevo sistema tiposCambio
+                        if (!parsed.tiposCambio) {
+                            parsed.tiposCambio = {};
+                            if (parsed.tipoCambioUSD) {
+                                parsed.tiposCambio['USD'] = { direccion: 'USD_TO_MXN', valor: parsed.tipoCambioUSD };
+                            }
+                            if (parsed.tipoCambioUSD && parsed.tipoCambioARS) {
+                                parsed.tiposCambio['ARS'] = { direccion: 'ARS_TO_MXN', valor: parsed.tipoCambioUSD / parsed.tipoCambioARS };
+                            }
+                        }
+                        if (!parsed.monedaPrincipal) parsed.monedaPrincipal = 'MXN';
                         if (!parsed.categoriasExtra) parsed.categoriasExtra = [];
                         if (!parsed.coloresCategorias) parsed.coloresCategorias = {};
                         if (parsed.isPremium === undefined) parsed.isPremium = false;
@@ -101,8 +112,7 @@
                     diasAcumulados: 1,
                     monedaPrincipal: 'MXN',
                     monedasSecundarias: [],
-                    tipoCambioUSD: 17.16,
-                    tipoCambioARS: 1560,
+                    tiposCambio: {},
                     gastosFijos: [],
                     ingresosDiarios: [],
                     gastosExtras: [],
@@ -125,8 +135,26 @@
             const [form, setForm] = useState({});
             const [reportePeriodo, setReportePeriodo] = useState('mensual');
 
-            // TC ARS→MXN auto-calculado: (MXN por USD) / (ARS por USD)
-            const tipoCambioMXNARS = estado.tipoCambioUSD / (estado.tipoCambioARS || 1560);
+            const convertirMoneda = (monto, monedaOrigen, monedaDestino) => {
+                if (monedaOrigen === monedaDestino) return monto;
+                const tcs = estado.tiposCambio || {};
+                const principal = estado.monedaPrincipal || 'MXN';
+                const getBase = (tc) => tc.monedaBase || (tc.direccion || '').split('_TO_')[0];
+                if (monedaOrigen === principal) {
+                    const tc = tcs[monedaDestino];
+                    if (!tc) return monto;
+                    const valor = parseFloat(tc.valor) || 1;
+                    return getBase(tc) === principal ? monto * valor : monto / valor;
+                }
+                if (monedaDestino === principal) {
+                    const tc = tcs[monedaOrigen];
+                    if (!tc) return monto;
+                    const valor = parseFloat(tc.valor) || 1;
+                    return getBase(tc) === monedaOrigen ? monto * valor : monto / valor;
+                }
+                const viaPrincipal = convertirMoneda(monto, monedaOrigen, principal);
+                return convertirMoneda(viaPrincipal, principal, monedaDestino);
+            };
 
             const LIMITES = {
                 gastosFijos: estado.isPremium ? 999 : 3,
@@ -250,9 +278,9 @@
                 if (!gasto.vencimiento || gasto.vencimiento === '-') {
                     let montoDiarioMXN = gasto.monto;
                     if (gasto.moneda === 'ARS') {
-                        montoDiarioMXN = gasto.monto * tipoCambioMXNARS;
+                        montoDiarioMXN = convertirMoneda(gasto.monto, gasto.moneda, estado.monedaPrincipal || 'MXN');
                     } else if (gasto.moneda === 'USD') {
-                        montoDiarioMXN = gasto.monto * estado.tipoCambioUSD;
+                        montoDiarioMXN = convertirMoneda(gasto.monto, 'USD', estado.monedaPrincipal || 'MXN');
                     }
                     
                     const montoDiarioCostoDiario = montoDiarioMXN * (porcentaje / 100);
@@ -287,9 +315,9 @@
                 
                 let montoDiarioMXN = montoDiario;
                 if (gasto.moneda === 'ARS') {
-                    montoDiarioMXN = montoDiario * tipoCambioMXNARS;
+                    montoDiarioMXN = convertirMoneda(montoDiario, gasto.moneda, estado.monedaPrincipal || 'MXN');
                 } else if (gasto.moneda === 'USD') {
-                    montoDiarioMXN = montoDiario * estado.tipoCambioUSD;
+                    montoDiarioMXN = convertirMoneda(montoDiario, 'USD', estado.monedaPrincipal || 'MXN');
                 }
                 
                 const montoDiarioCostoDiario = montoDiarioMXN * (porcentaje / 100);
@@ -333,9 +361,9 @@
                     // Convertir el monto a MXN si es necesario
                     let montoTotalMXN = g.monto;
                     if (g.moneda === 'ARS') {
-                        montoTotalMXN = g.monto * tipoCambioMXNARS;
+                        montoTotalMXN = convertirMoneda(g.monto, g.moneda, estado.monedaPrincipal || 'MXN');
                     } else if (g.moneda === 'USD') {
-                        montoTotalMXN = g.monto * estado.tipoCambioUSD;
+                        montoTotalMXN = convertirMoneda(g.monto, 'USD', estado.monedaPrincipal || 'MXN');
                     }
                     // Solo contar la parte de propinas del monto total
                     const montoPropinas = montoTotalMXN * (ciclo.porcentajeCostoDiario / 100);
@@ -448,7 +476,7 @@
                                 </div>
                                 <div onClick={() => setVista('billetera')} className="bg-gradient-to-br from-orange-500 to-red-600 rounded-3xl shadow-xl p-6 text-white cursor-pointer hover:scale-105 transition-all">
                                     <p className="text-sm opacity-90 mb-2">Billetera Total</p>
-                                    <p className="text-4xl font-bold">${Math.round(superavit + (estado.billetera.usd * estado.tipoCambioUSD) + (estado.billetera.ars * tipoCambioMXNARS) + estado.billetera.tanda)}</p>
+                                    <p className="text-4xl font-bold">${Math.round(superavit + convertirMoneda(estado.billetera.usd, 'USD', estado.monedaPrincipal || 'MXN') + convertirMoneda(estado.billetera.ars, 'ARS', estado.monedaPrincipal || 'MXN') + estado.billetera.tanda)}</p>
                                     <p className="text-xs opacity-75 mt-1">Disponible + USD + ARS + Tanda</p>
                                 </div>
                             </div>
@@ -579,7 +607,7 @@
                                             className="text-blue-600 hover:text-blue-800">✏️</button>
                                     </div>
                                     <p className="text-4xl font-bold text-blue-700">${Math.round(estado.billetera.usd)}</p>
-                                    <p className="text-sm text-gray-600 mt-2">≈ ${Math.round(estado.billetera.usd * estado.tipoCambioUSD)} MXN</p>
+                                    <p className="text-sm text-gray-600 mt-2">≈ ${Math.round(convertirMoneda(estado.billetera.usd, 'USD', estado.monedaPrincipal || 'MXN'))} {estado.monedaPrincipal || 'MXN'}</p>
                                 </div>
 
                                 <div className="bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl p-6">
@@ -590,7 +618,7 @@
                                     </div>
                                     <p className={`text-4xl font-bold ${t.accentTextDark}`}>{Math.round(estado.billetera.ars).toLocaleString()}</p>
                                     <p className="text-xs text-gray-500 mt-2">
-                                        ≈ ${(estado.billetera.ars / (estado.tipoCambioARS || 1)).toFixed(2)} USD → ${Math.round(estado.billetera.ars * tipoCambioMXNARS)} MXN
+                                        ≈ ${convertirMoneda(estado.billetera.ars, 'ARS', 'USD').toFixed(2)} USD → ${Math.round(convertirMoneda(estado.billetera.ars, 'ARS', estado.monedaPrincipal || 'MXN'))} {estado.monedaPrincipal || 'MXN'}
                                     </p>
                                 </div>
 
@@ -968,7 +996,7 @@
                                         <p className="text-2xl font-bold text-gray-800">${Math.round(seleccionado.monto)} {seleccionado.moneda}</p>
                                         {seleccionado.moneda === 'ARS' && (
                                             <p className="text-xs text-gray-500 mt-1">
-                                                ≈ ${(seleccionado.monto / (estado.tipoCambioARS || 1)).toFixed(2)} USD → ${Math.round(seleccionado.monto * tipoCambioMXNARS)} MXN
+                                                ≈ ${convertirMoneda(seleccionado.monto, 'ARS', 'USD').toFixed(2)} USD → ${Math.round(convertirMoneda(seleccionado.monto, 'ARS', estado.monedaPrincipal || 'MXN'))} {estado.monedaPrincipal || 'MXN'}
                                             </p>
                                         )}
                                     </div>
@@ -1063,8 +1091,8 @@
                 // Breakdown en MXN equivalente para las barras
                 const porMonedaIng = {};
                 if (totalIngMXN > 0) porMonedaIng['💵 MXN'] = totalIngMXN;
-                if (totalIngUSD > 0) porMonedaIng['💲 USD'] = totalIngUSD * estado.tipoCambioUSD;
-                if (totalIngARS > 0) porMonedaIng['🇦🇷 ARS'] = totalIngARS * tipoCambioMXNARS;
+                if (totalIngUSD > 0) porMonedaIng['💲 USD'] = convertirMoneda(totalIngUSD, 'USD', estado.monedaPrincipal || 'MXN');
+                if (totalIngARS > 0) porMonedaIng['🇦🇷 ARS'] = convertirMoneda(totalIngARS, 'ARS', estado.monedaPrincipal || 'MXN');
                 const totalIngEquivMXN = Object.values(porMonedaIng).reduce((s, v) => s + v, 0);
 
                 // --- Colores ---
@@ -1283,11 +1311,11 @@
                 if (sec === 'usd') {
                     titulo = '💲 Ingreso en USD';
                     placeholder = '100';
-                    tcInfo = `TC: $1 USD = ${estado.tipoCambioUSD} MXN`;
+                    tcInfo = `TC: 1 USD = ${convertirMoneda(1, 'USD', estado.monedaPrincipal || 'MXN').toFixed(2)} ${estado.monedaPrincipal || 'MXN'}`;
                 } else if (sec === 'ars') {
                     titulo = '🇦🇷 Ingreso en ARS';
                     placeholder = '50000';
-                    tcInfo = `TC: 1 ARS = ${tipoCambioMXNARS.toFixed(5)} MXN`;
+                    tcInfo = `TC: 1 ARS = ${convertirMoneda(1, 'ARS', estado.monedaPrincipal || 'MXN').toFixed(5)} ${estado.monedaPrincipal || 'MXN'}`;
                 } else if (sec === 'tanda') {
                     titulo = '🏆 Ingreso Tanda';
                     placeholder = '1000';
@@ -1386,8 +1414,7 @@
                         diasAcumulados: 1,
                         monedaPrincipal: datos.monedaPrincipal || 'MXN',
                         monedasSecundarias: datos.monedasSecundarias || [],
-                        tipoCambioUSD: parseFloat(datos.tcUSD) || 17.16,
-                        tipoCambioARS: parseFloat(datos.arsporUSD) || 1430,
+                        tiposCambio: datos.tiposCambio || {},
                         gastosFijos: gastoInicial,
                         ingresosDiarios: [],
                         gastosExtras: [],
@@ -1975,7 +2002,7 @@
                                         ))}
                                     </select>
                                 </div>
-                                <p className="text-sm text-gray-600 mb-4">TC: $1 USD = ${estado.tipoCambioUSD} MXN</p>
+                                <p className="text-sm text-gray-600 mb-4">TC: 1 USD = {convertirMoneda(1, 'USD', estado.monedaPrincipal || 'MXN').toFixed(2)} {estado.monedaPrincipal || 'MXN'}</p>
                                 <div className="flex gap-3">
                                     <button type="button" onClick={() => setModal(null)} className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">Cancelar</button>
                                     <button type="submit" className="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-xl font-bold">Agregar</button>
@@ -2025,7 +2052,7 @@
                                         ))}
                                     </select>
                                 </div>
-                                <p className="text-xs text-gray-500 mb-4">TC: 1 USD = {estado.tipoCambioARS} ARS · 1 ARS = ${tipoCambioMXNARS.toFixed(5)} MXN</p>
+                                <p className="text-xs text-gray-500 mb-4">TC: 1 ARS = {convertirMoneda(1, 'ARS', estado.monedaPrincipal || 'MXN').toFixed(5)} {estado.monedaPrincipal || 'MXN'}</p>
                                 <div className="flex gap-3">
                                     <button type="button" onClick={() => setModal(null)} className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">Cancelar</button>
                                     <button type="submit" className="flex-1 bg-sky-500 hover:bg-sky-600 text-white px-6 py-3 rounded-xl font-bold">Agregar</button>
@@ -2337,18 +2364,31 @@
                                     <label className="block text-gray-700 font-bold mb-2">Día actual</label>
                                     <input type="number" name="dias" defaultValue={estado.diasAcumulados} required className="w-full px-4 py-3 border-2 rounded-xl" />
                                 </div>
-                                <div className="mb-4">
-                                    <label className="block text-gray-700 font-bold mb-1">💵 USD → MXN</label>
-                                    <p className="text-xs text-gray-500 mb-2">¿Cuántos pesos mexicanos vale 1 USD? (ej: 17.16)</p>
-                                    <input type="number" step="0.01" value={estado.tipoCambioUSD} onChange={(e) => setEstado({...estado, tipoCambioUSD: parseFloat(e.target.value) || 0})} className="w-full px-4 py-3 border-2 rounded-xl" />
-                                </div>
-                                <div className="mb-4">
-                                    <label className="block text-gray-700 font-bold mb-1">🇦🇷 ARS por 1 USD</label>
-                                    <p className="text-xs text-gray-500 mb-2">¿Cuántos pesos argentinos vale 1 USD? (ej: 1430)</p>
-                                    <input type="number" step="1" value={estado.tipoCambioARS} onChange={(e) => setEstado({...estado, tipoCambioARS: parseFloat(e.target.value) || 1})} className="w-full px-4 py-3 border-2 rounded-xl" />
-                                </div>
-                                <div className="bg-blue-50 rounded-xl p-3 mb-6 text-sm text-blue-800">
-                                    Conversión: ARS → USD → MXN · 1 ARS = ${(1 / (estado.tipoCambioARS || 1)).toFixed(5)} USD = ${(estado.tipoCambioUSD / (estado.tipoCambioARS || 1)).toFixed(5)} MXN
+                                <div className="mb-6">
+                                    <h3 className="text-lg font-bold mb-3">💱 Tipos de Cambio</h3>
+                                    {Object.keys(estado.tiposCambio || {}).length === 0 ? (
+                                        <p className="text-sm text-gray-500 bg-gray-50 rounded-xl p-3">No hay monedas secundarias configuradas.</p>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            {Object.entries(estado.tiposCambio || {}).map(([code, tc]) => {
+                                                const principal = estado.monedaPrincipal || 'MXN';
+                                                const base = (tc.monedaBase) || (tc.direccion || '').split('_TO_')[0];
+                                                const label = base === code ? `1 ${code} = ? ${principal}` : `1 ${principal} = ? ${code}`;
+                                                return (
+                                                    <div key={code} className="bg-gray-50 rounded-xl p-3">
+                                                        <label className="block text-sm font-bold text-gray-700 mb-1">{label}</label>
+                                                        <input type="number" step="any"
+                                                            value={tc.valor}
+                                                            onChange={(e) => setEstado({...estado, tiposCambio: {
+                                                                ...estado.tiposCambio,
+                                                                [code]: {...tc, valor: parseFloat(e.target.value) || 0}
+                                                            }})}
+                                                            className="w-full px-3 py-2 border-2 rounded-xl text-sm" />
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Selector de Temas */}
