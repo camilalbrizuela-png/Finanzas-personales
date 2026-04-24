@@ -1468,85 +1468,8 @@
                             </div>
                         )}
 
-                        {/* PASO 2: Configuración Inicial (OBLIGATORIO) */}
-                        {paso === 2 && (
-                            <div className={card}>
-                                <Progreso />
-                                <h2 className="text-2xl font-bold text-gray-800 mb-2">⚙️ Configuración Inicial</h2>
-                                <p className="text-gray-600 mb-5">Primero, configuremos tu información básica</p>
-                                <div className="space-y-5 mb-6">
-                                    <div>
-                                        <label className="block text-gray-700 font-bold mb-2">📅 ¿Desde cuándo quieres empezar a contar?</label>
-                                        <input type="date" value={datos.fechaInicio}
-                                            onChange={(e) => setDatos({...datos, fechaInicio: e.target.value})}
-                                            className={inp} required />
-                                    </div>
-                                    <div>
-                                        <label className="block text-gray-700 font-bold mb-2">💵 Tipo de cambio USD → MXN</label>
-                                        <input type="number" step="0.01" value={datos.tcUSD}
-                                            onChange={(e) => setDatos({...datos, tcUSD: e.target.value})}
-                                            placeholder="ej: 17.16" className={inp} />
-                                        <p className="text-xs text-gray-500 mt-1">¿Cuántos pesos mexicanos vale 1 dólar?</p>
-                                    </div>
-                                    <div>
-                                        <label className="block text-gray-700 font-bold mb-2">🇦🇷 ¿Cuántos ARS equivalen a 1 USD?</label>
-                                        <input type="number" step="1" value={datos.arsporUSD}
-                                            onChange={(e) => setDatos({...datos, arsporUSD: e.target.value})}
-                                            placeholder="ej: 1430" className={inp} />
-                                        <p className="text-xs text-gray-500 mt-1">Tipo de cambio ARS/USD · 1 USD = {datos.arsporUSD || '1430'} ARS</p>
-                                    </div>
-                                </div>
-                                <div className="flex gap-3">
-                                    <button onClick={() => setPaso(1)} className={btnP}>← Atrás</button>
-                                    <button onClick={() => {
-                                        if (!datos.fechaInicio) { alert('Por favor ingresa una fecha de inicio'); return; }
-                                        setPaso(3);
-                                    }} className={btnN}>Siguiente →</button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* PASO 3: Tu Billetera (OBLIGATORIO) */}
-                        {paso === 3 && (
-                            <div className={card}>
-                                <Progreso />
-                                <h2 className="text-2xl font-bold text-gray-800 mb-2">💰 Tu Billetera</h2>
-                                <p className="text-gray-600 mb-5">¿Cuánto dinero tienes ahora en cada moneda?</p>
-                                <div className="space-y-4 mb-6">
-                                    <div>
-                                        <label className="block text-gray-700 font-semibold mb-1">💵 MXN Físico</label>
-                                        <input type="number" step="0.01" value={datos.mxnFisico}
-                                            onChange={(e) => setDatos({...datos, mxnFisico: e.target.value})}
-                                            placeholder="0" className={inp} />
-                                    </div>
-                                    <div>
-                                        <label className="block text-gray-700 font-semibold mb-1">💲 USD</label>
-                                        <input type="number" step="0.01" value={datos.usd}
-                                            onChange={(e) => setDatos({...datos, usd: e.target.value})}
-                                            placeholder="0" className={inp} />
-                                    </div>
-                                    <div>
-                                        <label className="block text-gray-700 font-semibold mb-1">🇦🇷 ARS</label>
-                                        <input type="number" step="1" value={datos.ars}
-                                            onChange={(e) => setDatos({...datos, ars: e.target.value})}
-                                            placeholder="0" className={inp} />
-                                    </div>
-                                    <div>
-                                        <label className="block text-gray-700 font-semibold mb-1">🏆 Tanda</label>
-                                        <input type="number" step="0.01" value={datos.tanda}
-                                            onChange={(e) => setDatos({...datos, tanda: e.target.value})}
-                                            placeholder="0" className={inp} />
-                                    </div>
-                                </div>
-                                <div className="flex gap-3">
-                                    <button onClick={() => setPaso(2)} className={btnP}>← Atrás</button>
-                                    <button onClick={() => setPaso(4)} className={btnN}>Siguiente →</button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* PASO 4: Configurá tus Monedas */}
-                        {paso === 4 && (() => {
+                        {/* PASO 2: Configurá tus Monedas */}
+                        {paso === 2 && (() => {
                             const MONEDAS_LISTA = [
                                 { code: 'MXN', label: 'MXN - Peso Mexicano 🇲🇽' },
                                 { code: 'USD', label: 'USD - Dólar Estadounidense 💲' },
@@ -1616,12 +1539,89 @@
                                         </div>
                                     </div>
                                     <div className="flex gap-3">
-                                        <button onClick={() => setPaso(3)} className={btnP}>← Atrás</button>
-                                        <button onClick={() => setPaso(5)} className={btnN}>Siguiente →</button>
+                                        <button onClick={() => setPaso(1)} className={btnP}>← Atrás</button>
+                                        <button onClick={() => setPaso(3)} className={btnN}>Siguiente →</button>
                                     </div>
                                 </div>
                             );
                         })()}
+
+                        {/* PASO 3: Configuración Inicial (OBLIGATORIO) */}
+                        {paso === 3 && (
+                            <div className={card}>
+                                <Progreso />
+                                <h2 className="text-2xl font-bold text-gray-800 mb-2">⚙️ Configuración Inicial</h2>
+                                <p className="text-gray-600 mb-5">Primero, configuremos tu información básica</p>
+                                <div className="space-y-5 mb-6">
+                                    <div>
+                                        <label className="block text-gray-700 font-bold mb-2">📅 ¿Desde cuándo quieres empezar a contar?</label>
+                                        <input type="date" value={datos.fechaInicio}
+                                            onChange={(e) => setDatos({...datos, fechaInicio: e.target.value})}
+                                            className={inp} required />
+                                    </div>
+                                    <div>
+                                        <label className="block text-gray-700 font-bold mb-2">💵 Tipo de cambio USD → MXN</label>
+                                        <input type="number" step="0.01" value={datos.tcUSD}
+                                            onChange={(e) => setDatos({...datos, tcUSD: e.target.value})}
+                                            placeholder="ej: 17.16" className={inp} />
+                                        <p className="text-xs text-gray-500 mt-1">¿Cuántos pesos mexicanos vale 1 dólar?</p>
+                                    </div>
+                                    <div>
+                                        <label className="block text-gray-700 font-bold mb-2">🇦🇷 ¿Cuántos ARS equivalen a 1 USD?</label>
+                                        <input type="number" step="1" value={datos.arsporUSD}
+                                            onChange={(e) => setDatos({...datos, arsporUSD: e.target.value})}
+                                            placeholder="ej: 1430" className={inp} />
+                                        <p className="text-xs text-gray-500 mt-1">Tipo de cambio ARS/USD · 1 USD = {datos.arsporUSD || '1430'} ARS</p>
+                                    </div>
+                                </div>
+                                <div className="flex gap-3">
+                                    <button onClick={() => setPaso(2)} className={btnP}>← Atrás</button>
+                                    <button onClick={() => {
+                                        if (!datos.fechaInicio) { alert('Por favor ingresa una fecha de inicio'); return; }
+                                        setPaso(4);
+                                    }} className={btnN}>Siguiente →</button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* PASO 4: Tu Billetera (OBLIGATORIO) */}
+                        {paso === 4 && (
+                            <div className={card}>
+                                <Progreso />
+                                <h2 className="text-2xl font-bold text-gray-800 mb-2">💰 Tu Billetera</h2>
+                                <p className="text-gray-600 mb-5">¿Cuánto dinero tienes ahora en cada moneda?</p>
+                                <div className="space-y-4 mb-6">
+                                    <div>
+                                        <label className="block text-gray-700 font-semibold mb-1">💵 MXN Físico</label>
+                                        <input type="number" step="0.01" value={datos.mxnFisico}
+                                            onChange={(e) => setDatos({...datos, mxnFisico: e.target.value})}
+                                            placeholder="0" className={inp} />
+                                    </div>
+                                    <div>
+                                        <label className="block text-gray-700 font-semibold mb-1">💲 USD</label>
+                                        <input type="number" step="0.01" value={datos.usd}
+                                            onChange={(e) => setDatos({...datos, usd: e.target.value})}
+                                            placeholder="0" className={inp} />
+                                    </div>
+                                    <div>
+                                        <label className="block text-gray-700 font-semibold mb-1">🇦🇷 ARS</label>
+                                        <input type="number" step="1" value={datos.ars}
+                                            onChange={(e) => setDatos({...datos, ars: e.target.value})}
+                                            placeholder="0" className={inp} />
+                                    </div>
+                                    <div>
+                                        <label className="block text-gray-700 font-semibold mb-1">🏆 Tanda</label>
+                                        <input type="number" step="0.01" value={datos.tanda}
+                                            onChange={(e) => setDatos({...datos, tanda: e.target.value})}
+                                            placeholder="0" className={inp} />
+                                    </div>
+                                </div>
+                                <div className="flex gap-3">
+                                    <button onClick={() => setPaso(3)} className={btnP}>← Atrás</button>
+                                    <button onClick={() => setPaso(5)} className={btnN}>Siguiente →</button>
+                                </div>
+                            </div>
+                        )}
 
                         {/* PASO 5: Gastos Fijos (opcional) */}
                         {paso === 5 && (
