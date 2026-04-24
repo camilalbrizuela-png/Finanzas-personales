@@ -1349,6 +1349,8 @@
                 const [datos, setDatos] = useState({
                     nombre: '',
                     idioma: 'es-MX',
+                    monedaPrincipal: 'MXN',
+                    monedasSecundarias: [],
                     fechaInicio: new Date().toISOString().split('T')[0],
                     tcUSD: '17.16',
                     arsporUSD: '1430',
@@ -1362,7 +1364,7 @@
                     gastoMoneda: 'MXN',
                     gastoVencimiento: '',
                 });
-                const totalPasos = 8;
+                const totalPasos = 9;
 
                 const finalizarTutorial = () => {
                     const gastoInicial = datos.agregarGasto && datos.gastoNombre ? [{
@@ -1381,8 +1383,8 @@
                         nombreUsuario: datos.nombre || '',
                         fechaInicio: datos.fechaInicio,
                         diasAcumulados: 1,
-                        monedaPrincipal: 'MXN',
-                        monedasSecundarias: parseFloat(datos.ars) > 0 ? ['ARS'] : (parseFloat(datos.usd) > 0 ? ['USD'] : []),
+                        monedaPrincipal: datos.monedaPrincipal || 'MXN',
+                        monedasSecundarias: datos.monedasSecundarias || [],
                         tipoCambioUSD: parseFloat(datos.tcUSD) || 17.16,
                         tipoCambioARS: parseFloat(datos.arsporUSD) || 1430,
                         gastosFijos: gastoInicial,
@@ -1543,8 +1545,86 @@
                             </div>
                         )}
 
-                        {/* PASO 4: Gastos Fijos (opcional) */}
-                        {paso === 4 && (
+                        {/* PASO 4: Configurá tus Monedas */}
+                        {paso === 4 && (() => {
+                            const MONEDAS_LISTA = [
+                                { code: 'MXN', label: 'MXN - Peso Mexicano 🇲🇽' },
+                                { code: 'USD', label: 'USD - Dólar Estadounidense 💲' },
+                                { code: 'ARS', label: 'ARS - Peso Argentino 🇦🇷' },
+                                { code: 'EUR', label: 'EUR - Euro 🇪🇺' },
+                                { code: 'GBP', label: 'GBP - Libra Esterlina 🇬🇧' },
+                                { code: 'BRL', label: 'BRL - Real Brasileño 🇧🇷' },
+                                { code: 'COP', label: 'COP - Peso Colombiano 🇨🇴' },
+                                { code: 'CLP', label: 'CLP - Peso Chileno 🇨🇱' },
+                                { code: 'PEN', label: 'PEN - Sol Peruano 🇵🇪' },
+                            ];
+                            const LIMITE_SECUNDARIAS = estado.isPremium ? 999 : 2;
+                            const secundariasActuales = datos.monedasSecundarias || [];
+                            const toggleSecundaria = (code) => {
+                                if (secundariasActuales.includes(code)) {
+                                    setDatos({...datos, monedasSecundarias: secundariasActuales.filter(c => c !== code)});
+                                } else if (secundariasActuales.length < LIMITE_SECUNDARIAS) {
+                                    setDatos({...datos, monedasSecundarias: [...secundariasActuales, code]});
+                                }
+                            };
+                            return (
+                                <div className={card}>
+                                    <Progreso />
+                                    <h2 className="text-2xl font-bold text-gray-800 mb-2">💱 Configurá tus Monedas</h2>
+                                    <p className="text-gray-600 mb-5">¿Con qué monedas trabajás?</p>
+                                    <div className="space-y-5 mb-6">
+                                        <div>
+                                            <label className="block text-gray-700 font-bold mb-2">¿Cuál es tu moneda principal?</label>
+                                            <select value={datos.monedaPrincipal}
+                                                onChange={(e) => {
+                                                    const nueva = e.target.value;
+                                                    setDatos({...datos,
+                                                        monedaPrincipal: nueva,
+                                                        monedasSecundarias: secundariasActuales.filter(c => c !== nueva),
+                                                    });
+                                                }}
+                                                className={inp}>
+                                                {MONEDAS_LISTA.map(m => <option key={m.code} value={m.code}>{m.label}</option>)}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-gray-700 font-bold mb-2">¿Usás otras monedas?</label>
+                                            {!estado.isPremium && (
+                                                <p className="text-xs text-gray-500 mb-3">Versión Basic: hasta 2 monedas secundarias.</p>
+                                            )}
+                                            <div className="space-y-2">
+                                                {MONEDAS_LISTA.filter(m => m.code !== datos.monedaPrincipal).map(m => {
+                                                    const seleccionada = secundariasActuales.includes(m.code);
+                                                    const limiteAlcanzado = !seleccionada && secundariasActuales.length >= LIMITE_SECUNDARIAS;
+                                                    return (
+                                                        <label key={m.code} className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${seleccionada ? 'border-purple-400 bg-purple-50' : 'border-gray-200 hover:border-gray-300'} ${limiteAlcanzado ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                                            <input type="checkbox"
+                                                                checked={seleccionada}
+                                                                disabled={limiteAlcanzado}
+                                                                onChange={() => toggleSecundaria(m.code)}
+                                                                className="w-4 h-4 accent-purple-600" />
+                                                            <span className="font-medium text-gray-800">{m.label}</span>
+                                                        </label>
+                                                    );
+                                                })}
+                                            </div>
+                                            {!estado.isPremium && secundariasActuales.length >= LIMITE_SECUNDARIAS && (
+                                                <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-800">
+                                                    🔒 Versión Basic permite hasta 2 monedas secundarias. Activá Premium para ilimitadas.
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-3">
+                                        <button onClick={() => setPaso(3)} className={btnP}>← Atrás</button>
+                                        <button onClick={() => setPaso(5)} className={btnN}>Siguiente →</button>
+                                    </div>
+                                </div>
+                            );
+                        })()}
+
+                        {/* PASO 5: Gastos Fijos (opcional) */}
+                        {paso === 5 && (
                             <div className={card}>
                                 <Progreso />
                                 <h2 className="text-2xl font-bold text-gray-800 mb-2">📋 Gastos Fijos</h2>
@@ -1558,7 +1638,7 @@
                                             className="w-full bg-purple-100 hover:bg-purple-200 text-purple-800 px-6 py-4 rounded-xl font-bold text-left">
                                             ➕ Agregar mi primer gasto ahora
                                         </button>
-                                        <button onClick={() => setPaso(5)}
+                                        <button onClick={() => setPaso(6)}
                                             className="w-full bg-gray-100 hover:bg-gray-200 text-gray-600 px-6 py-3 rounded-xl font-bold">
                                             Hacerlo después →
                                         </button>
@@ -1583,18 +1663,18 @@
                                         <input type="date" value={datos.gastoVencimiento}
                                             onChange={(e) => setDatos({...datos, gastoVencimiento: e.target.value})}
                                             className={inp} />
-                                        <button onClick={() => setPaso(5)} className={`w-full ${btnN}`}>Siguiente →</button>
+                                        <button onClick={() => setPaso(6)} className={`w-full ${btnN}`}>Siguiente →</button>
                                         <button onClick={() => setDatos({...datos, agregarGasto: false})} className="w-full text-sm text-gray-500 underline">Cancelar</button>
                                     </div>
                                 )}
                                 {!datos.agregarGasto && (
-                                    <button onClick={() => setPaso(3)} className="text-sm text-gray-500 underline">← Atrás</button>
+                                    <button onClick={() => setPaso(4)} className="text-sm text-gray-500 underline">← Atrás</button>
                                 )}
                             </div>
                         )}
 
-                        {/* PASO 5: Cómo Funciona */}
-                        {paso === 5 && (
+                        {/* PASO 6: Cómo Funciona */}
+                        {paso === 6 && (
                             <div className={card}>
                                 <Progreso />
                                 <h2 className="text-2xl font-bold text-gray-800 mb-5">📱 Cómo Funciona la App</h2>
@@ -1617,14 +1697,14 @@
                                     ))}
                                 </div>
                                 <div className="flex gap-3">
-                                    <button onClick={() => setPaso(4)} className={btnP}>← Atrás</button>
-                                    <button onClick={() => setPaso(6)} className={btnN}>Siguiente →</button>
+                                    <button onClick={() => setPaso(5)} className={btnP}>← Atrás</button>
+                                    <button onClick={() => setPaso(7)} className={btnN}>Siguiente →</button>
                                 </div>
                             </div>
                         )}
 
-                        {/* PASO 6: Registrar Ingresos */}
-                        {paso === 6 && (
+                        {/* PASO 7: Registrar Ingresos */}
+                        {paso === 7 && (
                             <div className={card}>
                                 <Progreso />
                                 <div className="text-5xl mb-4 text-center">💵</div>
@@ -1639,14 +1719,14 @@
                                     </ul>
                                 </div>
                                 <div className="flex gap-3">
-                                    <button onClick={() => setPaso(5)} className={btnP}>← Atrás</button>
-                                    <button onClick={() => setPaso(7)} className={btnN}>Siguiente →</button>
+                                    <button onClick={() => setPaso(6)} className={btnP}>← Atrás</button>
+                                    <button onClick={() => setPaso(8)} className={btnN}>Siguiente →</button>
                                 </div>
                             </div>
                         )}
 
-                        {/* PASO 7: Avanzar Días */}
-                        {paso === 7 && (
+                        {/* PASO 8: Avanzar Días */}
+                        {paso === 8 && (
                             <div className={card}>
                                 <Progreso />
                                 <div className="text-5xl mb-4 text-center">⏭️</div>
@@ -1661,14 +1741,14 @@
                                     <p className="text-sm text-red-700">No puedes retroceder días. ¡Registra tus ingresos antes de avanzar!</p>
                                 </div>
                                 <div className="flex gap-3">
-                                    <button onClick={() => setPaso(6)} className={btnP}>← Atrás</button>
-                                    <button onClick={() => setPaso(8)} className={btnN}>Siguiente →</button>
+                                    <button onClick={() => setPaso(7)} className={btnP}>← Atrás</button>
+                                    <button onClick={() => setPaso(9)} className={btnN}>Siguiente →</button>
                                 </div>
                             </div>
                         )}
 
-                        {/* PASO 8: ¡Listo! */}
-                        {paso === 8 && (
+                        {/* PASO 9: ¡Listo! */}
+                        {paso === 9 && (
                             <div className={`${card} text-center`}>
                                 <Progreso />
                                 <div className="text-6xl mb-4">🎉</div>
