@@ -1351,6 +1351,7 @@
                     idioma: 'es-MX',
                     monedaPrincipal: 'MXN',
                     monedasSecundarias: [],
+                    tiposCambio: {},
                     fechaInicio: new Date().toISOString().split('T')[0],
                     tcUSD: '17.16',
                     arsporUSD: '1430',
@@ -1364,7 +1365,7 @@
                     gastoMoneda: 'MXN',
                     gastoVencimiento: '',
                 });
-                const totalPasos = 9;
+                const totalPasos = 10;
 
                 const finalizarTutorial = () => {
                     const gastoInicial = datos.agregarGasto && datos.gastoNombre ? [{
@@ -1546,8 +1547,69 @@
                             );
                         })()}
 
-                        {/* PASO 3: Configuración Inicial (OBLIGATORIO) */}
-                        {paso === 3 && (
+                        {/* PASO 3: Tipos de Cambio */}
+                        {paso === 3 && (() => {
+                            const principal = datos.monedaPrincipal;
+                            const secundarias = datos.monedasSecundarias || [];
+                            const tcActuales = datos.tiposCambio || {};
+                            const getTC = (code) => tcActuales[code] || { direccion: `${code}_TO_${principal}`, valor: '' };
+                            const updateTC = (code, field, value) => {
+                                setDatos({...datos, tiposCambio: {
+                                    ...tcActuales,
+                                    [code]: { ...getTC(code), [field]: value }
+                                }});
+                            };
+                            return (
+                                <div className={card}>
+                                    <Progreso />
+                                    <h2 className="text-2xl font-bold text-gray-800 mb-2">💹 Tipos de Cambio</h2>
+                                    <p className="text-gray-600 mb-5">
+                                        {secundarias.length > 0
+                                            ? `Define cómo se convierten tus monedas respecto a ${principal}`
+                                            : 'No seleccionaste monedas secundarias.'}
+                                    </p>
+                                    {secundarias.length > 0 && (
+                                        <div className="space-y-4 mb-6">
+                                            {secundarias.map(code => {
+                                                const tc = getTC(code);
+                                                const isSecToPrin = tc.direccion === `${code}_TO_${principal}`;
+                                                return (
+                                                    <div key={code} className="border-2 border-gray-200 rounded-xl p-4">
+                                                        <p className="font-bold text-gray-800 mb-3">{code}</p>
+                                                        <div className="space-y-2 mb-3">
+                                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                                <input type="radio" checked={isSecToPrin}
+                                                                    onChange={() => updateTC(code, 'direccion', `${code}_TO_${principal}`)}
+                                                                    className="accent-purple-600" />
+                                                                <span className="text-sm text-gray-700">1 {code} = ___ {principal}</span>
+                                                            </label>
+                                                            <label className="flex items-center gap-2 cursor-pointer">
+                                                                <input type="radio" checked={!isSecToPrin}
+                                                                    onChange={() => updateTC(code, 'direccion', `${principal}_TO_${code}`)}
+                                                                    className="accent-purple-600" />
+                                                                <span className="text-sm text-gray-700">1 {principal} = ___ {code}</span>
+                                                            </label>
+                                                        </div>
+                                                        <input type="number" step="any"
+                                                            value={tc.valor}
+                                                            onChange={(e) => updateTC(code, 'valor', e.target.value)}
+                                                            placeholder={isSecToPrin ? `1 ${code} = ? ${principal}` : `1 ${principal} = ? ${code}`}
+                                                            className={inp} />
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                    <div className="flex gap-3">
+                                        <button onClick={() => setPaso(2)} className={btnP}>← Atrás</button>
+                                        <button onClick={() => setPaso(4)} className={btnN}>Siguiente →</button>
+                                    </div>
+                                </div>
+                            );
+                        })()}
+
+                        {/* PASO 4: Configuración Inicial (OBLIGATORIO) */}
+                        {paso === 4 && (
                             <div className={card}>
                                 <Progreso />
                                 <h2 className="text-2xl font-bold text-gray-800 mb-2">⚙️ Configuración Inicial</h2>
@@ -1575,17 +1637,17 @@
                                     </div>
                                 </div>
                                 <div className="flex gap-3">
-                                    <button onClick={() => setPaso(2)} className={btnP}>← Atrás</button>
+                                    <button onClick={() => setPaso(3)} className={btnP}>← Atrás</button>
                                     <button onClick={() => {
                                         if (!datos.fechaInicio) { alert('Por favor ingresa una fecha de inicio'); return; }
-                                        setPaso(4);
+                                        setPaso(5);
                                     }} className={btnN}>Siguiente →</button>
                                 </div>
                             </div>
                         )}
 
-                        {/* PASO 4: Tu Billetera (OBLIGATORIO) */}
-                        {paso === 4 && (
+                        {/* PASO 5: Tu Billetera (OBLIGATORIO) */}
+                        {paso === 5 && (
                             <div className={card}>
                                 <Progreso />
                                 <h2 className="text-2xl font-bold text-gray-800 mb-2">💰 Tu Billetera</h2>
@@ -1617,14 +1679,14 @@
                                     </div>
                                 </div>
                                 <div className="flex gap-3">
-                                    <button onClick={() => setPaso(3)} className={btnP}>← Atrás</button>
-                                    <button onClick={() => setPaso(5)} className={btnN}>Siguiente →</button>
+                                    <button onClick={() => setPaso(4)} className={btnP}>← Atrás</button>
+                                    <button onClick={() => setPaso(6)} className={btnN}>Siguiente →</button>
                                 </div>
                             </div>
                         )}
 
-                        {/* PASO 5: Gastos Fijos (opcional) */}
-                        {paso === 5 && (
+                        {/* PASO 6: Gastos Fijos (opcional) */}
+                        {paso === 6 && (
                             <div className={card}>
                                 <Progreso />
                                 <h2 className="text-2xl font-bold text-gray-800 mb-2">📋 Gastos Fijos</h2>
@@ -1638,7 +1700,7 @@
                                             className="w-full bg-purple-100 hover:bg-purple-200 text-purple-800 px-6 py-4 rounded-xl font-bold text-left">
                                             ➕ Agregar mi primer gasto ahora
                                         </button>
-                                        <button onClick={() => setPaso(6)}
+                                        <button onClick={() => setPaso(7)}
                                             className="w-full bg-gray-100 hover:bg-gray-200 text-gray-600 px-6 py-3 rounded-xl font-bold">
                                             Hacerlo después →
                                         </button>
@@ -1663,18 +1725,18 @@
                                         <input type="date" value={datos.gastoVencimiento}
                                             onChange={(e) => setDatos({...datos, gastoVencimiento: e.target.value})}
                                             className={inp} />
-                                        <button onClick={() => setPaso(6)} className={`w-full ${btnN}`}>Siguiente →</button>
+                                        <button onClick={() => setPaso(7)} className={`w-full ${btnN}`}>Siguiente →</button>
                                         <button onClick={() => setDatos({...datos, agregarGasto: false})} className="w-full text-sm text-gray-500 underline">Cancelar</button>
                                     </div>
                                 )}
                                 {!datos.agregarGasto && (
-                                    <button onClick={() => setPaso(4)} className="text-sm text-gray-500 underline">← Atrás</button>
+                                    <button onClick={() => setPaso(5)} className="text-sm text-gray-500 underline">← Atrás</button>
                                 )}
                             </div>
                         )}
 
-                        {/* PASO 6: Cómo Funciona */}
-                        {paso === 6 && (
+                        {/* PASO 7: Cómo Funciona */}
+                        {paso === 7 && (
                             <div className={card}>
                                 <Progreso />
                                 <h2 className="text-2xl font-bold text-gray-800 mb-5">📱 Cómo Funciona la App</h2>
@@ -1697,14 +1759,14 @@
                                     ))}
                                 </div>
                                 <div className="flex gap-3">
-                                    <button onClick={() => setPaso(5)} className={btnP}>← Atrás</button>
-                                    <button onClick={() => setPaso(7)} className={btnN}>Siguiente →</button>
+                                    <button onClick={() => setPaso(6)} className={btnP}>← Atrás</button>
+                                    <button onClick={() => setPaso(8)} className={btnN}>Siguiente →</button>
                                 </div>
                             </div>
                         )}
 
-                        {/* PASO 7: Registrar Ingresos */}
-                        {paso === 7 && (
+                        {/* PASO 8: Registrar Ingresos */}
+                        {paso === 8 && (
                             <div className={card}>
                                 <Progreso />
                                 <div className="text-5xl mb-4 text-center">💵</div>
@@ -1719,14 +1781,14 @@
                                     </ul>
                                 </div>
                                 <div className="flex gap-3">
-                                    <button onClick={() => setPaso(6)} className={btnP}>← Atrás</button>
-                                    <button onClick={() => setPaso(8)} className={btnN}>Siguiente →</button>
+                                    <button onClick={() => setPaso(7)} className={btnP}>← Atrás</button>
+                                    <button onClick={() => setPaso(9)} className={btnN}>Siguiente →</button>
                                 </div>
                             </div>
                         )}
 
-                        {/* PASO 8: Avanzar Días */}
-                        {paso === 8 && (
+                        {/* PASO 9: Avanzar Días */}
+                        {paso === 9 && (
                             <div className={card}>
                                 <Progreso />
                                 <div className="text-5xl mb-4 text-center">⏭️</div>
@@ -1741,14 +1803,14 @@
                                     <p className="text-sm text-red-700">No puedes retroceder días. ¡Registra tus ingresos antes de avanzar!</p>
                                 </div>
                                 <div className="flex gap-3">
-                                    <button onClick={() => setPaso(7)} className={btnP}>← Atrás</button>
-                                    <button onClick={() => setPaso(9)} className={btnN}>Siguiente →</button>
+                                    <button onClick={() => setPaso(8)} className={btnP}>← Atrás</button>
+                                    <button onClick={() => setPaso(10)} className={btnN}>Siguiente →</button>
                                 </div>
                             </div>
                         )}
 
-                        {/* PASO 9: ¡Listo! */}
-                        {paso === 9 && (
+                        {/* PASO 10: ¡Listo! */}
+                        {paso === 10 && (
                             <div className={`${card} text-center`}>
                                 <Progreso />
                                 <div className="text-6xl mb-4">🎉</div>
