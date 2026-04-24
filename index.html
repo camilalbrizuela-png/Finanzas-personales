@@ -112,6 +112,7 @@
                     premiumCode: null,
                     premiumActivadoEn: null,
                     tema: 'classic',
+                    idiomaPreferido: 'es-MX',
                     billetera: { mxnFisico: 0, mxnDigital: 0, usd: 0, ars: 0, tanda: 0, secciones: [] }
                 };
             };
@@ -1347,6 +1348,7 @@
                 const [paso, setPaso] = useState(1);
                 const [datos, setDatos] = useState({
                     nombre: '',
+                    idioma: 'es-MX',
                     fechaInicio: new Date().toISOString().split('T')[0],
                     tcUSD: '17.16',
                     arsporUSD: '1430',
@@ -1400,6 +1402,7 @@
                         premiumCode: null,
                         premiumActivadoEn: null,
                         tema: 'classic',
+                        idiomaPreferido: datos.idioma || 'es-MX',
                     });
                     localStorage.setItem('tutorialCompletado', 'true');
                 };
@@ -1439,12 +1442,22 @@
                                 <div className="text-6xl mb-4">💰</div>
                                 <h1 className="text-3xl font-bold text-gray-800 mb-3">¡Bienvenido a Finanzas App!</h1>
                                 <p className="text-gray-600 mb-6">Te ayudaremos a gestionar tus gastos de forma inteligente. El tutorial dura solo 2 minutos.</p>
-                                <div className="mb-6 text-left">
+                                <div className="mb-4 text-left">
                                     <label className="block text-gray-700 font-bold mb-2">¿Cómo te llamas? (opcional)</label>
                                     <input type="text" value={datos.nombre}
                                         onChange={(e) => setDatos({...datos, nombre: e.target.value})}
                                         placeholder="Tu nombre"
                                         className={inp} />
+                                </div>
+                                <div className="mb-6 text-left">
+                                    <label className="block text-gray-700 font-bold mb-2">Idioma preferido</label>
+                                    <select value={datos.idioma}
+                                        onChange={(e) => setDatos({...datos, idioma: e.target.value})}
+                                        className={inp}>
+                                        <option value="es-MX">Español (México)</option>
+                                        <option value="es-AR">Español (Argentina)</option>
+                                        <option value="en">English</option>
+                                    </select>
                                 </div>
                                 <button onClick={() => setPaso(2)}
                                     className={`w-full bg-gradient-to-r ${t.btnGrad} text-white px-6 py-4 rounded-xl font-bold text-lg`}>
