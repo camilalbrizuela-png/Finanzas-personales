@@ -591,48 +591,57 @@
                                 </button>
                             </div>
 
-                            <div className="space-y-4">
-                                <div className="bg-gradient-to-br from-green-100 to-emerald-100 rounded-2xl p-6">
-                                    <div className="flex justify-between items-center mb-2">
-                                        <p className="text-gray-700 font-bold">MXN Disponible</p>
+                            {(() => {
+                                const principal = estado.monedaPrincipal || 'MXN';
+                                const walletValues = {
+                                    MXN: estado.billetera.mxnFisico + (estado.billetera.mxnDigital || 0),
+                                    USD: estado.billetera.usd,
+                                    ARS: estado.billetera.ars,
+                                };
+                                const walletTypes = { MXN: 'mxn', USD: 'usd', ARS: 'ars' };
+                                const bgColors = {
+                                    MXN: 'from-green-100 to-emerald-100', USD: 'from-blue-100 to-cyan-100',
+                                    ARS: 'from-purple-100 to-pink-100', EUR: 'from-indigo-100 to-violet-100',
+                                    GBP: 'from-rose-100 to-pink-100', BRL: 'from-lime-100 to-green-100',
+                                    COP: 'from-yellow-100 to-amber-100', CLP: 'from-red-100 to-orange-100',
+                                    PEN: 'from-teal-100 to-cyan-100',
+                                };
+                                const textColors = {
+                                    MXN: 'text-green-700', USD: 'text-blue-700', ARS: 'text-purple-700',
+                                    EUR: 'text-indigo-700', GBP: 'text-rose-700', BRL: 'text-lime-700',
+                                };
+                                const bg = (c) => bgColors[c] || 'from-gray-100 to-slate-100';
+                                const tc = (c) => textColors[c] || 'text-gray-700';
+                                return (
+                                <div className="space-y-4">
+                                    {/* Moneda Principal — Disponible */}
+                                    <div className={`bg-gradient-to-br ${bg(principal)} rounded-2xl p-6`}>
+                                        <p className="text-gray-700 font-bold mb-2">{principal} Disponible</p>
+                                        <p className={`text-4xl font-bold ${tc(principal)}`}>{Math.round(superavit).toLocaleString()}</p>
+                                        <p className="text-xs text-gray-500 mt-2">Calculado automáticamente</p>
                                     </div>
-                                    <p className="text-4xl font-bold text-green-700">${Math.round(mxnFisico)}</p>
-                                    <p className="text-xs text-gray-500 mt-2">Calculado automáticamente</p>
-                                </div>
 
-                                <div className="bg-gradient-to-br from-blue-100 to-cyan-100 rounded-2xl p-6">
-                                    <div className="flex justify-between items-center mb-2">
-                                        <p className="text-gray-700 font-bold">USD 💲</p>
-                                        <button onClick={() => { setForm({tipo: 'usd', valor: estado.billetera.usd}); setModal('editarBilletera'); }}
-                                            className="text-blue-600 hover:text-blue-800">✏️</button>
-                                    </div>
-                                    <p className="text-4xl font-bold text-blue-700">${Math.round(estado.billetera.usd)}</p>
-                                    <p className="text-sm text-gray-600 mt-2">≈ ${Math.round(convertirMoneda(estado.billetera.usd, 'USD', estado.monedaPrincipal || 'MXN'))} {estado.monedaPrincipal || 'MXN'}</p>
-                                </div>
+                                    {/* Monedas Secundarias */}
+                                    {(estado.monedasSecundarias || []).map(code => {
+                                        const valor = walletValues[code] !== undefined ? walletValues[code] : 0;
+                                        const canEdit = walletTypes[code] !== undefined;
+                                        return (
+                                            <div key={code} className={`bg-gradient-to-br ${bg(code)} rounded-2xl p-6`}>
+                                                <div className="flex justify-between items-center mb-2">
+                                                    <p className="text-gray-700 font-bold">{code}</p>
+                                                    {canEdit && (
+                                                        <button onClick={() => { setForm({tipo: walletTypes[code], valor}); setModal('editarBilletera'); }}
+                                                            className="text-blue-600 hover:text-blue-800">✏️</button>
+                                                    )}
+                                                </div>
+                                                <p className={`text-4xl font-bold ${tc(code)}`}>{Math.round(valor).toLocaleString()}</p>
+                                                <p className="text-sm text-gray-600 mt-2">≈ {Math.round(convertirMoneda(valor, code, principal)).toLocaleString()} {principal}</p>
+                                            </div>
+                                        );
+                                    })}
 
-                                <div className="bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl p-6">
-                                    <div className="flex justify-between items-center mb-2">
-                                        <p className="text-gray-700 font-bold">ARS 🇦🇷</p>
-                                        <button onClick={() => { setForm({tipo: 'ars', valor: estado.billetera.ars}); setModal('editarBilletera'); }}
-                                            className="text-blue-600 hover:text-blue-800">✏️</button>
-                                    </div>
-                                    <p className={`text-4xl font-bold ${t.accentTextDark}`}>{Math.round(estado.billetera.ars).toLocaleString()}</p>
-                                    <p className="text-xs text-gray-500 mt-2">
-                                        ≈ ${convertirMoneda(estado.billetera.ars, 'ARS', 'USD').toFixed(2)} USD → ${Math.round(convertirMoneda(estado.billetera.ars, 'ARS', estado.monedaPrincipal || 'MXN'))} {estado.monedaPrincipal || 'MXN'}
-                                    </p>
-                                </div>
-
-                                <div className="bg-gradient-to-br from-yellow-100 to-orange-100 rounded-2xl p-6">
-                                    <div className="flex justify-between items-center mb-2">
-                                        <p className="text-gray-700 font-bold">Tanda 🏆</p>
-                                        <button onClick={() => { setForm({tipo: 'tanda', valor: estado.billetera.tanda}); setModal('editarBilletera'); }}
-                                            className="text-blue-600 hover:text-blue-800">✏️</button>
-                                    </div>
-                                    <p className="text-4xl font-bold text-orange-700">${Math.round(estado.billetera.tanda)}</p>
-                                </div>
-
-                                {/* Secciones personalizadas */}
-                                {(estado.billetera.secciones || []).map(seccion => (
+                                    {/* Secciones personalizadas */}
+                                    {(estado.billetera.secciones || []).map(seccion => (
                                     <div key={seccion.id} className="bg-gradient-to-br from-gray-100 to-slate-100 rounded-2xl p-6">
                                         <div className="flex justify-between items-center mb-2">
                                             <p className="text-gray-700 font-bold">{seccion.icono || '💼'} {seccion.nombre}</p>
@@ -649,7 +658,9 @@
                                         <p className="text-4xl font-bold text-gray-700">{Math.round(seccion.monto).toLocaleString()}</p>
                                     </div>
                                 ))}
-                            </div>
+                                </div>
+                                );
+                            })()}
                         </div>
                     </div>
                 </div>
@@ -1635,33 +1646,18 @@
                             );
                         })()}
 
-                        {/* PASO 4: Configuración Inicial (OBLIGATORIO) */}
+                        {/* PASO 4: Información Básica */}
                         {paso === 4 && (
                             <div className={card}>
                                 <Progreso />
-                                <h2 className="text-2xl font-bold text-gray-800 mb-2">⚙️ Configuración Inicial</h2>
-                                <p className="text-gray-600 mb-5">Primero, configuremos tu información básica</p>
-                                <div className="space-y-5 mb-6">
-                                    <div>
-                                        <label className="block text-gray-700 font-bold mb-2">📅 ¿Desde cuándo quieres empezar a contar?</label>
-                                        <input type="date" value={datos.fechaInicio}
-                                            onChange={(e) => setDatos({...datos, fechaInicio: e.target.value})}
-                                            className={inp} required />
-                                    </div>
-                                    <div>
-                                        <label className="block text-gray-700 font-bold mb-2">💵 Tipo de cambio USD → MXN</label>
-                                        <input type="number" step="0.01" value={datos.tcUSD}
-                                            onChange={(e) => setDatos({...datos, tcUSD: e.target.value})}
-                                            placeholder="ej: 17.16" className={inp} />
-                                        <p className="text-xs text-gray-500 mt-1">¿Cuántos pesos mexicanos vale 1 dólar?</p>
-                                    </div>
-                                    <div>
-                                        <label className="block text-gray-700 font-bold mb-2">🇦🇷 ¿Cuántos ARS equivalen a 1 USD?</label>
-                                        <input type="number" step="1" value={datos.arsporUSD}
-                                            onChange={(e) => setDatos({...datos, arsporUSD: e.target.value})}
-                                            placeholder="ej: 1430" className={inp} />
-                                        <p className="text-xs text-gray-500 mt-1">Tipo de cambio ARS/USD · 1 USD = {datos.arsporUSD || '1430'} ARS</p>
-                                    </div>
+                                <h2 className="text-2xl font-bold text-gray-800 mb-2">📅 Información Básica</h2>
+                                <p className="text-gray-600 mb-5">¿Desde cuándo querés empezar a contar?</p>
+                                <div className="mb-6">
+                                    <label className="block text-gray-700 font-bold mb-2">📅 Fecha de inicio</label>
+                                    <input type="date" value={datos.fechaInicio}
+                                        onChange={(e) => setDatos({...datos, fechaInicio: e.target.value})}
+                                        className={inp} required />
+                                    <p className="text-xs text-gray-500 mt-1">A partir de esta fecha se calcula el ciclo de tus gastos fijos.</p>
                                 </div>
                                 <div className="flex gap-3">
                                     <button onClick={() => setPaso(3)} className={btnP}>← Atrás</button>
