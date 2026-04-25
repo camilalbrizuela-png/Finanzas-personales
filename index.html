@@ -123,7 +123,7 @@
                     premiumActivadoEn: null,
                     tema: 'classic',
                     idiomaPreferido: 'es-MX',
-                    billetera: { mxnFisico: 0, mxnDigital: 0, usd: 0, ars: 0, tanda: 0, secciones: [] }
+                    billetera: { mxnFisico: 0, mxnDigital: 0, usd: 0, ars: 0, tanda: 0, monedas: {}, secciones: [] }
                 };
             };
 
@@ -597,6 +597,7 @@
                                     MXN: estado.billetera.mxnFisico + (estado.billetera.mxnDigital || 0),
                                     USD: estado.billetera.usd,
                                     ARS: estado.billetera.ars,
+                                    ...(estado.billetera.monedas || {}),
                                 };
                                 const walletTypes = { MXN: 'mxn', USD: 'usd', ARS: 'ars' };
                                 const bgColors = {
@@ -1431,14 +1432,25 @@
                         gastosExtras: [],
                         categoriasExtra: [],
                         coloresCategorias: {},
-                        billetera: {
-                            mxnFisico: parseFloat(datos.mxnFisico) || 0,
-                            mxnDigital: 0,
-                            usd: parseFloat(datos.usd) || 0,
-                            ars: parseFloat(datos.ars) || 0,
-                            tanda: parseFloat(datos.tanda) || 0,
-                            secciones: [],
-                        },
+                        billetera: (() => {
+                            const knownKeys = { MXN: 'mxnFisico', USD: 'usd', ARS: 'ars' };
+                            const extras = {};
+                            (datos.monedasSecundarias || []).forEach(code => {
+                                if (!knownKeys[code]) {
+                                    const v = parseFloat(datos[code.toLowerCase()]) || 0;
+                                    if (v) extras[code] = v;
+                                }
+                            });
+                            return {
+                                mxnFisico: parseFloat(datos.mxnFisico) || 0,
+                                mxnDigital: 0,
+                                usd: parseFloat(datos.usd) || 0,
+                                ars: parseFloat(datos.ars) || 0,
+                                tanda: 0,
+                                monedas: extras,
+                                secciones: [],
+                            };
+                        })(),
                         isPremium: false,
                         premiumCode: null,
                         premiumActivadoEn: null,
@@ -1670,43 +1682,38 @@
                         )}
 
                         {/* PASO 5: Tu Billetera (OBLIGATORIO) */}
-                        {paso === 5 && (
-                            <div className={card}>
-                                <Progreso />
-                                <h2 className="text-2xl font-bold text-gray-800 mb-2">💰 Tu Billetera</h2>
-                                <p className="text-gray-600 mb-5">¿Cuánto dinero tienes ahora en cada moneda?</p>
-                                <div className="space-y-4 mb-6">
-                                    <div>
-                                        <label className="block text-gray-700 font-semibold mb-1">💵 MXN Físico</label>
-                                        <input type="number" step="0.01" value={datos.mxnFisico}
-                                            onChange={(e) => setDatos({...datos, mxnFisico: e.target.value})}
-                                            placeholder="0" className={inp} />
+                        {paso === 5 && (() => {
+                            const currencyEmojis = { MXN: '🇲🇽', USD: '💵', ARS: '🇦🇷', EUR: '🇪🇺', GBP: '🇬🇧', CAD: '🍁', COP: '🇨🇴', BRL: '🇧🇷', CLP: '🇨🇱' };
+                            const currencyKeys = { MXN: 'mxnFisico', USD: 'usd', ARS: 'ars' };
+                            const principal = datos.monedaPrincipal || 'MXN';
+                            const secundarias = datos.monedasSecundarias || [];
+                            const todasMonedas = [principal, ...secundarias];
+                            const getKey = (code) => currencyKeys[code] || code.toLowerCase();
+                            return (
+                                <div className={card}>
+                                    <Progreso />
+                                    <h2 className="text-2xl font-bold text-gray-800 mb-2">💰 Tu Billetera</h2>
+                                    <p className="text-gray-600 mb-5">¿Cuánto dinero tienes ahora en cada moneda?</p>
+                                    <div className="space-y-4 mb-6">
+                                        {todasMonedas.map(code => (
+                                            <div key={code}>
+                                                <label className="block text-gray-700 font-semibold mb-1">
+                                                    {currencyEmojis[code] || '💱'} {code}
+                                                </label>
+                                                <input type="number" step="0.01"
+                                                    value={datos[getKey(code)] || '0'}
+                                                    onChange={(e) => setDatos({...datos, [getKey(code)]: e.target.value})}
+                                                    placeholder="0" className={inp} />
+                                            </div>
+                                        ))}
                                     </div>
-                                    <div>
-                                        <label className="block text-gray-700 font-semibold mb-1">💲 USD</label>
-                                        <input type="number" step="0.01" value={datos.usd}
-                                            onChange={(e) => setDatos({...datos, usd: e.target.value})}
-                                            placeholder="0" className={inp} />
-                                    </div>
-                                    <div>
-                                        <label className="block text-gray-700 font-semibold mb-1">🇦🇷 ARS</label>
-                                        <input type="number" step="1" value={datos.ars}
-                                            onChange={(e) => setDatos({...datos, ars: e.target.value})}
-                                            placeholder="0" className={inp} />
-                                    </div>
-                                    <div>
-                                        <label className="block text-gray-700 font-semibold mb-1">🏆 Tanda</label>
-                                        <input type="number" step="0.01" value={datos.tanda}
-                                            onChange={(e) => setDatos({...datos, tanda: e.target.value})}
-                                            placeholder="0" className={inp} />
+                                    <div className="flex gap-3">
+                                        <button onClick={() => setPaso(4)} className={btnP}>← Atrás</button>
+                                        <button onClick={() => setPaso(6)} className={btnN}>Siguiente →</button>
                                     </div>
                                 </div>
-                                <div className="flex gap-3">
-                                    <button onClick={() => setPaso(4)} className={btnP}>← Atrás</button>
-                                    <button onClick={() => setPaso(6)} className={btnN}>Siguiente →</button>
-                                </div>
-                            </div>
-                        )}
+                            );
+                        })()}
 
                         {/* PASO 6: Gastos Fijos (opcional) */}
                         {paso === 6 && (
