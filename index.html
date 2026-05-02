@@ -87,6 +87,7 @@
                         if (parsed.isPremium === undefined) parsed.isPremium = false;
                         if (parsed.premiumCode === undefined) parsed.premiumCode = null;
                         if (parsed.premiumActivadoEn === undefined) parsed.premiumActivadoEn = null;
+                        if (parsed.premiumEmail === undefined) parsed.premiumEmail = null;
                         if (!parsed.tema) parsed.tema = 'classic';
                         // Onboarding: usuarios con datos existentes lo omiten
                         if (parsed.onboardingCompleto === undefined) {
@@ -121,6 +122,7 @@
                     isPremium: false,
                     premiumCode: null,
                     premiumActivadoEn: null,
+                    premiumEmail: null,
                     tema: 'classic',
                     idiomaPreferido: 'es-MX',
                     billetera: { mxnFisico: 0, mxnDigital: 0, usd: 0, ars: 0, tanda: 0, monedas: {}, secciones: [] }
@@ -403,6 +405,29 @@
                 if (code === 'USD') return estado.billetera.usd;
                 if (code === 'ARS') return estado.billetera.ars;
                 return (estado.billetera.monedas || {})[code] || 0;
+            };
+
+            const validarCodigoPremium = (codigoIngresado) => {
+                const codigo = codigoIngresado.trim().toUpperCase();
+                if (!/^FNZPRO-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(codigo)) {
+                    return { valido: false, error: 'Formato inválido. Debe ser: FNZPRO-XXXX-XXXX' };
+                }
+                const activados = JSON.parse(localStorage.getItem('finanzasPremiumActivados') || '[]');
+                if (activados.includes(codigo)) {
+                    return { valido: false, error: 'Este código ya fue activado anteriormente' };
+                }
+                return { valido: true };
+            };
+
+            const activarPremium = (codigo, email) => {
+                const validacion = validarCodigoPremium(codigo);
+                if (!validacion.valido) return { exito: false, mensaje: validacion.error };
+                const codigoUp = codigo.trim().toUpperCase();
+                const activados = JSON.parse(localStorage.getItem('finanzasPremiumActivados') || '[]');
+                activados.push(codigoUp);
+                localStorage.setItem('finanzasPremiumActivados', JSON.stringify(activados));
+                setEstado({...estado, isPremium: true, premiumCode: codigoUp, premiumActivadoEn: new Date().toISOString(), premiumEmail: email || null});
+                return { exito: true };
             };
 
             const Modal = ({ children, onClose }) => (
@@ -1460,6 +1485,7 @@
                         isPremium: false,
                         premiumCode: null,
                         premiumActivadoEn: null,
+                        premiumEmail: null,
                         tema: 'classic',
                         idiomaPreferido: datos.idioma || 'es-MX',
                     });
@@ -2305,38 +2331,45 @@
                     {/* Modal: Activar Premium con código */}
                     {modal === 'activarPremium' && (
                         <Modal onClose={() => { setModal(null); setCodigoError(''); }}>
-                            <h2 className="text-2xl font-bold mb-4">💎 Activar Premium</h2>
-                            <p className="text-gray-600 mb-4">Ingresa tu código de activación:</p>
+                            <h2 className="text-2xl font-bold mb-2">💎 Activar Premium</h2>
+                            <p className="text-gray-600 mb-4">Ingresa tu código de activación único:</p>
                             <form onSubmit={(e) => {
                                 e.preventDefault();
-                                const codigo = e.target.codigo.value.trim().toUpperCase();
-                                const CODIGOS_VALIDOS = { 'PREMIUM2026': true, 'UNLOCK': true, 'VIP': true };
-                                if (CODIGOS_VALIDOS[codigo]) {
+                                const codigo = e.target.codigo.value;
+                                const email = e.target.email.value.trim();
+                                const resultado = activarPremium(codigo, email);
+                                if (resultado.exito) {
                                     setCodigoError('');
-                                    setEstado({...estado, isPremium: true, premiumCode: codigo, premiumActivadoEn: new Date().toISOString()});
                                     setModal('premiumActivado');
                                 } else {
-                                    setCodigoError('❌ Código inválido. Verifica e intenta de nuevo.');
+                                    setCodigoError(resultado.mensaje);
                                 }
                             }}>
                                 <input type="text" name="codigo" required
-                                    placeholder="EJEMPLO: PREMIUM2026"
-                                    onChange={() => setCodigoError('')}
-                                    className={`w-full px-4 py-3 border-2 rounded-xl mb-2 text-center text-lg font-bold uppercase ${codigoError ? 'border-red-400' : ''}`}
-                                    style={{letterSpacing: '2px'}} />
-                                {codigoError && (
-                                    <p className="text-red-500 text-sm font-semibold text-center mb-3">{codigoError}</p>
+                                    placeholder="FNZPRO-XXXX-XXXX"
+                                    maxLength="17"
+                                    onChange={(e) => {
+                                        setCodigoError('');
+                                        e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, '');
+                                    }}
+                                    className={`w-full px-4 py-3 border-2 rounded-xl mb-2 text-center text-lg font-bold tracking-widest ${codigoError ? 'border-red-400 bg-red-50' : 'border-gray-300'}`} />
+                                {codigoError ? (
+                                    <p className="text-red-500 text-sm font-semibold text-center mb-3">❌ {codigoError}</p>
+                                ) : (
+                                    <p className="text-gray-400 text-xs text-center mb-3">Formato: FNZPRO-XXXX-XXXX</p>
                                 )}
-                                {!codigoError && <div className="mb-2" />}
+                                <input type="email" name="email"
+                                    placeholder="tu@email.com (opcional, para soporte)"
+                                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl mb-4 text-center text-sm" />
                                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4 text-sm">
-                                    <p className="font-semibold mb-1">¿Dónde consigo un código?</p>
-                                    <p className="text-gray-600">Visita: <span className="text-blue-600">tudominio.com/premium</span></p>
+                                    <p className="font-semibold mb-1">¿No tenés código?</p>
+                                    <p className="text-gray-600">Comprá Premium accediendo a nuestro sitio web.</p>
                                 </div>
                                 <div className="flex gap-3">
                                     <button type="button" onClick={() => { setModal(null); setCodigoError(''); }}
                                         className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">Cancelar</button>
                                     <button type="submit"
-                                        className={`flex-1 ${t.btn} text-white px-6 py-3 rounded-xl font-bold`}>Activar</button>
+                                        className="flex-1 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-bold">Activar</button>
                                 </div>
                             </form>
                         </Modal>
@@ -2436,6 +2469,7 @@
                                         <div className="bg-green-50 border-2 border-green-200 rounded-xl p-4">
                                             <p className="font-bold text-green-800 mb-1">⭐ Premium Activo</p>
                                             {estado.premiumCode && <p className="text-sm text-gray-600">Código: {estado.premiumCode}</p>}
+                                            {estado.premiumEmail && <p className="text-sm text-gray-600">Email: {estado.premiumEmail}</p>}
                                             {estado.premiumActivadoEn && (
                                                 <p className="text-xs text-gray-500 mt-1">
                                                     Activado el {new Date(estado.premiumActivadoEn).toLocaleDateString('es-MX')}
