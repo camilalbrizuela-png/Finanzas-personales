@@ -252,6 +252,19 @@
             };
             const t = TEMAS[estado.tema] || TEMAS.classic;
 
+            const MONEDA_CONF = {
+                MXN: { emoji: '🇲🇽', grad: 'from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600' },
+                USD: { emoji: '💵', grad: 'from-blue-400 to-cyan-500 hover:from-blue-500 hover:to-cyan-600' },
+                ARS: { emoji: '🇦🇷', grad: 'from-sky-400 to-blue-500 hover:from-sky-500 hover:to-blue-600' },
+                EUR: { emoji: '🇪🇺', grad: 'from-indigo-400 to-violet-500 hover:from-indigo-500 hover:to-violet-600' },
+                GBP: { emoji: '🇬🇧', grad: 'from-rose-400 to-pink-500 hover:from-rose-500 hover:to-pink-600' },
+                CAD: { emoji: '🍁', grad: 'from-red-400 to-orange-500 hover:from-red-500 hover:to-orange-600' },
+                COP: { emoji: '🇨🇴', grad: 'from-yellow-400 to-amber-500 hover:from-yellow-500 hover:to-amber-600' },
+                BRL: { emoji: '🇧🇷', grad: 'from-lime-400 to-green-500 hover:from-lime-500 hover:to-green-600' },
+                CLP: { emoji: '🇨🇱', grad: 'from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700' },
+            };
+            const monedaConf = (code) => MONEDA_CONF[code] || { emoji: '💱', grad: 'from-gray-400 to-slate-500 hover:from-gray-500 hover:to-slate-600' };
+
             // Guardar en localStorage cada vez que cambia el estado
             useEffect(() => {
                 localStorage.setItem('finanzasAppData', JSON.stringify(estado));
@@ -383,6 +396,14 @@
 
             // DISPONIBLE = Ingresos MXN - Acumulado esperado - Gastos extras (USD NO cuenta)
             const superavit = totalIngresosMXN - acumuladoEsperado - totalGastosExtras;
+
+            const getWalletBalance = (code) => {
+                const principal = estado.monedaPrincipal || 'MXN';
+                if (code === principal) return superavit;
+                if (code === 'USD') return estado.billetera.usd;
+                if (code === 'ARS') return estado.billetera.ars;
+                return (estado.billetera.monedas || {})[code] || 0;
+            };
 
             const Modal = ({ children, onClose }) => (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={onClose}>
@@ -683,35 +704,23 @@
                             <div className="bg-white rounded-3xl shadow-2xl p-6 mb-6">
                                 <h1 className="text-2xl font-bold text-gray-800 mb-4">📥 ¿Dónde ingresa el dinero?</h1>
                                 <div className="grid grid-cols-2 gap-3">
-                                    <button onClick={() => { setForm({ seccionIngreso: 'mxn' }); setModal('modalIngreso'); }}
-                                        className="flex flex-col items-center bg-gradient-to-br from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 text-white rounded-2xl p-5 shadow-md transition-all">
-                                        <span className="text-3xl mb-2">💵</span>
-                                        <span className="font-bold text-lg">MXN</span>
-                                        <span className="text-xs opacity-80 mt-1">Pesos mexicanos</span>
-                                    </button>
-                                    <button onClick={() => { setForm({ seccionIngreso: 'usd' }); setModal('modalIngreso'); }}
-                                        className="flex flex-col items-center bg-gradient-to-br from-blue-400 to-cyan-500 hover:from-blue-500 hover:to-cyan-600 text-white rounded-2xl p-5 shadow-md transition-all">
-                                        <span className="text-3xl mb-2">💲</span>
-                                        <span className="font-bold text-lg">USD</span>
-                                        <span className="text-xs opacity-80 mt-1">${Math.round(estado.billetera.usd)} disp.</span>
-                                    </button>
-                                    <button onClick={() => { setForm({ seccionIngreso: 'ars' }); setModal('modalIngreso'); }}
-                                        className="flex flex-col items-center bg-gradient-to-br from-sky-400 to-blue-500 hover:from-sky-500 hover:to-blue-600 text-white rounded-2xl p-5 shadow-md transition-all">
-                                        <span className="text-3xl mb-2">🇦🇷</span>
-                                        <span className="font-bold text-lg">ARS</span>
-                                        <span className="text-xs opacity-80 mt-1">{Math.round(estado.billetera.ars).toLocaleString()} disp.</span>
-                                    </button>
+                                    {[estado.monedaPrincipal || 'MXN', ...(estado.monedasSecundarias || [])].map(code => {
+                                        const cfg = monedaConf(code);
+                                        const bal = getWalletBalance(code);
+                                        return (
+                                            <button key={code} onClick={() => { setForm({ seccionIngreso: code.toLowerCase() }); setModal('modalIngreso'); }}
+                                                className={`flex flex-col items-center bg-gradient-to-br ${cfg.grad} text-white rounded-2xl p-5 shadow-md transition-all`}>
+                                                <span className="text-3xl mb-2">{cfg.emoji}</span>
+                                                <span className="font-bold text-lg">{code}</span>
+                                                <span className="text-xs opacity-80 mt-1">{Math.round(bal).toLocaleString()} disp.</span>
+                                            </button>
+                                        );
+                                    })}
                                     <button onClick={() => setModal('ingresoSueldo')}
                                         className={`flex flex-col items-center bg-gradient-to-br ${t.card1} text-white rounded-2xl p-5 shadow-md transition-all hover:scale-[1.02]`}>
                                         <span className="text-3xl mb-2">💰</span>
                                         <span className="font-bold text-lg">Salario</span>
                                         <span className="text-xs opacity-80 mt-1">Asignar a gastos</span>
-                                    </button>
-                                    <button onClick={() => { setForm({ seccionIngreso: 'tanda' }); setModal('modalIngreso'); }}
-                                        className="flex flex-col items-center bg-gradient-to-br from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white rounded-2xl p-5 shadow-md transition-all">
-                                        <span className="text-3xl mb-2">🏆</span>
-                                        <span className="font-bold text-lg">Tanda</span>
-                                        <span className="text-xs opacity-80 mt-1">${Math.round(estado.billetera.tanda)} disp.</span>
                                     </button>
                                     {(estado.billetera.secciones || []).map(seccion => (
                                         <button key={seccion.id} onClick={() => { setForm({ seccionIngreso: seccion.id }); setModal('modalIngreso'); }}
@@ -814,11 +823,10 @@
                 const totalGastosMXN = estado.gastosExtras.reduce((sum, g) => (!g.fuente || g.fuente === 'mxn') ? sum + g.monto : sum, 0);
 
                 const getNombreFuente = (fuente) => {
-                    if (!fuente || fuente === 'mxn') return '💵 MXN';
-                    if (fuente === 'usd') return '💲 USD';
-                    if (fuente === 'ars') return '🇦🇷 ARS';
-                    if (fuente === 'tanda') return '🏆 Tanda';
+                    if (!fuente) return `${monedaConf(estado.monedaPrincipal || 'MXN').emoji} ${estado.monedaPrincipal || 'MXN'}`;
                     if (fuente === 'sueldo') return '💰 Salario';
+                    const fCode = fuente.toUpperCase();
+                    if (MONEDA_CONF[fCode]) return `${monedaConf(fCode).emoji} ${fCode}`;
                     const seccion = (estado.billetera.secciones || []).find(s => s.id === fuente || s.id === parseInt(fuente));
                     return seccion ? `${seccion.icono || '💼'} ${seccion.nombre}` : fuente;
                 };
@@ -1075,11 +1083,10 @@
                     return acc;
                 }, {});
                 const getNF = (fuente) => {
-                    if (!fuente || fuente === 'mxn') return '💵 MXN';
-                    if (fuente === 'usd') return '💲 USD';
-                    if (fuente === 'ars') return '🇦🇷 ARS';
-                    if (fuente === 'tanda') return '🏆 Tanda';
+                    if (!fuente) return `${monedaConf(estado.monedaPrincipal || 'MXN').emoji} ${estado.monedaPrincipal || 'MXN'}`;
                     if (fuente === 'sueldo') return '💰 Salario';
+                    const fCode = fuente.toUpperCase();
+                    if (MONEDA_CONF[fCode]) return `${monedaConf(fCode).emoji} ${fCode}`;
                     const s = (estado.billetera.secciones || []).find(s => s.id === parseInt(fuente));
                     return s ? `${s.icono || '💼'} ${s.nombre}` : fuente;
                 };
@@ -1318,26 +1325,25 @@
             // Modal de ingreso unificado (como componente para evitar IIFEs en JSX)
             const ModalIngreso = () => {
                 const sec = form.seccionIngreso;
+                const principal = estado.monedaPrincipal || 'MXN';
+                const secCode = sec ? sec.toUpperCase() : principal;
                 const seccionCustom = (estado.billetera.secciones || []).find(s => s.id === sec || s.id === parseInt(sec));
+                const cfg = monedaConf(secCode);
                 let titulo, placeholder, tcInfo;
-                if (sec === 'usd') {
-                    titulo = '💲 Ingreso en USD';
-                    placeholder = '100';
-                    tcInfo = `TC: 1 USD = ${convertirMoneda(1, 'USD', estado.monedaPrincipal || 'MXN').toFixed(2)} ${estado.monedaPrincipal || 'MXN'}`;
-                } else if (sec === 'ars') {
-                    titulo = '🇦🇷 Ingreso en ARS';
-                    placeholder = '50000';
-                    tcInfo = `TC: 1 ARS = ${convertirMoneda(1, 'ARS', estado.monedaPrincipal || 'MXN').toFixed(5)} ${estado.monedaPrincipal || 'MXN'}`;
-                } else if (sec === 'tanda') {
-                    titulo = '🏆 Ingreso Tanda';
-                    placeholder = '1000';
+                if (secCode === principal || !sec) {
+                    titulo = `${cfg.emoji} Ingreso ${principal}`;
+                    placeholder = '1500';
                     tcInfo = null;
+                } else if (MONEDA_CONF[secCode]) {
+                    titulo = `${cfg.emoji} Ingreso en ${secCode}`;
+                    placeholder = '0';
+                    tcInfo = `TC: 1 ${secCode} = ${convertirMoneda(1, secCode, principal).toFixed(secCode === 'ARS' || secCode === 'CLP' || secCode === 'COP' ? 5 : 2)} ${principal}`;
                 } else if (seccionCustom) {
                     titulo = `${seccionCustom.icono || '💼'} Ingreso ${seccionCustom.nombre}`;
                     placeholder = '0';
                     tcInfo = null;
                 } else {
-                    titulo = '💵 Ingreso MXN';
+                    titulo = `${cfg.emoji} Ingreso ${principal}`;
                     placeholder = '1500';
                     tcInfo = null;
                 }
@@ -1348,20 +1354,20 @@
                     const fecha = calcularFechaActual().toISOString().split('T')[0];
                     let nuevoIngreso = { dia: estado.diasAcumulados, fecha, propinas: 0, usd: 0, ars: 0, concepto: concepto || titulo };
                     let nuevaBilletera = {...estado.billetera};
-                    if (sec === 'mxn') {
+                    if (!sec || secCode === principal) {
                         nuevoIngreso.propinas = monto;
-                    } else if (sec === 'usd') {
+                    } else if (secCode === 'USD') {
                         nuevoIngreso.usd = monto;
                         nuevaBilletera.usd = nuevaBilletera.usd + monto;
-                    } else if (sec === 'ars') {
+                    } else if (secCode === 'ARS') {
                         nuevoIngreso.ars = monto;
                         nuevaBilletera.ars = nuevaBilletera.ars + monto;
-                    } else if (sec === 'tanda') {
-                        nuevaBilletera.tanda = nuevaBilletera.tanda + monto;
                     } else if (seccionCustom) {
                         nuevaBilletera.secciones = (nuevaBilletera.secciones || []).map(s =>
                             (s.id === sec || s.id === parseInt(sec)) ? {...s, monto: s.monto + monto} : s
                         );
+                    } else if (MONEDA_CONF[secCode]) {
+                        nuevaBilletera.monedas = {...(nuevaBilletera.monedas || {}), [secCode]: ((nuevaBilletera.monedas || {})[secCode] || 0) + monto};
                     }
                     setEstado({...estado, billetera: nuevaBilletera, ingresosDiarios: [...estado.ingresosDiarios, nuevoIngreso]});
                     setModal(null);
@@ -1373,7 +1379,7 @@
                             <input type="number" name="monto" step="0.01" required className="w-full px-4 py-3 border-2 rounded-xl mb-3 text-2xl" placeholder={placeholder} />
                             <input type="text" name="concepto" className="w-full px-4 py-3 border-2 rounded-xl mb-3" placeholder="Concepto (opcional)" />
                             {tcInfo && <p className="text-sm text-gray-600 mb-4">{tcInfo}</p>}
-                            {sec === 'mxn' && <p className="text-sm text-gray-600 mb-4">Costo de vida hoy: ${Math.round(costoVidaDiario)}</p>}
+                            {secCode === principal && <p className="text-sm text-gray-600 mb-4">Costo de vida hoy: ${Math.round(costoVidaDiario)}</p>}
                             <div className="flex gap-3">
                                 <button type="button" onClick={() => setModal(null)} className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">Cancelar</button>
                                 <button type="submit" className="flex-1 bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-bold">Registrar</button>
@@ -2073,10 +2079,11 @@
                             <h2 className="text-2xl font-bold mb-4">🛍️ ¿De dónde sale el dinero?</h2>
                             <div className="grid grid-cols-2 gap-3">
                                 {[
-                                    { id: 'mxn', icono: '💵', nombre: 'MXN', sub: `$${Math.round(estado.billetera.mxnFisico + estado.billetera.mxnDigital)} disp.`, color: 'from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600' },
-                                    { id: 'usd', icono: '💲', nombre: 'USD', sub: `$${Math.round(estado.billetera.usd)} disp.`, color: 'from-blue-400 to-cyan-500 hover:from-blue-500 hover:to-cyan-600' },
-                                    { id: 'ars', icono: '🇦🇷', nombre: 'ARS', sub: `${Math.round(estado.billetera.ars).toLocaleString()} disp.`, color: 'from-sky-400 to-blue-500 hover:from-sky-500 hover:to-blue-600' },
-                                    { id: 'tanda', icono: '🏆', nombre: 'Tanda', sub: `$${Math.round(estado.billetera.tanda)} disp.`, color: 'from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600' },
+                                    ...[estado.monedaPrincipal || 'MXN', ...(estado.monedasSecundarias || [])].map(code => {
+                                        const cfg = monedaConf(code);
+                                        const bal = getWalletBalance(code);
+                                        return { id: code.toLowerCase(), icono: cfg.emoji, nombre: code, sub: `${Math.round(bal).toLocaleString()} disp.`, color: cfg.grad };
+                                    }),
                                     ...(estado.billetera.secciones || []).map(s => ({
                                         id: s.id, icono: s.icono || '💼', nombre: s.nombre,
                                         sub: `${Math.round(s.monto).toLocaleString()} disp.`,
@@ -2102,13 +2109,14 @@
                         <Modal onClose={() => setModal(null)}>
                             <div className="flex items-center gap-2 mb-3">
                                 <span className="bg-gray-100 text-gray-600 text-xs font-bold px-3 py-1 rounded-full">
-                                    De: {
-                                        !form.fuente || form.fuente === 'mxn' ? '💵 MXN Disponible' :
-                                        form.fuente === 'usd' ? '💲 USD' :
-                                        form.fuente === 'ars' ? '🇦🇷 ARS' :
-                                        form.fuente === 'tanda' ? '🏆 Tanda' :
-                                        ((estado.billetera.secciones || []).find(s => s.id === form.fuente || s.id === parseInt(form.fuente)) || {nombre: String(form.fuente)}).nombre
-                                    }
+                                    De: {(() => {
+                                        const f = form.fuente;
+                                        if (!f) return `${monedaConf(estado.monedaPrincipal || 'MXN').emoji} ${estado.monedaPrincipal || 'MXN'}`;
+                                        const fCode = f.toUpperCase();
+                                        if (MONEDA_CONF[fCode]) return `${monedaConf(fCode).emoji} ${fCode}`;
+                                        const sec = (estado.billetera.secciones || []).find(s => s.id === f || s.id === parseInt(f));
+                                        return sec ? `${sec.icono || '💼'} ${sec.nombre}` : f;
+                                    })()}
                                 </span>
                             </div>
                             <h2 className="text-2xl font-bold mb-4">🛍️ Nuevo gasto</h2>
@@ -2130,16 +2138,19 @@
                                 };
 
                                 let nuevaBilletera = {...estado.billetera};
-                                if (fuente === 'usd') {
+                                const fuenteCode = fuente ? fuente.toUpperCase() : '';
+                                if (fuente === 'usd' || fuenteCode === 'USD') {
                                     nuevaBilletera.usd = nuevaBilletera.usd - monto;
-                                } else if (fuente === 'ars') {
+                                } else if (fuente === 'ars' || fuenteCode === 'ARS') {
                                     nuevaBilletera.ars = nuevaBilletera.ars - monto;
-                                } else if (fuente === 'tanda') {
-                                    nuevaBilletera.tanda = nuevaBilletera.tanda - monto;
-                                } else if (fuente !== 'mxn') {
-                                    nuevaBilletera.secciones = (nuevaBilletera.secciones || []).map(s =>
-                                        s.id === parseInt(fuente) ? {...s, monto: s.monto - monto} : s
-                                    );
+                                } else if (fuente !== 'mxn' && fuenteCode !== (estado.monedaPrincipal || 'MXN')) {
+                                    if (MONEDA_CONF[fuenteCode] && fuenteCode !== 'MXN') {
+                                        nuevaBilletera.monedas = {...(nuevaBilletera.monedas || {}), [fuenteCode]: ((nuevaBilletera.monedas || {})[fuenteCode] || 0) - monto};
+                                    } else {
+                                        nuevaBilletera.secciones = (nuevaBilletera.secciones || []).map(s =>
+                                            s.id === parseInt(fuente) ? {...s, monto: s.monto - monto} : s
+                                        );
+                                    }
                                 }
 
                                 setEstado({...estado, gastosExtras: [...estado.gastosExtras, nuevoGasto], billetera: nuevaBilletera});
