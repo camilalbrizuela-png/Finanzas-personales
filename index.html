@@ -2601,6 +2601,17 @@
                                     )}
                                 </div>
 
+                                <a href="/instalar" target="_blank" rel="noopener noreferrer"
+                                    className="block w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white p-6 rounded-2xl font-bold text-lg text-center shadow-lg transition-all mb-6">
+                                    <div className="flex items-center justify-center gap-3">
+                                        <span className="text-3xl">📱</span>
+                                        <div className="text-left">
+                                            <div>Instalar Aplicación</div>
+                                            <div className="text-xs opacity-90 font-normal">Acceso rápido desde tu pantalla</div>
+                                        </div>
+                                    </div>
+                                </a>
+
                                 <button onClick={() => {
                                     if (confirm('⚠️ ¿Estás segura? Esto borrará TODOS los datos guardados y empezarás de cero.')) {
                                         localStorage.removeItem('finanzasAppData');
