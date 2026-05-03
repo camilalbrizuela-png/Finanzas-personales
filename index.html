@@ -994,51 +994,12 @@
                                             · <strong>Total: ${Math.round(ciclo.montoAcumulado)}</strong>
                                         </p>
                                         <button onClick={() => {
-                                            const nuevaFecha = prompt(
-                                                `Nueva fecha de vencimiento para "${seleccionado.nombre}":\nFormato: AAAA-MM-DD (ej: 2026-06-01)`
-                                            );
-                                            if (!nuevaFecha) { alert('Debés ingresar una fecha de vencimiento para continuar.'); return; }
-                                            if (!/^\d{4}-\d{2}-\d{2}$/.test(nuevaFecha.trim())) { alert('Formato inválido. Usá: AAAA-MM-DD'); return; }
-
-                                            const fechaActual = calcularFechaActual().toISOString().split('T')[0];
-                                            const maxId = estado.gastosExtras.length > 0 ? Math.max(...estado.gastosExtras.map(g => g.id)) : 0;
-                                            let nuevoEstado = {...estado};
-
-                                            // Sueldo asignado → ingreso para que sume al disponible
-                                            if (ciclo.montoSueldoAsignado > 0) {
-                                                nuevoEstado.ingresosDiarios = [...estado.ingresosDiarios, {
-                                                    dia: estado.diasAcumulados,
-                                                    fecha: fechaActual,
-                                                    propinas: ciclo.montoSueldoAsignado,
-                                                    usd: 0,
-                                                    ars: 0,
-                                                    concepto: `Sueldo asignado a ${seleccionado.nombre}`
-                                                }];
-                                            }
-
-                                            // Reiniciar gasto fijo con nueva fecha de vencimiento
-                                            nuevoEstado.gastosFijos = estado.gastosFijos.map(g =>
-                                                g.id === seleccionado.id
-                                                    ? {...g, diaInicioCiclo: estado.diasAcumulados, montoSueldoAsignado: 0, vencimiento: nuevaFecha.trim()}
-                                                    : g
-                                            );
-
-                                            // Gasto del ciclo completo (descuenta del disponible)
-                                            let montoTotalMXN = seleccionado.monto;
-                                            if (seleccionado.moneda && seleccionado.moneda !== (estado.monedaPrincipal || 'MXN')) {
-                                                montoTotalMXN = convertirMoneda(seleccionado.monto, seleccionado.moneda, estado.monedaPrincipal || 'MXN');
-                                            }
-                                            nuevoEstado.gastosExtras = [...(nuevoEstado.gastosExtras || estado.gastosExtras), {
-                                                id: maxId + 1,
-                                                fecha: fechaActual,
-                                                concepto: `${seleccionado.nombre} (ciclo completo)`,
-                                                monto: Math.round(montoTotalMXN),
-                                                categoria: 'Gasto Fijo',
-                                                fuente: 'mxn'
-                                            }];
-
-                                            setEstado(nuevoEstado);
-                                            setVista('dashboard');
+                                            setForm({
+                                                gastoId: seleccionado.id,
+                                                gastoNombre: seleccionado.nombre,
+                                                cicloCompleto: ciclo
+                                            });
+                                            setModal('confirmarCiclo');
                                         }} className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-bold">Confirmar y reiniciar</button>
                                     </div>
                                 )}
@@ -2811,6 +2772,78 @@
                                 <div className="flex gap-3">
                                     <button type="button" onClick={() => setModal(null)} className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">Cancelar</button>
                                     <button type="submit" className={`flex-1 ${t.btn} text-white px-6 py-3 rounded-xl font-bold`}>Guardar</button>
+                                </div>
+                            </form>
+                        </Modal>
+                    )}
+                    {modal === 'confirmarCiclo' && (
+                        <Modal onClose={() => setModal(null)}>
+                            <h2 className="text-2xl font-bold mb-4">✅ Ciclo Completo</h2>
+                            <p className="text-gray-600 mb-4">
+                                El ciclo de <strong>{form.gastoNombre}</strong> está completo.
+                            </p>
+                            <div className="bg-green-100 border-l-4 border-green-500 p-4 mb-6 rounded">
+                                <p className="text-green-800 font-bold text-sm mb-1">💵 Propinas: ${Math.round(form.cicloCompleto?.montoAcumuladoPropinas || 0)}</p>
+                                <p className="text-green-800 font-bold text-sm mb-1">💰 Sueldo: ${Math.round(form.cicloCompleto?.montoSueldoAsignado || 0)}</p>
+                                <p className="text-green-800 font-bold text-lg">Total: ${Math.round(form.cicloCompleto?.montoAcumulado || 0)}</p>
+                            </div>
+                            <form onSubmit={(e) => {
+                                e.preventDefault();
+                                const nuevaFecha = e.target.nuevaFecha.value;
+                                if (!nuevaFecha) { alert('Debés seleccionar una fecha de vencimiento.'); return; }
+                                const fechaActual = calcularFechaActual().toISOString().split('T')[0];
+                                const maxId = estado.gastosExtras.length > 0 ? Math.max(...estado.gastosExtras.map(g => g.id)) : 0;
+                                let nuevoEstado = {...estado};
+                                if ((form.cicloCompleto?.montoSueldoAsignado || 0) > 0) {
+                                    nuevoEstado.ingresosDiarios = [...estado.ingresosDiarios, {
+                                        dia: estado.diasAcumulados,
+                                        fecha: fechaActual,
+                                        propinas: form.cicloCompleto.montoSueldoAsignado,
+                                        usd: 0, ars: 0,
+                                        concepto: `Sueldo asignado a ${form.gastoNombre}`
+                                    }];
+                                }
+                                nuevoEstado.gastosFijos = estado.gastosFijos.map(g =>
+                                    g.id === form.gastoId
+                                        ? {...g, diaInicioCiclo: estado.diasAcumulados, montoSueldoAsignado: 0, vencimiento: nuevaFecha}
+                                        : g
+                                );
+                                const gastoSeleccionado = estado.gastosFijos.find(g => g.id === form.gastoId);
+                                let montoTotalMXN = gastoSeleccionado.monto;
+                                if (gastoSeleccionado.moneda && gastoSeleccionado.moneda !== (estado.monedaPrincipal || 'MXN')) {
+                                    montoTotalMXN = convertirMoneda(gastoSeleccionado.monto, gastoSeleccionado.moneda, estado.monedaPrincipal || 'MXN');
+                                }
+                                nuevoEstado.gastosExtras = [...(nuevoEstado.gastosExtras || estado.gastosExtras), {
+                                    id: maxId + 1,
+                                    fecha: fechaActual,
+                                    concepto: `${form.gastoNombre} (ciclo completo)`,
+                                    monto: Math.round(montoTotalMXN),
+                                    categoria: 'Gasto Fijo',
+                                    fuente: 'mxn'
+                                }];
+                                setEstado(nuevoEstado);
+                                setModal(null);
+                                setVista('dashboard');
+                            }}>
+                                <div className="mb-6">
+                                    <label className="block text-gray-700 font-bold mb-2">📅 Nueva fecha de vencimiento</label>
+                                    <input type="date" name="nuevaFecha" required
+                                        className="w-full px-4 py-3 border-2 rounded-xl focus:border-purple-500 outline-none" />
+                                </div>
+                                <div className="flex gap-3">
+                                    <button type="button" onClick={() => {
+                                        if (confirm(`¿Estás segura de que querés ELIMINAR "${form.gastoNombre}"?\n\nEsta acción no se puede deshacer.`)) {
+                                            setEstado({...estado, gastosFijos: estado.gastosFijos.filter(g => g.id !== form.gastoId)});
+                                            setModal(null);
+                                            setVista('dashboard');
+                                        }
+                                    }} className="flex-1 bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl font-bold">
+                                        🗑️ Eliminar Gasto
+                                    </button>
+                                    <button type="submit"
+                                        className="flex-1 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-bold">
+                                        ✅ Reiniciar Ciclo
+                                    </button>
                                 </div>
                             </form>
                         </Modal>
