@@ -629,7 +629,7 @@
                                 <div className="flex gap-2">
                                     <button onClick={() => {
                                         const monedasActuales = (estado.monedasSecundarias || []).length;
-                                        const limite = estado.isPremium ? 999 : 3;
+                                        const limite = estado.isPremium ? 999 : 2;
                                         if (monedasActuales >= limite) {
                                             setForm({ razon: 'monedas', actual: monedasActuales, limite });
                                             setModal('upgradePremium');
@@ -927,8 +927,9 @@
                                 <h2 className="text-xl font-bold text-gray-800 mb-4">📋 Historial de gastos</h2>
 
                                 <div className="bg-red-100 rounded-xl p-4 mb-4">
-                                    <p className="text-sm text-gray-600">Total descontado de MXN</p>
+                                    <p className="text-sm text-gray-600">Total de gastos</p>
                                     <p className="text-3xl font-bold text-red-700">${Math.round(totalGastosMXN)}</p>
+                                    <p className="text-xs text-gray-500 mt-1">En {estado.monedaPrincipal || 'MXN'}</p>
                                 </div>
 
                                 {estado.gastosExtras.length === 0 ? (
@@ -2443,24 +2444,37 @@
                                 </div>
                                 <div className="mb-6">
                                     <h3 className="text-lg font-bold mb-3">💱 Tipos de Cambio</h3>
-                                    {Object.keys(estado.tiposCambio || {}).length === 0 ? (
+                                    {(estado.monedasSecundarias || []).length === 0 ? (
                                         <p className="text-sm text-gray-500 bg-gray-50 rounded-xl p-3">No hay monedas secundarias configuradas.</p>
                                     ) : (
                                         <div className="space-y-3">
-                                            {Object.entries(estado.tiposCambio || {}).map(([code, tc]) => {
+                                            {(estado.monedasSecundarias || []).map(moneda => {
+                                                const tc = (estado.tiposCambio || {})[moneda];
+                                                if (!tc) return null;
                                                 const principal = estado.monedaPrincipal || 'MXN';
-                                                const base = (tc.monedaBase) || (tc.direccion || '').split('_TO_')[0];
-                                                const label = base === code ? `1 ${code} = ? ${principal}` : `1 ${principal} = ? ${code}`;
+                                                const base = tc.monedaBase || (tc.direccion || '').split('_TO_')[0];
+                                                const textoTC = base === moneda
+                                                    ? `1 ${moneda} = ${tc.valor} ${principal}`
+                                                    : `1 ${principal} = ${tc.valor} ${moneda}`;
                                                 return (
-                                                    <div key={code} className="bg-gray-50 rounded-xl p-3">
-                                                        <label className="block text-sm font-bold text-gray-700 mb-1">{label}</label>
-                                                        <input type="number" step="any"
-                                                            value={tc.valor}
-                                                            onChange={(e) => setEstado({...estado, tiposCambio: {
-                                                                ...estado.tiposCambio,
-                                                                [code]: {...tc, valor: parseFloat(e.target.value) || 0}
-                                                            }})}
-                                                            className="w-full px-3 py-2 border-2 rounded-xl text-sm" />
+                                                    <div key={moneda} className="bg-gray-50 rounded-xl p-4 flex justify-between items-center">
+                                                        <div>
+                                                            <p className="font-bold text-gray-800">{monedaConf(moneda).emoji} {moneda}</p>
+                                                            <p className="text-sm text-gray-600">{textoTC}</p>
+                                                        </div>
+                                                        <div className="flex gap-2">
+                                                            <button type="button" onClick={() => {
+                                                                setForm({ moneda, valor: tc.valor, direccion: base === moneda ? `${moneda}_TO_${principal}` : `${principal}_TO_${moneda}` });
+                                                                setModal('editarMoneda');
+                                                            }} className="text-blue-600 hover:text-blue-800 font-bold text-sm">✏️ Editar</button>
+                                                            <button type="button" onClick={() => {
+                                                                if (confirm(`¿Eliminar ${moneda}?\n\nSe eliminará de tus monedas secundarias.`)) {
+                                                                    const nuevosTCs = {...estado.tiposCambio};
+                                                                    delete nuevosTCs[moneda];
+                                                                    setEstado({...estado, monedasSecundarias: estado.monedasSecundarias.filter(m => m !== moneda), tiposCambio: nuevosTCs});
+                                                                }
+                                                            }} className="text-red-600 hover:text-red-800 font-bold text-sm">🗑️</button>
+                                                        </div>
                                                     </div>
                                                 );
                                             })}
@@ -2903,7 +2917,7 @@
                             <p className="text-gray-600 mb-4">Seleccioná una moneda adicional para gestionar en tu billetera.</p>
                             {!estado.isPremium && (
                                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4 text-sm">
-                                    <p className="text-blue-800">ℹ️ Versión Basic: hasta 3 monedas secundarias</p>
+                                    <p className="text-blue-800">ℹ️ Versión Basic: hasta 2 monedas secundarias</p>
                                 </div>
                             )}
                             <form onSubmit={(e) => {
@@ -2956,6 +2970,42 @@
                                 <div className="flex gap-3">
                                     <button type="button" onClick={() => setModal(null)} className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">Cancelar</button>
                                     <button type="submit" className="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-xl font-bold">Agregar</button>
+                                </div>
+                            </form>
+                        </Modal>
+                    )}
+                    {modal === 'editarMoneda' && (
+                        <Modal onClose={() => setModal(null)}>
+                            <h2 className="text-2xl font-bold mb-2">✏️ Editar Tipo de Cambio</h2>
+                            <p className="text-gray-600 mb-4">Modificá el tipo de cambio de <strong>{form.moneda}</strong></p>
+                            <form onSubmit={(e) => {
+                                e.preventDefault();
+                                const nuevaDireccion = e.target.direccion.value;
+                                const nuevoValor = parseFloat(e.target.valor.value);
+                                if (!nuevoValor || nuevoValor <= 0) { alert('Ingresá un valor válido.'); return; }
+                                const [base, dest] = nuevaDireccion.split('_TO_');
+                                setEstado({...estado, tiposCambio: {
+                                    ...estado.tiposCambio,
+                                    [form.moneda]: { direccion: nuevaDireccion, valor: nuevoValor, monedaBase: base, monedaDestino: dest }
+                                }});
+                                setModal(null);
+                            }}>
+                                <div className="space-y-4 mb-6">
+                                    <div>
+                                        <label className="block text-gray-700 font-bold mb-2">Dirección del tipo de cambio</label>
+                                        <select name="direccion" defaultValue={form.direccion} className="w-full px-4 py-3 border-2 rounded-xl">
+                                            <option value={`${estado.monedaPrincipal || 'MXN'}_TO_${form.moneda}`}>1 {estado.monedaPrincipal || 'MXN'} = ___ {form.moneda}</option>
+                                            <option value={`${form.moneda}_TO_${estado.monedaPrincipal || 'MXN'}`}>1 {form.moneda} = ___ {estado.monedaPrincipal || 'MXN'}</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-gray-700 font-bold mb-2">Tipo de cambio</label>
+                                        <input type="number" step="0.000001" name="valor" defaultValue={form.valor} required className="w-full px-4 py-3 border-2 rounded-xl" />
+                                    </div>
+                                </div>
+                                <div className="flex gap-3">
+                                    <button type="button" onClick={() => setModal(null)} className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">Cancelar</button>
+                                    <button type="submit" className="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-xl font-bold">Guardar</button>
                                 </div>
                             </form>
                         </Modal>
