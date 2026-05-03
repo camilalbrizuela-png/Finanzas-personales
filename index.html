@@ -765,20 +765,30 @@
                             <div className="bg-white rounded-3xl shadow-2xl p-6">
                                 <h2 className="text-xl font-bold text-gray-800 mb-4">📋 Historial</h2>
 
-                                <div className="grid grid-cols-3 gap-3 mb-6">
-                                    <div className="bg-green-100 rounded-xl p-3">
-                                        <p className="text-xs text-gray-600">{monedaConf(estado.monedaPrincipal || 'MXN').emoji} Total {estado.monedaPrincipal || 'MXN'}</p>
-                                        <p className="text-2xl font-bold text-green-700">${Math.round(totalPropinas)}</p>
-                                    </div>
-                                    <div className="bg-blue-100 rounded-xl p-3">
-                                        <p className="text-xs text-gray-600">💲 Total USD</p>
-                                        <p className="text-2xl font-bold text-blue-700">${Math.round(totalUSD)}</p>
-                                    </div>
-                                    <div className="bg-sky-100 rounded-xl p-3">
-                                        <p className="text-xs text-gray-600">🇦🇷 Total ARS</p>
-                                        <p className="text-2xl font-bold text-sky-700">${Math.round(totalARS).toLocaleString()}</p>
-                                    </div>
-                                </div>
+                                {(() => {
+                                    const principal = estado.monedaPrincipal || 'MXN';
+                                    const secundarias = estado.monedasSecundarias || [];
+                                    const bgMap = { MXN: 'bg-green-100', USD: 'bg-blue-100', ARS: 'bg-sky-100', EUR: 'bg-indigo-100', GBP: 'bg-rose-100', CAD: 'bg-red-100', COP: 'bg-yellow-100', BRL: 'bg-lime-100', CLP: 'bg-orange-100' };
+                                    const tcMap = { MXN: 'text-green-700', USD: 'text-blue-700', ARS: 'text-sky-700', EUR: 'text-indigo-700', GBP: 'text-rose-700', CAD: 'text-red-700', COP: 'text-yellow-700', BRL: 'text-lime-700', CLP: 'text-orange-700' };
+                                    const getTotal = (code) => {
+                                        if (code === principal) return totalPropinas;
+                                        if (code === 'USD') return totalUSD;
+                                        if (code === 'ARS') return totalARS;
+                                        return estado.ingresosDiarios.reduce((sum, ing) => sum + (ing[code.toLowerCase()] || 0), 0);
+                                    };
+                                    const monedas = [principal, ...secundarias];
+                                    const cols = monedas.length === 1 ? 'grid-cols-1' : monedas.length === 2 ? 'grid-cols-2' : 'grid-cols-3';
+                                    return (
+                                        <div className={`grid ${cols} gap-3 mb-6`}>
+                                            {monedas.map(code => (
+                                                <div key={code} className={`${bgMap[code] || 'bg-gray-100'} rounded-xl p-3`}>
+                                                    <p className="text-xs text-gray-600">{monedaConf(code).emoji} Total {code}</p>
+                                                    <p className={`text-2xl font-bold ${tcMap[code] || 'text-gray-700'}`}>{Math.round(getTotal(code)).toLocaleString()}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    );
+                                })()}
 
                                 {estado.ingresosDiarios.length === 0 ? (
                                     <div className="text-center py-12 text-gray-500">
