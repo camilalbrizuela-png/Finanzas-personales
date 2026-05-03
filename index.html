@@ -687,15 +687,16 @@
                                     {/* Monedas Secundarias */}
                                     {(estado.monedasSecundarias || []).map(code => {
                                         const valor = walletValues[code] !== undefined ? walletValues[code] : 0;
-                                        const canEdit = walletTypes[code] !== undefined;
                                         return (
                                             <div key={code} className={`bg-gradient-to-br ${bg(code)} rounded-2xl p-6`}>
                                                 <div className="flex justify-between items-center mb-2">
                                                     <p className="text-gray-700 font-bold">{code}</p>
-                                                    {canEdit && (
-                                                        <button onClick={() => { setForm({tipo: walletTypes[code], valor}); setModal('editarBilletera'); }}
-                                                            className="text-blue-600 hover:text-blue-800">✏️</button>
-                                                    )}
+                                                    <button onClick={() => {
+                                                        walletTypes[code]
+                                                            ? setForm({tipo: walletTypes[code], valor})
+                                                            : setForm({monedaCode: code, valor});
+                                                        setModal('editarBilletera');
+                                                    }} className="text-blue-600 hover:text-blue-800">✏️</button>
                                                 </div>
                                                 <p className={`text-4xl font-bold ${tc(code)}`}>{Math.round(valor).toLocaleString()}</p>
                                                 <p className="text-sm text-gray-600 mt-2">≈ {Math.round(convertirMoneda(valor, code, principal)).toLocaleString()} {principal}</p>
@@ -2646,7 +2647,11 @@
                             <form onSubmit={(e) => {
                                 e.preventDefault();
                                 const nuevoValor = parseFloat(e.target.valor.value);
-                                setEstado({...estado, billetera: {...estado.billetera, [form.tipo]: nuevoValor}});
+                                if (form.monedaCode) {
+                                    setEstado({...estado, billetera: {...estado.billetera, monedas: {...(estado.billetera.monedas || {}), [form.monedaCode]: nuevoValor}}});
+                                } else {
+                                    setEstado({...estado, billetera: {...estado.billetera, [form.tipo]: nuevoValor}});
+                                }
                                 setModal(null);
                             }}>
                                 <input type="number" step="0.01" name="valor" defaultValue={form.valor} required className="w-full px-4 py-3 border-2 rounded-xl text-2xl mb-4" />
