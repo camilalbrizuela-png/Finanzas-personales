@@ -2791,6 +2791,8 @@
                                 e.preventDefault();
                                 const nuevaFecha = e.target.nuevaFecha.value;
                                 if (!nuevaFecha) { alert('Debés seleccionar una fecha de vencimiento.'); return; }
+                                const fechaHoy = calcularFechaActual().toISOString().split('T')[0];
+                                if (nuevaFecha <= fechaHoy) { alert('La fecha de vencimiento debe ser posterior al día de hoy.'); return; }
                                 const fechaActual = calcularFechaActual().toISOString().split('T')[0];
                                 const maxId = estado.gastosExtras.length > 0 ? Math.max(...estado.gastosExtras.map(g => g.id)) : 0;
                                 let nuevoEstado = {...estado};
@@ -2828,6 +2830,7 @@
                                 <div className="mb-6">
                                     <label className="block text-gray-700 font-bold mb-2">📅 Nueva fecha de vencimiento</label>
                                     <input type="date" name="nuevaFecha" required
+                                        min={(() => { const m = new Date(calcularFechaActual()); m.setDate(m.getDate() + 1); return m.toISOString().split('T')[0]; })()}
                                         className="w-full px-4 py-3 border-2 rounded-xl focus:border-purple-500 outline-none" />
                                 </div>
                                 <div className="flex gap-3">
