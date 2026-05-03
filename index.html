@@ -1001,17 +1001,19 @@
                                                     g.id === seleccionado.id ? {...g, diaInicioCiclo: estado.diasAcumulados, montoSueldoAsignado: 0} : g
                                                 )
                                             };
-                                            // Registrar la parte de sueldo como gasto en el historial
-                                            if (ciclo.montoSueldoAsignado > 0) {
-                                                nuevoEstado.gastosExtras = [...estado.gastosExtras, {
-                                                    id: maxId + 1,
-                                                    fecha: fechaActual,
-                                                    concepto: `${seleccionado.nombre} (salario asignado)`,
-                                                    monto: Math.round(ciclo.montoSueldoAsignado),
-                                                    categoria: 'Gasto Fijo',
-                                                    fuente: 'sueldo'
-                                                }];
+                                            // Registrar el ciclo completo como gasto
+                                            let montoTotalMXN = seleccionado.monto;
+                                            if (seleccionado.moneda && seleccionado.moneda !== (estado.monedaPrincipal || 'MXN')) {
+                                                montoTotalMXN = convertirMoneda(seleccionado.monto, seleccionado.moneda, estado.monedaPrincipal || 'MXN');
                                             }
+                                            nuevoEstado.gastosExtras = [...estado.gastosExtras, {
+                                                id: maxId + 1,
+                                                fecha: fechaActual,
+                                                concepto: `${seleccionado.nombre} (ciclo completo)`,
+                                                monto: Math.round(montoTotalMXN),
+                                                categoria: 'Gasto Fijo',
+                                                fuente: 'ciclo_completo'
+                                            }];
                                             setEstado(nuevoEstado);
                                             setVista('dashboard');
                                         }} className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-bold">Confirmar y reiniciar</button>
