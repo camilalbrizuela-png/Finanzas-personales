@@ -927,40 +927,43 @@
                             <div className="bg-white rounded-3xl shadow-2xl p-6">
                                 <h2 className="text-xl font-bold text-gray-800 mb-4">📋 Historial de gastos</h2>
 
-                                <div className="space-y-3 mb-6">
-                                    <div className="bg-red-100 rounded-xl p-4">
-                                        <p className="text-sm text-gray-600">{monedaConf(estado.monedaPrincipal || 'MXN').emoji} Total en {estado.monedaPrincipal || 'MXN'}</p>
-                                        <p className="text-3xl font-bold text-red-700">${Math.round(estado.gastosExtras.filter(g => !g.fuente || g.fuente === 'mxn' || g.fuente === (estado.monedaPrincipal || 'MXN').toLowerCase()).reduce((sum, g) => sum + g.monto, 0)).toLocaleString()}</p>
-                                    </div>
-                                    {(estado.monedasSecundarias || []).map(moneda => {
-                                        const total = estado.gastosExtras.filter(g => g.fuente === moneda.toLowerCase()).reduce((sum, g) => sum + g.monto, 0);
-                                        if (total === 0) return null;
-                                        return (
-                                            <div key={moneda} className="bg-red-100 rounded-xl p-4">
-                                                <p className="text-sm text-gray-600">{monedaConf(moneda).emoji} Total en {moneda}</p>
-                                                <p className="text-3xl font-bold text-red-700">{Math.round(total).toLocaleString()}</p>
-                                                <p className="text-xs text-gray-500 mt-1">≈ ${Math.round(convertirMoneda(total, moneda, estado.monedaPrincipal || 'MXN')).toLocaleString()} {estado.monedaPrincipal || 'MXN'}</p>
+                                {(() => {
+                                    const principal = estado.monedaPrincipal || 'MXN';
+                                    const totalPrincipal = estado.gastosExtras.filter(g => !g.fuente || g.fuente === 'mxn' || g.fuente === principal.toLowerCase()).reduce((sum, g) => sum + g.monto, 0);
+                                    const secundariasConGastos = (estado.monedasSecundarias || []).filter(m => estado.gastosExtras.some(g => g.fuente === m.toLowerCase()));
+                                    const seccionesConGastos = (estado.billetera.secciones || []).filter(s => estado.gastosExtras.some(g => g.fuente === s.id));
+                                    const items = [principal, ...secundariasConGastos, ...seccionesConGastos.map(s => `sec_${s.id}`)];
+                                    const cols = items.length === 1 ? 'grid-cols-1' : items.length === 2 ? 'grid-cols-2' : 'grid-cols-3';
+                                    return (
+                                        <div className={`grid ${cols} gap-3 mb-6`}>
+                                            <div className="bg-red-100 rounded-xl p-3">
+                                                <p className="text-xs text-gray-600">{monedaConf(principal).emoji} Total {principal}</p>
+                                                <p className="text-2xl font-bold text-red-700">${Math.round(totalPrincipal).toLocaleString()}</p>
                                             </div>
-                                        );
-                                    })}
-                                    {(estado.billetera.secciones || []).map(seccion => {
-                                        const total = estado.gastosExtras.filter(g => g.fuente === seccion.id).reduce((sum, g) => sum + g.monto, 0);
-                                        if (total === 0) return null;
-                                        const principal = estado.monedaPrincipal || 'MXN';
-                                        const esOtraMoneda = seccion.moneda && seccion.moneda !== principal;
-                                        return (
-                                            <div key={seccion.id} className="bg-red-100 rounded-xl p-4">
-                                                <p className="text-sm text-gray-600">Total desde {seccion.icono || '💼'} {seccion.nombre}</p>
-                                                <p className="text-3xl font-bold text-red-700">{esOtraMoneda ? `${seccion.moneda} ` : '$'}{Math.round(total).toLocaleString()}</p>
-                                                {esOtraMoneda && <p className="text-xs text-gray-500 mt-1">≈ ${Math.round(convertirMoneda(total, seccion.moneda, principal)).toLocaleString()} {principal}</p>}
-                                            </div>
-                                        );
-                                    })}
-                                    <div className="bg-red-200 rounded-xl p-4 border-2 border-red-300">
-                                        <p className="text-sm text-gray-700 font-bold">Total general (en {estado.monedaPrincipal || 'MXN'})</p>
-                                        <p className="text-4xl font-bold text-red-800">${Math.round(totalGastosMXN).toLocaleString()}</p>
-                                    </div>
-                                </div>
+                                            {secundariasConGastos.map(moneda => {
+                                                const total = estado.gastosExtras.filter(g => g.fuente === moneda.toLowerCase()).reduce((sum, g) => sum + g.monto, 0);
+                                                return (
+                                                    <div key={moneda} className="bg-red-100 rounded-xl p-3">
+                                                        <p className="text-xs text-gray-600">{monedaConf(moneda).emoji} Total {moneda}</p>
+                                                        <p className="text-2xl font-bold text-red-700">{Math.round(total).toLocaleString()}</p>
+                                                        <p className="text-xs text-gray-500 mt-1">≈ ${Math.round(convertirMoneda(total, moneda, principal)).toLocaleString()} {principal}</p>
+                                                    </div>
+                                                );
+                                            })}
+                                            {seccionesConGastos.map(seccion => {
+                                                const total = estado.gastosExtras.filter(g => g.fuente === seccion.id).reduce((sum, g) => sum + g.monto, 0);
+                                                const esOtraMoneda = seccion.moneda && seccion.moneda !== principal;
+                                                return (
+                                                    <div key={seccion.id} className="bg-red-100 rounded-xl p-3">
+                                                        <p className="text-xs text-gray-600">{seccion.icono || '💼'} {seccion.nombre}</p>
+                                                        <p className="text-2xl font-bold text-red-700">{esOtraMoneda ? `${seccion.moneda} ` : '$'}{Math.round(total).toLocaleString()}</p>
+                                                        {esOtraMoneda && <p className="text-xs text-gray-500 mt-1">≈ ${Math.round(convertirMoneda(total, seccion.moneda, principal)).toLocaleString()} {principal}</p>}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    );
+                                })()}
 
                                 {estado.gastosExtras.length === 0 ? (
                                     <div className="text-center py-12 text-gray-500">
