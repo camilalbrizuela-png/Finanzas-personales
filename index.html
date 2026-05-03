@@ -626,18 +626,31 @@
                         <div className="bg-white rounded-3xl shadow-2xl p-8 mb-6">
                             <div className="flex justify-between items-center mb-6">
                                 <h1 className="text-3xl font-bold text-gray-800">💰 Mi Billetera</h1>
-                                <button onClick={() => {
-                                    if ((estado.billetera.secciones || []).length >= LIMITES.secciones) {
-                                        setForm({ razon: 'secciones', actual: (estado.billetera.secciones || []).length, limite: LIMITES.secciones });
-                                        setModal('upgradePremium');
-                                        return;
-                                    }
-                                    setForm({nombre: '', monto: '', icono: ''});
-                                    setModal('nuevaSeccion');
-                                }}
-                                    className={`${t.btn} text-white px-4 py-2 rounded-xl font-bold text-sm`}>
-                                    ➕ Sección
-                                </button>
+                                <div className="flex gap-2">
+                                    <button onClick={() => {
+                                        const monedasActuales = (estado.monedasSecundarias || []).length;
+                                        const limite = estado.isPremium ? 999 : 3;
+                                        if (monedasActuales >= limite) {
+                                            setForm({ razon: 'monedas', actual: monedasActuales, limite });
+                                            setModal('upgradePremium');
+                                            return;
+                                        }
+                                        setModal('agregarMoneda');
+                                    }} className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-xl font-bold text-sm">
+                                        💱 Moneda
+                                    </button>
+                                    <button onClick={() => {
+                                        if ((estado.billetera.secciones || []).length >= LIMITES.secciones) {
+                                            setForm({ razon: 'secciones', actual: (estado.billetera.secciones || []).length, limite: LIMITES.secciones });
+                                            setModal('upgradePremium');
+                                            return;
+                                        }
+                                        setForm({nombre: '', monto: '', icono: ''});
+                                        setModal('nuevaSeccion');
+                                    }} className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl font-bold text-sm">
+                                        ➕ Sección
+                                    </button>
+                                </div>
                             </div>
 
                             {(() => {
@@ -705,7 +718,16 @@
                                                 }} className="text-red-500 hover:text-red-700">🗑️</button>
                                             </div>
                                         </div>
-                                        <p className="text-4xl font-bold text-gray-700">{Math.round(seccion.monto).toLocaleString()}</p>
+                                        <p className="text-4xl font-bold text-gray-700">
+                                            {seccion.moneda && seccion.moneda !== (estado.monedaPrincipal || 'MXN')
+                                                ? `${seccion.moneda} ${Math.round(seccion.monto).toLocaleString()}`
+                                                : `$${Math.round(seccion.monto).toLocaleString()}`}
+                                        </p>
+                                        {seccion.moneda && seccion.moneda !== (estado.monedaPrincipal || 'MXN') && (
+                                            <p className="text-xs text-gray-500 mt-1">
+                                                ≈ ${Math.round(convertirMoneda(seccion.monto, seccion.moneda, estado.monedaPrincipal || 'MXN')).toLocaleString()} {estado.monedaPrincipal || 'MXN'}
+                                            </p>
+                                        )}
                                     </div>
                                 ))}
                                 </div>
@@ -2635,7 +2657,8 @@
                                     id: maxId + 1,
                                     nombre: f.nombre.value,
                                     monto: parseFloat(f.monto.value) || 0,
-                                    icono: f.icono.value || '💼'
+                                    icono: f.icono.value || '💼',
+                                    moneda: f.moneda.value
                                 };
                                 setEstado({...estado, billetera: {...estado.billetera, secciones: [...secciones, nuevaSeccion]}});
                                 setModal(null);
@@ -2648,6 +2671,15 @@
                                     <div>
                                         <label className="block text-gray-700 font-bold mb-2">Nombre</label>
                                         <input type="text" name="nombre" required placeholder="Ej: Ahorros, Cuenta digital" className="w-full px-4 py-3 border-2 rounded-xl" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-gray-700 font-bold mb-2">Moneda</label>
+                                        <select name="moneda" className="w-full px-4 py-3 border-2 rounded-xl">
+                                            <option value={estado.monedaPrincipal || 'MXN'}>{estado.monedaPrincipal || 'MXN'}</option>
+                                            {(estado.monedasSecundarias || []).map(m => (
+                                                <option key={m} value={m}>{m}</option>
+                                            ))}
+                                        </select>
                                     </div>
                                     <div>
                                         <label className="block text-gray-700 font-bold mb-2">Monto inicial</label>
@@ -2861,6 +2893,69 @@
                                         className="flex-1 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-bold">
                                         ✅ Reiniciar Ciclo
                                     </button>
+                                </div>
+                            </form>
+                        </Modal>
+                    )}
+                    {modal === 'agregarMoneda' && (
+                        <Modal onClose={() => setModal(null)}>
+                            <h2 className="text-2xl font-bold mb-2">💱 Agregar Nueva Moneda</h2>
+                            <p className="text-gray-600 mb-4">Seleccioná una moneda adicional para gestionar en tu billetera.</p>
+                            {!estado.isPremium && (
+                                <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4 text-sm">
+                                    <p className="text-blue-800">ℹ️ Versión Basic: hasta 3 monedas secundarias</p>
+                                </div>
+                            )}
+                            <form onSubmit={(e) => {
+                                e.preventDefault();
+                                const f = e.target;
+                                const nuevaMoneda = f.moneda.value;
+                                const tipoCambio = parseFloat(f.tipoCambio.value);
+                                const direccion = f.direccion.value;
+                                const principal = estado.monedaPrincipal || 'MXN';
+                                if (!nuevaMoneda) { alert('Seleccioná una moneda.'); return; }
+                                if (nuevaMoneda === principal) { alert('Esta moneda ya es tu moneda principal.'); return; }
+                                if ((estado.monedasSecundarias || []).includes(nuevaMoneda)) { alert('Esta moneda ya está agregada.'); return; }
+                                if (!tipoCambio || tipoCambio <= 0) { alert('Ingresá un tipo de cambio válido.'); return; }
+                                const monedaBase = direccion === `${principal}_TO_${nuevaMoneda}` ? principal : nuevaMoneda;
+                                setEstado({
+                                    ...estado,
+                                    monedasSecundarias: [...(estado.monedasSecundarias || []), nuevaMoneda],
+                                    tiposCambio: {
+                                        ...estado.tiposCambio,
+                                        [nuevaMoneda]: { direccion, valor: tipoCambio, monedaBase }
+                                    },
+                                    billetera: { ...estado.billetera, monedas: { ...(estado.billetera.monedas || {}), [nuevaMoneda]: 0 } }
+                                });
+                                setModal(null);
+                            }}>
+                                <div className="space-y-4 mb-6">
+                                    <div>
+                                        <label className="block text-gray-700 font-bold mb-2">Moneda</label>
+                                        <select name="moneda" required className="w-full px-4 py-3 border-2 rounded-xl">
+                                            <option value="">Seleccioná una moneda</option>
+                                            {[{c:'USD',l:'💵 USD - Dólar Estadounidense'},{c:'EUR',l:'🇪🇺 EUR - Euro'},{c:'GBP',l:'🇬🇧 GBP - Libra Esterlina'},
+                                              {c:'ARS',l:'🇦🇷 ARS - Peso Argentino'},{c:'BRL',l:'🇧🇷 BRL - Real Brasileño'},{c:'COP',l:'🇨🇴 COP - Peso Colombiano'},
+                                              {c:'CLP',l:'🇨🇱 CLP - Peso Chileno'},{c:'CAD',l:'🍁 CAD - Dólar Canadiense'}
+                                            ].filter(({c}) => c !== (estado.monedaPrincipal || 'MXN') && !(estado.monedasSecundarias || []).includes(c))
+                                             .map(({c,l}) => <option key={c} value={c}>{l}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-gray-700 font-bold mb-2">Dirección del tipo de cambio</label>
+                                        <select name="direccion" className="w-full px-4 py-3 border-2 rounded-xl">
+                                            <option value={`NUEVA_TO_${estado.monedaPrincipal || 'MXN'}`}>1 [moneda nueva] = ___ {estado.monedaPrincipal || 'MXN'}</option>
+                                            <option value={`${estado.monedaPrincipal || 'MXN'}_TO_NUEVA`}>1 {estado.monedaPrincipal || 'MXN'} = ___ [moneda nueva]</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-gray-700 font-bold mb-2">Tipo de cambio</label>
+                                        <input type="number" step="0.000001" name="tipoCambio" required placeholder="17.16" className="w-full px-4 py-3 border-2 rounded-xl" />
+                                    </div>
+                                </div>
+                                <div className="flex gap-3">
+                                    <button type="button" onClick={() => setModal(null)} className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">Cancelar</button>
+                                    <button type="submit" className="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-xl font-bold">Agregar</button>
                                 </div>
                             </form>
                         </Modal>
