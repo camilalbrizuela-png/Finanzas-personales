@@ -1941,11 +1941,36 @@
                                         <p>💡 Ajusta los tipos de cambio en Config cuando cambien</p>
                                     </div>
                                 </div>
-                                <button onClick={() => { finalizarTutorial(); setTimeout(() => setModal('activarPremium'), 300); }}
+                                <div className="mb-6 text-left">
+                                    <label className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl border-2 border-gray-200 cursor-pointer hover:border-purple-400 transition-colors">
+                                        <input type="checkbox" id="aceptarTerminos" className="mt-1 w-5 h-5 text-purple-600 cursor-pointer" />
+                                        <span className="text-sm text-gray-700 leading-relaxed">
+                                            Acepto los{' '}
+                                            <a href="/terminos" target="_blank" rel="noopener noreferrer" className="text-purple-600 font-bold underline hover:text-purple-800">
+                                                Términos y Condiciones
+                                            </a>
+                                            {' '}de uso de Finanzas App
+                                        </span>
+                                    </label>
+                                </div>
+                                <button onClick={() => {
+                                        if (!document.getElementById('aceptarTerminos')?.checked) {
+                                            alert('Debés aceptar los Términos y Condiciones para continuar');
+                                            return;
+                                        }
+                                        finalizarTutorial();
+                                        setTimeout(() => setModal('activarPremium'), 300);
+                                    }}
                                     className="w-full bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-500 hover:to-orange-500 text-white px-6 py-3 rounded-xl font-bold text-base mb-3">
                                     🌟 Activar Premium
                                 </button>
-                                <button onClick={finalizarTutorial}
+                                <button onClick={() => {
+                                        if (!document.getElementById('aceptarTerminos')?.checked) {
+                                            alert('Debés aceptar los Términos y Condiciones para continuar');
+                                            return;
+                                        }
+                                        finalizarTutorial();
+                                    }}
                                     className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-6 py-4 rounded-xl font-bold text-lg">
                                     🚀 Comenzar a usar la app
                                 </button>
