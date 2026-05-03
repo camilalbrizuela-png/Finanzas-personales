@@ -324,7 +324,9 @@
                 fechaInicioCiclo.setDate(fechaInicio.getDate() + gasto.diaInicioCiclo);
                 
                 const diasDelCiclo = Math.max(1, Math.floor((fechaVenc - fechaInicioCiclo) / (1000 * 60 * 60 * 24)));
-                const residuo = (estado.diasAcumulados - gasto.diaInicioCiclo) % diasDelCiclo;
+                let residuo = (estado.diasAcumulados - gasto.diaInicioCiclo) % diasDelCiclo;
+                const cicloCompleto = residuo === 0 && estado.diasAcumulados > gasto.diaInicioCiclo;
+                if (cicloCompleto) residuo = diasDelCiclo;
                 
                 const montoDiario = gasto.monto / diasDelCiclo;
                 
@@ -343,7 +345,6 @@
                 const montoAcumuladoTotal = montoAcumuladoPropinas + montoSueldoAsignado;
                 
                 const progreso = (montoAcumuladoTotal / (gasto.monto * (montoDiarioMXN / montoDiario))) * 100;
-                const cicloCompleto = residuo === 0 && estado.diasAcumulados > gasto.diaInicioCiclo;
                 
                 return { 
                     residuo, 
@@ -993,20 +994,41 @@
                                             · <strong>Total: ${Math.round(ciclo.montoAcumulado)}</strong>
                                         </p>
                                         <button onClick={() => {
+                                            const nuevaFecha = prompt(
+                                                `Nueva fecha de vencimiento para "${seleccionado.nombre}":\nFormato: AAAA-MM-DD (ej: 2026-06-01)`
+                                            );
+                                            if (!nuevaFecha) { alert('Debés ingresar una fecha de vencimiento para continuar.'); return; }
+                                            if (!/^\d{4}-\d{2}-\d{2}$/.test(nuevaFecha.trim())) { alert('Formato inválido. Usá: AAAA-MM-DD'); return; }
+
                                             const fechaActual = calcularFechaActual().toISOString().split('T')[0];
                                             const maxId = estado.gastosExtras.length > 0 ? Math.max(...estado.gastosExtras.map(g => g.id)) : 0;
-                                            let nuevoEstado = {
-                                                ...estado,
-                                                gastosFijos: estado.gastosFijos.map(g =>
-                                                    g.id === seleccionado.id ? {...g, diaInicioCiclo: estado.diasAcumulados, montoSueldoAsignado: 0} : g
-                                                )
-                                            };
-                                            // Registrar el ciclo completo como gasto
+                                            let nuevoEstado = {...estado};
+
+                                            // Sueldo asignado → ingreso para que sume al disponible
+                                            if (ciclo.montoSueldoAsignado > 0) {
+                                                nuevoEstado.ingresosDiarios = [...estado.ingresosDiarios, {
+                                                    dia: estado.diasAcumulados,
+                                                    fecha: fechaActual,
+                                                    propinas: ciclo.montoSueldoAsignado,
+                                                    usd: 0,
+                                                    ars: 0,
+                                                    concepto: `Sueldo asignado a ${seleccionado.nombre}`
+                                                }];
+                                            }
+
+                                            // Reiniciar gasto fijo con nueva fecha de vencimiento
+                                            nuevoEstado.gastosFijos = estado.gastosFijos.map(g =>
+                                                g.id === seleccionado.id
+                                                    ? {...g, diaInicioCiclo: estado.diasAcumulados, montoSueldoAsignado: 0, vencimiento: nuevaFecha.trim()}
+                                                    : g
+                                            );
+
+                                            // Gasto del ciclo completo (descuenta del disponible)
                                             let montoTotalMXN = seleccionado.monto;
                                             if (seleccionado.moneda && seleccionado.moneda !== (estado.monedaPrincipal || 'MXN')) {
                                                 montoTotalMXN = convertirMoneda(seleccionado.monto, seleccionado.moneda, estado.monedaPrincipal || 'MXN');
                                             }
-                                            nuevoEstado.gastosExtras = [...estado.gastosExtras, {
+                                            nuevoEstado.gastosExtras = [...(nuevoEstado.gastosExtras || estado.gastosExtras), {
                                                 id: maxId + 1,
                                                 fecha: fechaActual,
                                                 concepto: `${seleccionado.nombre} (ciclo completo)`,
@@ -1014,6 +1036,7 @@
                                                 categoria: 'Gasto Fijo',
                                                 fuente: 'mxn'
                                             }];
+
                                             setEstado(nuevoEstado);
                                             setVista('dashboard');
                                         }} className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-bold">Confirmar y reiniciar</button>
