@@ -519,7 +519,7 @@
                                 <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-3xl shadow-xl p-6 text-white">
                                     <p className="text-sm opacity-90 mb-2">Disponible</p>
                                     <p className="text-4xl font-bold">${Math.round(superavit)}</p>
-                                    <p className="text-xs opacity-75 mt-1">En pesos mexicanos</p>
+                                    <p className="text-xs opacity-75 mt-1">En {estado.monedaPrincipal || 'MXN'}</p>
                                 </div>
                                 <div onClick={() => setVista('billetera')} className="bg-gradient-to-br from-orange-500 to-red-600 rounded-3xl shadow-xl p-6 text-white cursor-pointer hover:scale-105 transition-all">
                                     <p className="text-sm opacity-90 mb-2">Billetera Total</p>
@@ -767,7 +767,7 @@
 
                                 <div className="grid grid-cols-3 gap-3 mb-6">
                                     <div className="bg-green-100 rounded-xl p-3">
-                                        <p className="text-xs text-gray-600">💵 Total MXN</p>
+                                        <p className="text-xs text-gray-600">{monedaConf(estado.monedaPrincipal || 'MXN').emoji} Total {estado.monedaPrincipal || 'MXN'}</p>
                                         <p className="text-2xl font-bold text-green-700">${Math.round(totalPropinas)}</p>
                                     </div>
                                     <div className="bg-blue-100 rounded-xl p-3">
