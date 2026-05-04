@@ -491,6 +491,22 @@
                                 </div>
                                             </div>
 
+                            {!window.matchMedia('(display-mode: standalone)').matches && (
+                                <div className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-4 py-3 rounded-xl mb-4 shadow-lg flex items-center justify-between gap-3">
+                                    <div className="flex items-center gap-3 flex-1">
+                                        <span className="text-2xl">📱</span>
+                                        <div className="text-sm">
+                                            <p className="font-bold">Instala la app para acceso rápido</p>
+                                            <p className="text-xs opacity-90">Ve a ⚙️ Config → Instalar Aplicación</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={(e) => { e.currentTarget.parentElement.style.display = 'none'; }}
+                                        className="text-white hover:bg-white hover:bg-opacity-20 rounded-lg px-3 py-1 text-xs font-bold transition-all"
+                                    >✕</button>
+                                </div>
+                            )}
+
                             {!estado.isPremium && (
                                 <div className={`bg-gradient-to-r ${t.bannerGrad} rounded-2xl p-4 mb-6 text-white cursor-pointer hover:scale-[1.02] transition-all`}
                                      onClick={() => { setModal('upgradePremium'); setForm({ razon: 'banner' }); }}>
