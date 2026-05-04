@@ -20,9 +20,9 @@
         .t-dark .bg-gray-50, .t-dark .bg-slate-50 { background-color: #111827 !important; }
         .t-dark .bg-gray-100 { background-color: #1e293b !important; }
         .t-dark .bg-green-50, .t-dark .bg-yellow-50, .t-dark .bg-orange-50,
-        .t-dark .bg-blue-50, .t-dark .bg-red-50, .t-dark .bg-purple-50 { background-color: #1e293b !important; }
-        .t-dark .bg-green-100 { background-color: #1e3a2e !important; }
-        .t-dark .bg-blue-100 { background-color: #1e2d3d !important; }
+        .t-dark .bg-blue-50, .t-dark .bg-red-50, .t-dark .bg-gray-50 { background-color: #1e293b !important; }
+        .t-dark .bg-green-50 { background-color: #1e3a2e !important; }
+        .t-dark .bg-blue-50 { background-color: #1e2d3d !important; }
         .t-dark .text-gray-800 { color: #f1f5f9 !important; }
         .t-dark .text-gray-700 { color: #e2e8f0 !important; }
         .t-dark .text-gray-600 { color: #cbd5e1 !important; }
@@ -35,9 +35,9 @@
         .t-dark .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5) !important; }
         .t-dark .shadow-xl { box-shadow: 0 20px 25px -5px rgba(0,0,0,0.6) !important; }
         .t-dark .bg-gray-200 { background-color: #374151 !important; }
-        .t-dark .text-green-700 { color: #34d399 !important; }
+        .t-dark .text-green-800 { color: #34d399 !important; }
         .t-dark .text-green-800 { color: #6ee7b7 !important; }
-        .t-dark .text-blue-700 { color: #60a5fa !important; }
+        .t-dark .text-blue-800 { color: #60a5fa !important; }
         .t-dark .text-blue-800 { color: #93c5fd !important; }
     </style>
 </head>
@@ -169,20 +169,20 @@
             const TEMAS = {
                 classic: {
                     nombre: 'Classic 🎨', libre: true,
-                    bg: 'from-indigo-50 via-purple-50 to-pink-50',
-                    card1: 'from-purple-500 to-indigo-600',
-                    navActive: 'bg-purple-100 text-purple-600',
-                    bannerGrad: 'from-purple-600 to-indigo-600',
-                    previewGrad: 'from-purple-500 to-indigo-600',
-                    btn: 'bg-purple-600 hover:bg-purple-700',
-                    btnGrad: 'from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700',
-                    progressBar: 'from-purple-500 to-indigo-500',
-                    badge: 'bg-purple-100 text-purple-700',
-                    accentText: 'text-purple-600',
-                    accentTextDark: 'text-purple-700',
-                    cardHover: 'hover:border-purple-400',
-                    primary: '#8B5CF6',
-                    secondary: '#6366F1',
+                    bg: 'from-gray-50 via-gray-100 to-gray-100',
+                    card1: 'from-gray-700 to-gray-800',
+                    navActive: 'bg-gray-100 text-gray-700',
+                    bannerGrad: 'from-gray-700 to-gray-800',
+                    previewGrad: 'from-gray-700 to-gray-800',
+                    btn: 'bg-gray-700 hover:bg-gray-800',
+                    btnGrad: 'from-gray-700 to-gray-800 hover:from-gray-800 hover:to-gray-900',
+                    progressBar: 'from-gray-600 to-gray-700',
+                    badge: 'bg-gray-100 text-gray-700',
+                    accentText: 'text-gray-700',
+                    accentTextDark: 'text-gray-700',
+                    cardHover: 'hover:border-gray-400',
+                    primary: '#4A5568',
+                    secondary: '#718096',
                 },
                 dark: {
                     nombre: 'Dark 🌙', libre: false,
@@ -205,15 +205,15 @@
                     nombre: 'Ocean 🌊', libre: false,
                     bg: 'from-slate-900 via-blue-900 to-cyan-900',
                     card1: 'from-blue-500 to-cyan-600',
-                    navActive: 'bg-blue-100 text-blue-700',
+                    navActive: 'bg-blue-50 text-blue-800',
                     bannerGrad: 'from-blue-600 to-cyan-500',
                     previewGrad: 'from-blue-600 to-cyan-500',
                     btn: 'bg-blue-600 hover:bg-blue-700',
                     btnGrad: 'from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600',
                     progressBar: 'from-blue-500 to-cyan-400',
-                    badge: 'bg-blue-100 text-blue-700',
+                    badge: 'bg-blue-50 text-blue-800',
                     accentText: 'text-blue-600',
-                    accentTextDark: 'text-blue-700',
+                    accentTextDark: 'text-blue-800',
                     cardHover: 'hover:border-blue-400',
                     primary: '#2563EB',
                     secondary: '#0891B2',
@@ -239,13 +239,13 @@
                     nombre: 'Forest 🌿', libre: false,
                     bg: 'from-green-50 via-emerald-50 to-teal-50',
                     card1: 'from-emerald-500 to-green-600',
-                    navActive: 'bg-emerald-100 text-emerald-700',
+                    navActive: 'bg-emerald-50 text-emerald-700',
                     bannerGrad: 'from-emerald-600 to-green-700',
                     previewGrad: 'from-emerald-600 to-green-700',
                     btn: 'bg-emerald-600 hover:bg-emerald-700',
                     btnGrad: 'from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700',
                     progressBar: 'from-emerald-500 to-green-400',
-                    badge: 'bg-emerald-100 text-emerald-700',
+                    badge: 'bg-emerald-50 text-emerald-700',
                     accentText: 'text-emerald-600',
                     accentTextDark: 'text-emerald-700',
                     cardHover: 'hover:border-emerald-400',
@@ -502,7 +502,7 @@
                                             </div>
 
                             {!window.matchMedia('(display-mode: standalone)').matches && (
-                                <div className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-4 py-3 rounded-xl mb-4 shadow-lg flex items-center justify-between gap-3">
+                                <div className="bg-gradient-to-r from-gray-700 to-gray-800 text-white px-4 py-3 rounded-xl mb-4 shadow-lg flex items-center justify-between gap-3">
                                     <div className="flex items-center gap-3 flex-1">
                                         <span className="text-2xl">📱</span>
                                         <div className="text-sm">
@@ -547,7 +547,7 @@
                                     <p className="text-4xl font-bold">${Math.round(superavit)}</p>
                                     <p className="text-xs opacity-75 mt-1">En {estado.monedaPrincipal || 'MXN'}</p>
                                 </div>
-                                <div onClick={() => setVista('billetera')} className="bg-gradient-to-br from-orange-500 to-red-600 rounded-3xl shadow-xl p-6 text-white cursor-pointer hover:scale-105 transition-all">
+                                <div onClick={() => setVista('billetera')} className="bg-gradient-to-br from-orange-300 to-red-400 rounded-3xl shadow-xl p-6 text-white cursor-pointer hover:scale-105 transition-all">
                                     <p className="text-sm opacity-90 mb-2">Billetera Total</p>
                                     <p className="text-4xl font-bold">${Math.round(superavit + convertirMoneda(estado.billetera.usd, 'USD', estado.monedaPrincipal || 'MXN') + convertirMoneda(estado.billetera.ars, 'ARS', estado.monedaPrincipal || 'MXN') + estado.billetera.tanda)}</p>
                                     <p className="text-xs opacity-75 mt-1">
@@ -587,7 +587,7 @@
                                                     </div>
                                                 </div>
                                                 {ciclo.cicloCompleto && (
-                                                    <div className="bg-green-100 border-l-4 border-green-500 p-3 mb-3 rounded">
+                                                    <div className="bg-green-50 border-l-4 border-green-500 p-3 mb-3 rounded">
                                                         <p className="text-green-800 font-bold text-sm">✅ Completo - ${Math.round(gasto.monto)}</p>
                                                     </div>
                                                 )}
@@ -617,17 +617,17 @@
                                                     {ciclo.porcentajeCostoDiario === 100 ? (
                                                         <div className="flex justify-between">
                                                             <span className="text-gray-500">💵 Diario:</span>
-                                                            <span className="font-bold text-green-700">${Math.round(ciclo.montoDiarioCostoDiario)}</span>
+                                                            <span className="font-bold text-green-800">${Math.round(ciclo.montoDiarioCostoDiario)}</span>
                                                         </div>
                                                     ) : (
                                                         <div className="space-y-1">
                                                             <div className="flex justify-between">
                                                                 <span className="text-gray-500">💵 Propinas:</span>
-                                                                <span className="font-bold text-green-700">${Math.round(ciclo.montoDiarioCostoDiario)}/día</span>
+                                                                <span className="font-bold text-green-800">${Math.round(ciclo.montoDiarioCostoDiario)}/día</span>
                                                             </div>
                                                             <div className="flex justify-between">
                                                                 <span className="text-gray-500">💰 Sueldo:</span>
-                                                                <span className="font-bold text-blue-700">${Math.round((ciclo.montoDiarioMXN * ciclo.diasDelCiclo) * ((100 - ciclo.porcentajeCostoDiario) / 100))}</span>
+                                                                <span className="font-bold text-blue-800">${Math.round((ciclo.montoDiarioMXN * ciclo.diasDelCiclo) * ((100 - ciclo.porcentajeCostoDiario) / 100))}</span>
                                                             </div>
                                                         </div>
                                                     )}
@@ -673,7 +673,7 @@
                                         }
                                         setForm({nombre: '', monto: '', icono: ''});
                                         setModal('nuevaSeccion');
-                                    }} className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl font-bold text-sm">
+                                    }} className="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-xl font-bold text-sm">
                                         ➕ Sección
                                     </button>
                                 </div>
@@ -689,14 +689,14 @@
                                 };
                                 const walletTypes = { MXN: 'mxn', USD: 'usd', ARS: 'ars' };
                                 const bgColors = {
-                                    MXN: 'from-green-100 to-emerald-100', USD: 'from-blue-100 to-cyan-100',
-                                    ARS: 'from-purple-100 to-pink-100', EUR: 'from-indigo-100 to-violet-100',
-                                    GBP: 'from-rose-100 to-pink-100', BRL: 'from-lime-100 to-green-100',
-                                    COP: 'from-yellow-100 to-amber-100', CLP: 'from-red-100 to-orange-100',
-                                    PEN: 'from-teal-100 to-cyan-100',
+                                    MXN: 'from-green-50 to-emerald-50', USD: 'from-blue-50 to-cyan-50',
+                                    ARS: 'from-sky-50 to-blue-50', EUR: 'from-indigo-50 to-violet-50',
+                                    GBP: 'from-rose-50 to-pink-50', BRL: 'from-lime-50 to-green-50',
+                                    COP: 'from-yellow-50 to-amber-50', CLP: 'from-red-50 to-orange-50',
+                                    PEN: 'from-teal-50 to-cyan-50',
                                 };
                                 const textColors = {
-                                    MXN: 'text-green-700', USD: 'text-blue-700', ARS: 'text-purple-700',
+                                    MXN: 'text-green-800', USD: 'text-blue-800', ARS: 'text-sky-700',
                                     EUR: 'text-indigo-700', GBP: 'text-rose-700', BRL: 'text-lime-700',
                                 };
                                 const bg = (c) => bgColors[c] || 'from-gray-100 to-slate-100';
@@ -742,7 +742,7 @@
                                                     if (confirm(`¿Eliminar sección "${seccion.nombre}"?`)) {
                                                         setEstado({...estado, billetera: {...estado.billetera, secciones: estado.billetera.secciones.filter(s => s.id !== seccion.id)}});
                                                     }
-                                                }} className="text-red-500 hover:text-red-700">🗑️</button>
+                                                }} className="text-red-500 hover:text-red-800">🗑️</button>
                                             </div>
                                         </div>
                                         <p className="text-4xl font-bold text-gray-700">
@@ -817,8 +817,8 @@
                                 {(() => {
                                     const principal = estado.monedaPrincipal || 'MXN';
                                     const secundarias = estado.monedasSecundarias || [];
-                                    const bgMap = { MXN: 'bg-green-100', USD: 'bg-blue-100', ARS: 'bg-sky-100', EUR: 'bg-indigo-100', GBP: 'bg-rose-100', CAD: 'bg-red-100', COP: 'bg-yellow-100', BRL: 'bg-lime-100', CLP: 'bg-orange-100' };
-                                    const tcMap = { MXN: 'text-green-700', USD: 'text-blue-700', ARS: 'text-sky-700', EUR: 'text-indigo-700', GBP: 'text-rose-700', CAD: 'text-red-700', COP: 'text-yellow-700', BRL: 'text-lime-700', CLP: 'text-orange-700' };
+                                    const bgMap = { MXN: 'bg-green-50', USD: 'bg-blue-50', ARS: 'bg-sky-50', EUR: 'bg-indigo-50', GBP: 'bg-rose-50', CAD: 'bg-red-50', COP: 'bg-yellow-50', BRL: 'bg-lime-50', CLP: 'bg-orange-50' };
+                                    const tcMap = { MXN: 'text-green-800', USD: 'text-blue-800', ARS: 'text-sky-700', EUR: 'text-indigo-700', GBP: 'text-rose-700', CAD: 'text-red-800', COP: 'text-yellow-700', BRL: 'text-lime-700', CLP: 'text-orange-700' };
                                     const getTotal = (code) => {
                                         if (code === principal) return totalPropinas;
                                         if (code === 'USD') return totalUSD;
@@ -862,10 +862,10 @@
                                                         <div className="text-right flex items-start gap-2">
                                                             <div>
                                                                 {ingreso.propinas > 0 && (
-                                                                    <p className="text-green-700 font-bold">💵 ${Math.round(ingreso.propinas)}</p>
+                                                                    <p className="text-green-800 font-bold">💵 ${Math.round(ingreso.propinas)}</p>
                                                                 )}
                                                                 {ingreso.usd > 0 && (
-                                                                    <p className="text-blue-700 font-bold">💲 ${Math.round(ingreso.usd)}</p>
+                                                                    <p className="text-blue-800 font-bold">💲 ${Math.round(ingreso.usd)}</p>
                                                                 )}
                                                                 {(ingreso.ars || 0) > 0 && (
                                                                     <p className="text-sky-700 font-bold">🇦🇷 ${Math.round(ingreso.ars).toLocaleString()}</p>
@@ -962,16 +962,16 @@
                                     const cols = items.length === 1 ? 'grid-cols-1' : items.length === 2 ? 'grid-cols-2' : 'grid-cols-3';
                                     return (
                                         <div className={`grid ${cols} gap-3 mb-6`}>
-                                            <div className="bg-red-100 rounded-xl p-3">
+                                            <div className="bg-red-50 rounded-xl p-3">
                                                 <p className="text-xs text-gray-600">{monedaConf(principal).emoji} Total {principal}</p>
-                                                <p className="text-2xl font-bold text-red-700">${Math.round(totalPrincipal).toLocaleString()}</p>
+                                                <p className="text-2xl font-bold text-red-800">${Math.round(totalPrincipal).toLocaleString()}</p>
                                             </div>
                                             {secundariasConGastos.map(moneda => {
                                                 const total = estado.gastosExtras.filter(g => g.fuente === moneda.toLowerCase()).reduce((sum, g) => sum + g.monto, 0);
                                                 return (
-                                                    <div key={moneda} className="bg-red-100 rounded-xl p-3">
+                                                    <div key={moneda} className="bg-red-50 rounded-xl p-3">
                                                         <p className="text-xs text-gray-600">{monedaConf(moneda).emoji} Total {moneda}</p>
-                                                        <p className="text-2xl font-bold text-red-700">{Math.round(total).toLocaleString()}</p>
+                                                        <p className="text-2xl font-bold text-red-800">{Math.round(total).toLocaleString()}</p>
                                                         <p className="text-xs text-gray-500 mt-1">≈ ${Math.round(convertirMoneda(total, moneda, principal)).toLocaleString()} {principal}</p>
                                                     </div>
                                                 );
@@ -980,9 +980,9 @@
                                                 const total = estado.gastosExtras.filter(g => g.fuente === seccion.id).reduce((sum, g) => sum + g.monto, 0);
                                                 const esOtraMoneda = seccion.moneda && seccion.moneda !== principal;
                                                 return (
-                                                    <div key={seccion.id} className="bg-red-100 rounded-xl p-3">
+                                                    <div key={seccion.id} className="bg-red-50 rounded-xl p-3">
                                                         <p className="text-xs text-gray-600">{seccion.icono || '💼'} {seccion.nombre}</p>
-                                                        <p className="text-2xl font-bold text-red-700">{esOtraMoneda ? `${seccion.moneda} ` : '$'}{Math.round(total).toLocaleString()}</p>
+                                                        <p className="text-2xl font-bold text-red-800">{esOtraMoneda ? `${seccion.moneda} ` : '$'}{Math.round(total).toLocaleString()}</p>
                                                         {esOtraMoneda && <p className="text-xs text-gray-500 mt-1">≈ ${Math.round(convertirMoneda(total, seccion.moneda, principal)).toLocaleString()} {principal}</p>}
                                                     </div>
                                                 );
@@ -1020,7 +1020,7 @@
                                                         <button onClick={() => {
                                                             setForm({...gasto});
                                                             setModal('editarGastoExtra');
-                                                        }} className="text-sm text-blue-500 hover:text-blue-700 mt-1">✏️</button>
+                                                        }} className="text-sm text-blue-500 hover:text-blue-800 mt-1">✏️</button>
                                                         <button onClick={() => {
                                                             if (confirm('¿Eliminar este gasto?')) {
                                                                 let nuevaBilletera = {...estado.billetera};
@@ -1037,7 +1037,7 @@
                                                                 }
                                                                 setEstado({...estado, gastosExtras: estado.gastosExtras.filter(g => g.id !== gasto.id), billetera: nuevaBilletera});
                                                             }
-                                                        }} className="text-sm text-red-500 hover:text-red-700 mt-1">🗑️</button>
+                                                        }} className="text-sm text-red-500 hover:text-red-800 mt-1">🗑️</button>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1072,7 +1072,7 @@
                                     </div>
                                 </div>
 
-                                <div className="bg-blue-100 rounded-2xl p-4 mb-6">
+                                <div className="bg-blue-50 rounded-2xl p-4 mb-6">
                                     <p className="text-sm text-gray-700 mb-2">Día de inicio del ciclo: <span className="font-bold">{seleccionado.diaInicioCiclo}</span></p>
                                     <button onClick={() => { setForm({...seleccionado}); setModal('ajustarInicio'); }}
                                         className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm">
@@ -1081,9 +1081,9 @@
                                 </div>
 
                                 {ciclo.cicloCompleto && (
-                                    <div className="bg-green-100 border-l-4 border-green-500 p-6 mb-6 rounded-lg">
+                                    <div className="bg-green-50 border-l-4 border-green-500 p-6 mb-6 rounded-lg">
                                         <h3 className="text-xl font-bold text-green-800 mb-2">✅ Ciclo Completo</h3>
-                                        <p className="text-sm text-green-700 mb-3">
+                                        <p className="text-sm text-green-800 mb-3">
                                             Propinas: ${Math.round(ciclo.montoAcumuladoPropinas)} · Sueldo: ${Math.round(ciclo.montoSueldoAsignado)}
                                             · <strong>Total: ${Math.round(ciclo.montoAcumulado)}</strong>
                                         </p>
@@ -1098,7 +1098,7 @@
                                     </div>
                                 )}
 
-                                <div className="bg-gradient-to-br from-purple-100 to-indigo-100 rounded-2xl p-8 mb-6">
+                                <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl p-8 mb-6">
                                     <p className="text-gray-600 text-sm mb-2">Acumulado total</p>
                                     <p className={`text-5xl font-bold ${t.accentTextDark}`}>${Math.round(ciclo.montoAcumulado)}</p>
                                     <p className="text-gray-600 mb-3">de ${Math.round(seleccionado.monto)}</p>
@@ -1106,11 +1106,11 @@
                                     <div className="grid grid-cols-2 gap-3 text-sm">
                                         <div className="bg-white bg-opacity-60 rounded-lg p-3">
                                             <p className="text-gray-600">💵 De propinas</p>
-                                            <p className="text-xl font-bold text-green-700">${Math.round(ciclo.montoAcumuladoPropinas)}</p>
+                                            <p className="text-xl font-bold text-green-800">${Math.round(ciclo.montoAcumuladoPropinas)}</p>
                                         </div>
                                         <div className="bg-white bg-opacity-60 rounded-lg p-3">
                                             <p className="text-gray-600">💰 De sueldo</p>
-                                            <p className="text-xl font-bold text-blue-700">${Math.round(ciclo.montoSueldoAsignado)}</p>
+                                            <p className="text-xl font-bold text-blue-800">${Math.round(ciclo.montoSueldoAsignado)}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -1139,19 +1139,19 @@
                                     <div className="grid grid-cols-2 gap-4 mb-4">
                                         <div>
                                             <p className="text-sm text-gray-600 mb-1">💵 Con propinas diarias</p>
-                                            <p className="text-3xl font-bold text-green-700">{ciclo.porcentajeCostoDiario}%</p>
+                                            <p className="text-3xl font-bold text-green-800">{ciclo.porcentajeCostoDiario}%</p>
                                             <p className="text-sm text-gray-600">${Math.round(ciclo.montoDiarioCostoDiario)} MXN/día</p>
                                             <p className="text-xs text-gray-500 mt-1">Total: ${Math.round(ciclo.montoDiarioCostoDiario * ciclo.diasDelCiclo)} MXN</p>
                                         </div>
                                         <div>
                                             <p className="text-sm text-gray-600 mb-1">💰 Con sueldo quincenal</p>
-                                            <p className="text-3xl font-bold text-blue-700">{100 - ciclo.porcentajeCostoDiario}%</p>
+                                            <p className="text-3xl font-bold text-blue-800">{100 - ciclo.porcentajeCostoDiario}%</p>
                                             <p className="text-sm font-bold text-gray-700">${Math.round((ciclo.montoDiarioMXN * ciclo.diasDelCiclo) * ((100 - ciclo.porcentajeCostoDiario) / 100))} MXN</p>
                                             <p className="text-xs text-gray-500 mt-1">Del sueldo de la quincena</p>
                                         </div>
                                     </div>
                                     {ciclo.porcentajeCostoDiario < 100 && (
-                                        <div className="bg-blue-100 rounded-lg p-3 text-sm text-blue-800">
+                                        <div className="bg-blue-50 rounded-lg p-3 text-sm text-blue-800">
                                             💡 <strong>Recordá:</strong> Cuando cobres el sueldo, asigná ${Math.round((ciclo.montoDiarioMXN * ciclo.diasDelCiclo) * ((100 - ciclo.porcentajeCostoDiario) / 100))} MXN usando "💰 Asignar Sueldo"
                                         </div>
                                     )}
@@ -1237,7 +1237,7 @@
                                 <div className="grid grid-cols-4 gap-2 mb-3">
                                     {['diario','semanal','mensual','anual'].map(p => (
                                         <button key={p} onClick={() => setReportePeriodo(p)}
-                                            className={`py-2 rounded-xl text-xs font-bold capitalize ${reportePeriodo === p ? 'bg-purple-500 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                                            className={`py-2 rounded-xl text-xs font-bold capitalize ${reportePeriodo === p ? 'bg-gray-700 text-white' : 'bg-gray-100 text-gray-600'}`}>
                                             {p.charAt(0).toUpperCase() + p.slice(1)}
                                         </button>
                                     ))}
@@ -1263,11 +1263,11 @@
                                     <div className="grid grid-cols-3 gap-2">
                                         <div className="bg-green-50 rounded-xl p-3 text-center">
                                             <p className="text-xs text-gray-500">💵 MXN</p>
-                                            <p className="text-lg font-bold text-green-700">${Math.round(totalIngMXN).toLocaleString()}</p>
+                                            <p className="text-lg font-bold text-green-800">${Math.round(totalIngMXN).toLocaleString()}</p>
                                         </div>
                                         <div className="bg-blue-50 rounded-xl p-3 text-center">
                                             <p className="text-xs text-gray-500">💲 USD</p>
-                                            <p className="text-lg font-bold text-blue-700">${Math.round(totalIngUSD)}</p>
+                                            <p className="text-lg font-bold text-blue-800">${Math.round(totalIngUSD)}</p>
                                         </div>
                                         <div className="bg-sky-50 rounded-xl p-3 text-center">
                                             <p className="text-xs text-gray-500">🇦🇷 ARS</p>
@@ -1389,7 +1389,7 @@
                                                 </div>
                                                 <div className="mt-4 bg-green-50 rounded-xl p-3">
                                                     <p className="text-xs text-gray-500">Total en MXN equivalente</p>
-                                                    <p className="text-xl font-bold text-green-700">${Math.round(totalIngEquivMXN).toLocaleString()}</p>
+                                                    <p className="text-xl font-bold text-green-800">${Math.round(totalIngEquivMXN).toLocaleString()}</p>
                                                 </div>
                                             </div>
                                         )}
@@ -1409,8 +1409,8 @@
                                                                 {ing.concepto && <p className="text-xs text-gray-500">{ing.concepto}</p>}
                                                             </div>
                                                             <div className="text-right">
-                                                                {(ing.propinas || 0) > 0 && <p className="text-green-700 font-bold text-sm">💵 ${Math.round(ing.propinas).toLocaleString()}</p>}
-                                                                {(ing.usd || 0) > 0 && <p className="text-blue-700 font-bold text-sm">💲 ${Math.round(ing.usd)}</p>}
+                                                                {(ing.propinas || 0) > 0 && <p className="text-green-800 font-bold text-sm">💵 ${Math.round(ing.propinas).toLocaleString()}</p>}
+                                                                {(ing.usd || 0) > 0 && <p className="text-blue-800 font-bold text-sm">💲 ${Math.round(ing.usd)}</p>}
                                                                 {(ing.ars || 0) > 0 && <p className="text-sky-700 font-bold text-sm">🇦🇷 {Math.round(ing.ars).toLocaleString()}</p>}
                                                             </div>
                                                         </div>
@@ -1579,22 +1579,22 @@
                             {paso > 3 && (
                                 <button type="button" onClick={() => {
                                     if (confirm('¿Saltar el tutorial? Puedes verlo de nuevo borrando tus datos desde Config.')) finalizarTutorial();
-                                }} className="text-purple-400 hover:text-purple-600 underline">
+                                }} className="text-gray-500 hover:text-gray-700 underline">
                                     Saltar tutorial
                                 </button>
                             )}
                         </div>
                         <div className="flex gap-1">
                             {Array.from({length: totalPasos}, (_, i) => (
-                                <div key={i} className={`flex-1 h-2 rounded-full transition-all ${i < paso ? 'bg-purple-500' : 'bg-gray-200'}`} />
+                                <div key={i} className={`flex-1 h-2 rounded-full transition-all ${i < paso ? 'bg-gray-700' : 'bg-gray-200'}`} />
                             ))}
                         </div>
                     </div>
                 );
 
-                const bg = "min-h-screen bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center p-4";
+                const bg = "min-h-screen bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center p-4";
                 const card = "bg-white rounded-3xl shadow-2xl max-w-lg w-full p-8";
-                const inp = "w-full px-4 py-3 border-2 rounded-xl focus:border-purple-500 outline-none";
+                const inp = "w-full px-4 py-3 border-2 rounded-xl focus:border-yellow-500 outline-none";
                 const btnP = "flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold";
                 const btnN = `flex-1 ${t.btn} text-white px-6 py-3 rounded-xl font-bold`;
 
@@ -1683,12 +1683,12 @@
                                                     const seleccionada = secundariasActuales.includes(m.code);
                                                     const limiteAlcanzado = !seleccionada && secundariasActuales.length >= LIMITE_SECUNDARIAS;
                                                     return (
-                                                        <label key={m.code} className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${seleccionada ? 'border-purple-400 bg-purple-50' : 'border-gray-200 hover:border-gray-300'} ${limiteAlcanzado ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                                        <label key={m.code} className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${seleccionada ? 'border-gray-400 bg-gray-50' : 'border-gray-200 hover:border-gray-300'} ${limiteAlcanzado ? 'opacity-50 cursor-not-allowed' : ''}`}>
                                                             <input type="checkbox"
                                                                 checked={seleccionada}
                                                                 disabled={limiteAlcanzado}
                                                                 onChange={() => toggleSecundaria(m.code)}
-                                                                className="w-4 h-4 accent-purple-600" />
+                                                                className="w-4 h-4 accent-gray-700" />
                                                             <span className="font-medium text-gray-800">{m.label}</span>
                                                         </label>
                                                     );
@@ -1742,13 +1742,13 @@
                                                             <label className="flex items-center gap-2 cursor-pointer">
                                                                 <input type="radio" checked={isSecToPrin}
                                                                     onChange={() => updateTC(code, 'direccion', `${code}_TO_${principal}`)}
-                                                                    className="accent-purple-600" />
+                                                                    className="accent-gray-700" />
                                                                 <span className="text-sm text-gray-700">1 {code} = ___ {principal}</span>
                                                             </label>
                                                             <label className="flex items-center gap-2 cursor-pointer">
                                                                 <input type="radio" checked={!isSecToPrin}
                                                                     onChange={() => updateTC(code, 'direccion', `${principal}_TO_${code}`)}
-                                                                    className="accent-purple-600" />
+                                                                    className="accent-gray-700" />
                                                                 <span className="text-sm text-gray-700">1 {principal} = ___ {code}</span>
                                                             </label>
                                                         </div>
@@ -1833,13 +1833,13 @@
                                 <Progreso />
                                 <h2 className="text-2xl font-bold text-gray-800 mb-2">📋 Gastos Fijos</h2>
                                 <p className="text-gray-600 mb-3">Los gastos fijos son pagos recurrentes (renta, universidad, servicios, etc.)</p>
-                                <div className="bg-purple-50 rounded-xl p-3 mb-5 text-sm text-purple-800">
+                                <div className="bg-gray-50 rounded-xl p-3 mb-5 text-sm text-gray-800">
                                     💡 Puedes agregar todos tus gastos después, o empezar con uno ahora
                                 </div>
                                 {!datos.agregarGasto ? (
                                     <div className="flex flex-col gap-3 mb-4">
                                         <button onClick={() => setDatos({...datos, agregarGasto: true})}
-                                            className="w-full bg-purple-100 hover:bg-purple-200 text-purple-800 px-6 py-4 rounded-xl font-bold text-left">
+                                            className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 px-6 py-4 rounded-xl font-bold text-left">
                                             ➕ Agregar mi primer gasto ahora
                                         </button>
                                         <button onClick={() => setPaso(7)}
@@ -1917,7 +1917,7 @@
                                 <p className="text-gray-600 mb-5">Cada día que trabajes, registra tus propinas o ingresos en la sección de Ingresos.</p>
                                 <div className="bg-green-50 rounded-xl p-4 mb-5">
                                     <p className="font-semibold text-green-800 mb-2">✓ El sistema calcula automáticamente:</p>
-                                    <ul className="text-sm text-green-700 space-y-1">
+                                    <ul className="text-sm text-green-800 space-y-1">
                                         <li>• Cuánto te queda después de tus gastos fijos</li>
                                         <li>• Tu progreso mensual</li>
                                         <li>• Comparativa entre monedas</li>
@@ -1939,11 +1939,11 @@
                                 <p className="text-gray-600 mb-4">Usa el botón "⏭️ Avanzar" en el Dashboard para pasar al siguiente día.</p>
                                 <div className="bg-blue-50 rounded-xl p-4 mb-4">
                                     <p className="font-semibold text-blue-800 mb-1">💡 Úsalo cuando:</p>
-                                    <p className="text-sm text-blue-700">Llegues a casa del trabajo o al final de cada día laborado.</p>
+                                    <p className="text-sm text-blue-800">Llegues a casa del trabajo o al final de cada día laborado.</p>
                                 </div>
                                 <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-5">
                                     <p className="font-semibold text-red-800">⚠️ Importante:</p>
-                                    <p className="text-sm text-red-700">No puedes retroceder días. ¡Registra tus ingresos antes de avanzar!</p>
+                                    <p className="text-sm text-red-800">No puedes retroceder días. ¡Registra tus ingresos antes de avanzar!</p>
                                 </div>
                                 <div className="flex gap-3">
                                     <button onClick={() => setPaso(8)} className={btnP}>← Atrás</button>
@@ -1968,11 +1968,11 @@
                                     </div>
                                 </div>
                                 <div className="mb-6 text-left">
-                                    <label className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl border-2 border-gray-200 cursor-pointer hover:border-purple-400 transition-colors">
-                                        <input type="checkbox" id="aceptarTerminos" className="mt-1 w-5 h-5 text-purple-600 cursor-pointer" />
+                                    <label className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl border-2 border-gray-200 cursor-pointer hover:border-gray-400 transition-colors">
+                                        <input type="checkbox" id="aceptarTerminos" className="mt-1 w-5 h-5 text-gray-700 cursor-pointer" />
                                         <span className="text-sm text-gray-700 leading-relaxed">
                                             Acepto los{' '}
-                                            <a href="/terminos" target="_blank" rel="noopener noreferrer" className="text-purple-600 font-bold underline hover:text-purple-800">
+                                            <a href="/terminos" target="_blank" rel="noopener noreferrer" className="text-gray-700 font-bold underline hover:text-gray-800">
                                                 Términos y Condiciones
                                             </a>
                                             {' '}de uso de Finanzas App
@@ -2427,7 +2427,7 @@
                                         Has alcanzado el límite de {form.limite} {form.razon === 'gastos_fijos' ? 'gastos fijos' : form.razon === 'secciones' ? 'secciones de billetera' : 'categorías personalizadas'} en la versión gratuita.
                                     </p>
                                 )}
-                                <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-2xl p-6 mb-6 text-left">
+                                <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl p-6 mb-6 text-left">
                                     <h3 className="font-bold text-lg mb-3 text-center">💎 Con Premium obtienes:</h3>
                                     <div className="space-y-2">
                                         <p className="flex items-center gap-2"><span className="text-green-600">✓</span> Gastos fijos ilimitados</p>
@@ -2506,7 +2506,7 @@
                                     <button type="button" onClick={() => { setModal(null); setCodigoError(''); }}
                                         className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">Cancelar</button>
                                     <button type="submit"
-                                        className="flex-1 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-bold">Activar</button>
+                                        className="flex-1 bg-gray-700 hover:bg-gray-800 text-white px-6 py-3 rounded-xl font-bold">Activar</button>
                                 </div>
                             </form>
                         </Modal>
@@ -2601,7 +2601,7 @@
                                                     }
                                                     setEstado({...estado, tema: key});
                                                 }}
-                                                className={`relative p-3 rounded-xl border-2 text-left transition-all ${estado.tema === key ? 'border-purple-500 shadow-lg' : 'border-gray-200 hover:border-purple-300'}`}>
+                                                className={`relative p-3 rounded-xl border-2 text-left transition-all ${estado.tema === key ? 'border-gray-500 shadow-lg' : 'border-gray-200 hover:border-gray-300'}`}>
                                                 {!tema.libre && !estado.isPremium && (
                                                     <span className="absolute top-2 right-2 text-base">🔒</span>
                                                 )}
@@ -2718,7 +2718,7 @@
                                             <div key={gasto.id} className="bg-blue-50 rounded-xl p-3 border border-blue-200">
                                                 <div className="flex justify-between items-center mb-2">
                                                     <span className="font-bold text-gray-800 text-sm">{gasto.nombre}</span>
-                                                    <span className="text-xs text-blue-700">{100 - ciclo.porcentajeCostoDiario}% sueldo · necesita ${montoNecesario}</span>
+                                                    <span className="text-xs text-blue-800">{100 - ciclo.porcentajeCostoDiario}% sueldo · necesita ${montoNecesario}</span>
                                                 </div>
                                                 {yaAsignado > 0 && <p className="text-xs text-green-600 mb-1">✓ Ya asignado: ${Math.round(yaAsignado)}</p>}
                                                 <input type="number" name={`gasto_${gasto.id}`} step="0.01" defaultValue={falta} placeholder="0" className="w-full px-3 py-2 border-2 rounded-lg text-base font-bold" />
@@ -2964,7 +2964,7 @@
                             <p className="text-gray-600 mb-4">
                                 El ciclo de <strong>{form.gastoNombre}</strong> está completo.
                             </p>
-                            <div className="bg-green-100 border-l-4 border-green-500 p-4 mb-6 rounded">
+                            <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-6 rounded">
                                 <p className="text-green-800 font-bold text-sm mb-1">💵 Propinas: ${Math.round(form.cicloCompleto?.montoAcumuladoPropinas || 0)}</p>
                                 <p className="text-green-800 font-bold text-sm mb-1">💰 Sueldo: ${Math.round(form.cicloCompleto?.montoSueldoAsignado || 0)}</p>
                                 <p className="text-green-800 font-bold text-lg">Total: ${Math.round(form.cicloCompleto?.montoAcumulado || 0)}</p>
@@ -3013,7 +3013,7 @@
                                     <label className="block text-gray-700 font-bold mb-2">📅 Nueva fecha de vencimiento</label>
                                     <input type="date" name="nuevaFecha" required
                                         min={(() => { const m = new Date(calcularFechaActual()); m.setDate(m.getDate() + 1); return m.toISOString().split('T')[0]; })()}
-                                        className="w-full px-4 py-3 border-2 rounded-xl focus:border-purple-500 outline-none" />
+                                        className="w-full px-4 py-3 border-2 rounded-xl focus:border-gray-500 outline-none" />
                                 </div>
                                 <div className="flex gap-3">
                                     <button type="button" onClick={() => {
