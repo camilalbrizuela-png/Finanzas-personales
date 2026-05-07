@@ -563,11 +563,7 @@
                                         const ciclo = calcularCiclo(gasto);
                                         return (
                                             <div key={gasto.id} onClick={() => { setSeleccionado(gasto); setVista('detalle'); }}
-                                                className={`rounded-2xl p-5 cursor-pointer hover:shadow-lg transition-all border-2 ${t.cardHover}`}
-                                                style={{
-                                                    background: (estado.isPremium && gasto.color) ? `linear-gradient(135deg, ${gasto.color}18, ${gasto.color}08)` : undefined,
-                                                    borderColor: (estado.isPremium && gasto.color) ? `${gasto.color}50` : '#E5E7EB',
-                                                }}>
+                                                className={`rounded-2xl p-5 cursor-pointer hover:shadow-lg transition-all border-2 border-gray-200 ${t.cardHover} ${gasto.color || 'bg-white'}`}>
                                                 <div className="flex justify-between items-start mb-3">
                                                     <div>
                                                         <h3 className="text-lg font-bold text-gray-800">{gasto.nombre}</h3>
@@ -575,8 +571,7 @@
                                                         <p className="text-xs text-gray-500">📅 {formatearFecha(ciclo.fechaInicioCiclo)} → {formatearFecha(ciclo.fechaVencimiento)}</p>
                                                     </div>
                                                     <div className="flex flex-col gap-1 items-end">
-                                                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${t.badge}`}
-                                                            style={(estado.isPremium && gasto.color) ? {background: `${gasto.color}22`, color: gasto.color} : undefined}>
+                                                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${t.badge}`}>
                                                             {gasto.categoria}
                                                         </span>
                                                         {ciclo.porcentajeCostoDiario < 100 && (
@@ -594,17 +589,13 @@
                                                 <div className="mb-3">
                                                     <div className="flex justify-between text-sm mb-1">
                                                         <span className="text-gray-600">Día {ciclo.residuo}/{ciclo.diasDelCiclo}</span>
-                                                        <span className={`font-bold ${t.accentText}`}
-                                                            style={(estado.isPremium && gasto.color) ? {color: gasto.color} : undefined}>
+                                                        <span className={`font-bold ${t.accentText}`}>
                                                             ${Math.round(ciclo.montoAcumulado)}
                                                         </span>
                                                     </div>
                                                     <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
                                                         <div className={`bg-gradient-to-r ${t.progressBar} h-3 rounded-full`}
-                                                            style={{
-                                                                width: `${Math.min(100, ciclo.progreso)}%`,
-                                                                ...(estado.isPremium && gasto.color ? {background: gasto.color} : {})
-                                                            }}></div>
+                                                            style={{width: `${Math.min(100, ciclo.progreso)}%`}}></div>
                                                     </div>
                                                     <div className="flex justify-between text-xs text-gray-600">
                                                         <span>💵 Propinas: ${Math.round(ciclo.montoAcumuladoPropinas)}</span>
@@ -2921,35 +2912,24 @@
                                         <option value="Fijo">Fijo</option>
                                         <option value="No Negociable">No Negociable</option>
                                     </select>
-                                    {/* Color personalizado - Solo Premium */}
-                                    {estado.isPremium && (
-                                        <div>
-                                            <label className="block text-gray-700 font-bold mb-2">🎨 Color del gasto</label>
-                                            <div className="flex flex-wrap gap-2 mb-2">
-                                                {['#EF4444','#F97316','#EAB308','#10B981','#3B82F6','#6366F1','#8B5CF6','#EC4899','#6B7280','#1F2937'].map(c => (
-                                                    <button key={c} type="button"
-                                                        onClick={() => setForm({...form, color: form.color === c ? null : c})}
-                                                        className="w-8 h-8 rounded-full transition-all relative flex items-center justify-center"
-                                                        style={{
-                                                            backgroundColor: c,
-                                                            outline: form.color === c ? `3px solid ${c}` : '3px solid transparent',
-                                                            outlineOffset: '2px',
-                                                            transform: form.color === c ? 'scale(1.15)' : 'scale(1)',
-                                                        }}>
-                                                        {form.color === c && <span className="text-white font-bold text-sm leading-none">✓</span>}
-                                                    </button>
-                                                ))}
-                                            </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Color</label>
+                                        <div className="flex gap-2 flex-wrap">
+                                            {['bg-blue-50', 'bg-green-50', 'bg-yellow-50', 'bg-red-50',
+                                              'bg-pink-50', 'bg-orange-50', 'bg-teal-50', 'bg-gray-100'].map(color => (
+                                                <button key={color} type="button"
+                                                    onClick={() => setForm({...form, color: color})}
+                                                    className={`w-10 h-10 rounded-lg border-2 ${form.color === color ? 'border-gray-700 ring-2 ring-gray-400' : 'border-gray-300'} ${color}`}
+                                                />
+                                            ))}
                                             {form.color && (
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-5 h-5 rounded-full" style={{backgroundColor: form.color}} />
-                                                    <span className="text-sm font-bold" style={{color: form.color}}>{form.color}</span>
-                                                    <button type="button" onClick={() => setForm({...form, color: null})}
-                                                        className="text-xs text-gray-400 hover:text-gray-600 underline ml-1">Quitar</button>
-                                                </div>
+                                                <button type="button" onClick={() => setForm({...form, color: null})}
+                                                    className="w-10 h-10 rounded-lg border-2 border-gray-300 bg-white flex items-center justify-center text-gray-400 hover:text-gray-600 text-lg">
+                                                    ✕
+                                                </button>
                                             )}
                                         </div>
-                                    )}
+                                    </div>
                                 </div>
                                 <div className="flex gap-3">
                                     <button type="button" onClick={() => setModal(null)} className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">Cancelar</button>
