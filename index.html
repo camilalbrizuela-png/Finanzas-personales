@@ -59,6 +59,14 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
+        const Modal = ({ children, onClose }) => (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={onClose}>
+                <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                    {children}
+                </div>
+            </div>
+        );
+
         function FinanzasApp() {
             // Estado inicial desde localStorage o valores por defecto
             const estadoInicial = () => {
@@ -440,14 +448,6 @@
                 setEstado({...estado, isPremium: true, premiumCode: codigoUp, premiumActivadoEn: new Date().toISOString(), premiumEmail: email || null});
                 return { exito: true };
             };
-
-            const Modal = ({ children, onClose }) => (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={onClose}>
-                    <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-                        {children}
-                    </div>
-                </div>
-            );
 
             const MenuNav = () => (
                 <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 shadow-lg">
