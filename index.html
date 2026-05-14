@@ -598,7 +598,7 @@
                                                             style={{width: `${Math.min(100, ciclo.progreso)}%`}}></div>
                                                     </div>
                                                     <div className="flex justify-between text-xs text-gray-600">
-                                                        <span>💵 Propinas: ${Math.round(ciclo.montoAcumuladoPropinas)}</span>
+                                                        <span>💵 Ingresos diarios: ${Math.round(ciclo.montoAcumuladoPropinas)}</span>
                                                         {ciclo.porcentajeCostoDiario < 100 && (
                                                             <span>💰 Sueldo: ${Math.round(ciclo.montoSueldoAsignado)}</span>
                                                         )}
@@ -613,7 +613,7 @@
                                                     ) : (
                                                         <div className="space-y-1">
                                                             <div className="flex justify-between">
-                                                                <span className="text-gray-500">💵 Propinas:</span>
+                                                                <span className="text-gray-500">💵 Ingresos diarios:</span>
                                                                 <span className="font-bold text-green-800">${Math.round(ciclo.montoDiarioCostoDiario)}/día</span>
                                                             </div>
                                                             <div className="flex justify-between">
@@ -1080,7 +1080,7 @@
                                     <div className="bg-green-50 border-l-4 border-green-500 p-6 mb-6 rounded-lg">
                                         <h3 className="text-xl font-bold text-green-800 mb-2">✅ Ciclo Completo</h3>
                                         <p className="text-sm text-green-800 mb-3">
-                                            Propinas: ${Math.round(ciclo.montoAcumuladoPropinas)} · Sueldo: ${Math.round(ciclo.montoSueldoAsignado)}
+                                            Ingresos diarios: ${Math.round(ciclo.montoAcumuladoPropinas)} · Sueldo: ${Math.round(ciclo.montoSueldoAsignado)}
                                             · <strong>Total: ${Math.round(ciclo.montoAcumulado)}</strong>
                                         </p>
                                         <button onClick={() => {
@@ -1101,7 +1101,7 @@
                                     
                                     <div className="grid grid-cols-2 gap-3 text-sm">
                                         <div className="bg-white bg-opacity-60 rounded-lg p-3">
-                                            <p className="text-gray-600">💵 De propinas</p>
+                                            <p className="text-gray-600">💵 Ingresos diarios</p>
                                             <p className="text-xl font-bold text-green-800">${Math.round(ciclo.montoAcumuladoPropinas)}</p>
                                         </div>
                                         <div className="bg-white bg-opacity-60 rounded-lg p-3">
@@ -1134,7 +1134,7 @@
                                     <h3 className="text-lg font-bold text-gray-800 mb-4">💳 Cómo se cubre este gasto</h3>
                                     <div className="grid grid-cols-2 gap-4 mb-4">
                                         <div>
-                                            <p className="text-sm text-gray-600 mb-1">💵 Con propinas diarias</p>
+                                            <p className="text-sm text-gray-600 mb-1">💵 Con ingresos diarios</p>
                                             <p className="text-3xl font-bold text-green-800">{ciclo.porcentajeCostoDiario}%</p>
                                             <p className="text-sm text-gray-600">${Math.round(ciclo.montoDiarioCostoDiario)} MXN/día</p>
                                             <p className="text-xs text-gray-500 mt-1">Total: ${Math.round(ciclo.montoDiarioCostoDiario * ciclo.diasDelCiclo)} MXN</p>
@@ -1887,7 +1887,7 @@
                                     {[
                                         { icono: '🏠', titulo: 'Dashboard', desc: 'Ve tus gastos fijos, costo de vida diario y progreso' },
                                         { icono: '💰', titulo: 'Billetera', desc: 'Tu dinero disponible en todas las monedas' },
-                                        { icono: '📥', titulo: 'Ingresos', desc: 'Registra tus propinas e ingresos diarios' },
+                                        { icono: '📥', titulo: 'Ingresos', desc: 'Registra tus ingresos diarios' },
                                         { icono: '🛒', titulo: 'Gastos Extra', desc: 'Gastos fuera de tu presupuesto fijo' },
                                         { icono: '📊', titulo: 'Reporte', desc: 'Análisis gráfico de tus finanzas' },
                                         { icono: '⚙️', titulo: 'Config', desc: 'Ajusta tipos de cambio y preferencias' },
@@ -1914,7 +1914,7 @@
                                 <Progreso />
                                 <div className="text-5xl mb-4 text-center">💵</div>
                                 <h2 className="text-2xl font-bold text-gray-800 mb-3">Registrar Ingresos</h2>
-                                <p className="text-gray-600 mb-5">Cada día que trabajes, registra tus propinas o ingresos en la sección de Ingresos.</p>
+                                <p className="text-gray-600 mb-5">Cada día que trabajes, registra tus ingresos diarios en la sección de Ingresos.</p>
                                 <div className="bg-green-50 rounded-xl p-4 mb-5">
                                     <p className="font-semibold text-green-800 mb-2">✓ El sistema calcula automáticamente:</p>
                                     <ul className="text-sm text-green-800 space-y-1">
@@ -2910,14 +2910,14 @@
                                         <input type="date" name="vencimiento" defaultValue={form.vencimiento !== '-' ? form.vencimiento : ''} required className="w-full px-4 py-3 border-2 rounded-xl" />
                                     </div>
                                     <div>
-                                        <label className="block text-gray-700 font-bold mb-2">% Cubierto con propinas</label>
+                                        <label className="block text-gray-700 font-bold mb-2">% Cubierto con ingresos diarios</label>
                                         <div className="flex items-center gap-3">
                                             <input type="range" name="porcentaje" min="0" max="100" step="10" defaultValue={form.porcentajeCostoDiario || 100} className="flex-1" onChange={(e) => document.getElementById('porcentajeLabel').textContent = e.target.value + '%'} />
                                             <span id="porcentajeLabel" className={`text-2xl font-bold ${t.accentText} w-16`}>{form.porcentajeCostoDiario || 100}%</span>
                                         </div>
                                         <div className="flex justify-between text-xs text-gray-600 mt-1">
                                             <span>0% = Todo sueldo</span>
-                                            <span>100% = Todo propinas</span>
+                                            <span>100% = Todo ingresos diarios</span>
                                         </div>
                                     </div>
                                     <select name="categoria" defaultValue={form.categoria} className="w-full px-4 py-3 border-2 rounded-xl">
@@ -2957,7 +2957,7 @@
                                 El ciclo de <strong>{form.gastoNombre}</strong> está completo.
                             </p>
                             <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-6 rounded">
-                                <p className="text-green-800 font-bold text-sm mb-1">💵 Propinas: ${Math.round(form.cicloCompleto?.montoAcumuladoPropinas || 0)}</p>
+                                <p className="text-green-800 font-bold text-sm mb-1">💵 Ingresos diarios: ${Math.round(form.cicloCompleto?.montoAcumuladoPropinas || 0)}</p>
                                 <p className="text-green-800 font-bold text-sm mb-1">💰 Sueldo: ${Math.round(form.cicloCompleto?.montoSueldoAsignado || 0)}</p>
                                 <p className="text-green-800 font-bold text-lg">Total: ${Math.round(form.cicloCompleto?.montoAcumulado || 0)}</p>
                             </div>
