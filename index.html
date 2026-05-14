@@ -837,11 +837,18 @@
                                     </div>
                                 ) : (
                                     <div className="space-y-3 max-h-96 overflow-y-auto">
-                                        {[...estado.ingresosDiarios].reverse().map((ingreso, idx) => {
+                                        {[...estado.ingresosDiarios]
+                                            .map((ing, origIdx) => ({...ing, _origIdx: origIdx}))
+                                            .sort((a, b) => {
+                                                const fa = a.fecha ? new Date(a.fecha + 'T12:00:00') : (() => { const f = new Date(estado.fechaInicio); f.setDate(f.getDate() + a.dia); return f; })();
+                                                const fb = b.fecha ? new Date(b.fecha + 'T12:00:00') : (() => { const f = new Date(estado.fechaInicio); f.setDate(f.getDate() + b.dia); return f; })();
+                                                return fb - fa;
+                                            })
+                                            .map((ingreso, idx) => {
                                             const fechaIngreso = ingreso.fecha
                                                 ? new Date(ingreso.fecha + 'T12:00:00')
                                                 : (() => { const f = new Date(estado.fechaInicio); f.setDate(f.getDate() + ingreso.dia); return f; })();
-                                            const ingresoId = estado.ingresosDiarios.length - 1 - idx;
+                                            const ingresoId = ingreso._origIdx;
 
                                             return (
                                                 <div key={idx} className="bg-gray-50 rounded-xl p-4 border-2 border-gray-200">
@@ -874,9 +881,7 @@
                                                                 <button
                                                                     onClick={() => {
                                                                         if (confirm('¿Eliminar este ingreso?')) {
-                                                                            const nuevosIngresos = [...estado.ingresosDiarios];
-                                                                            nuevosIngresos.splice(ingresoId, 1);
-                                                                            setEstado({...estado, ingresosDiarios: nuevosIngresos});
+                                                                            setEstado({...estado, ingresosDiarios: estado.ingresosDiarios.filter((_, i) => i !== ingresoId)});
                                                                         }
                                                                     }}
                                                                     className="text-red-600 hover:text-red-800 text-sm">
@@ -989,7 +994,7 @@
                                     </div>
                                 ) : (
                                     <div className="space-y-3 max-h-96 overflow-y-auto">
-                                        {[...estado.gastosExtras].reverse().map((gasto) => (
+                                        {[...estado.gastosExtras].sort((a, b) => new Date(b.fecha || 0) - new Date(a.fecha || 0)).map((gasto) => (
                                             <div key={gasto.id} className="bg-gray-50 rounded-xl p-4 border-2 border-gray-200">
                                                 <div className="flex justify-between items-start">
                                                     <div>
@@ -1447,7 +1452,7 @@
                     e.preventDefault();
                     const monto = parseFloat(e.target.monto.value);
                     const concepto = e.target.concepto.value;
-                    const fecha = calcularFechaActual().toISOString().split('T')[0];
+                    const fecha = e.target.fechaIngreso.value || calcularFechaActual().toISOString().split('T')[0];
                     let nuevoIngreso = { dia: estado.diasAcumulados, fecha, propinas: 0, usd: 0, ars: 0, concepto: concepto || titulo };
                     let nuevaBilletera = {...estado.billetera};
                     if (!sec || secCode === principal) {
@@ -1474,6 +1479,10 @@
                         <form onSubmit={handleSubmit}>
                             <input type="number" name="monto" step="0.01" required className="w-full px-4 py-3 border-2 rounded-xl mb-3 text-2xl" placeholder={placeholder} />
                             <input type="text" name="concepto" className="w-full px-4 py-3 border-2 rounded-xl mb-3" placeholder="Concepto (opcional)" />
+                            <div className="mb-3">
+                                <label className="block text-gray-600 text-sm font-medium mb-1">Fecha del ingreso</label>
+                                <input type="date" name="fechaIngreso" defaultValue={new Date().toISOString().split('T')[0]} max={new Date().toISOString().split('T')[0]} className="w-full px-4 py-3 border-2 rounded-xl" />
+                            </div>
                             {tcInfo && <p className="text-sm text-gray-600 mb-4">{tcInfo}</p>}
                             {secCode === principal && <p className="text-sm text-gray-600 mb-4">Costo de vida hoy: ${Math.round(costoVidaDiario)}</p>}
                             <div className="flex gap-3">
@@ -2268,14 +2277,13 @@
                             <form onSubmit={(e) => {
                                 e.preventDefault();
                                 const f = e.target;
-                                const fechaActual = calcularFechaActual().toISOString().split('T')[0];
                                 const maxId = estado.gastosExtras.length > 0 ? Math.max(...estado.gastosExtras.map(g => g.id)) : 0;
                                 const fuente = f.fuente.value;
                                 const monto = parseFloat(f.monto.value);
 
                                 const nuevoGasto = {
                                     id: maxId + 1,
-                                    fecha: fechaActual,
+                                    fecha: f.fechaGasto.value || calcularFechaActual().toISOString().split('T')[0],
                                     concepto: f.concepto.value,
                                     monto: monto,
                                     categoria: f.categoria.value,
@@ -2305,6 +2313,10 @@
                                 <div className="space-y-3 mb-4">
                                     <input type="text" name="concepto" required placeholder="Concepto" className="w-full px-4 py-3 border-2 rounded-xl" />
                                     <input type="number" step="0.01" name="monto" required placeholder="Monto" className="w-full px-4 py-3 border-2 rounded-xl text-2xl" />
+                                    <div>
+                                        <label className="block text-gray-600 text-sm font-medium mb-1">Fecha del gasto</label>
+                                        <input type="date" name="fechaGasto" defaultValue={new Date().toISOString().split('T')[0]} max={new Date().toISOString().split('T')[0]} className="w-full px-4 py-3 border-2 rounded-xl" />
+                                    </div>
                                     <div>
                                         <label className="block text-gray-700 font-bold mb-2">Categoría</label>
                                         <select name="categoria" className="w-full px-4 py-3 border-2 rounded-xl mb-2">
