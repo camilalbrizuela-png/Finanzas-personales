@@ -93,13 +93,25 @@
                         if (!parsed.categoriasExtra) parsed.categoriasExtra = [];
                         if (!parsed.coloresCategorias) parsed.coloresCategorias = {};
                         if (!parsed.categoriasGasto) parsed.categoriasGasto = [
-                            { id: 1, emoji: '🍕', nombre: 'Comida' },
-                            { id: 2, emoji: '🚗', nombre: 'Transporte' },
-                            { id: 3, emoji: '🎬', nombre: 'Entretenimiento' },
-                            { id: 4, emoji: '🏠', nombre: 'Hogar' },
-                            { id: 5, emoji: '💊', nombre: 'Salud' },
-                            { id: 6, emoji: '💰', nombre: 'Otros' },
+                            { id: 1, emoji: '🍕', nombre: 'Comida', predefinida: true },
+                            { id: 2, emoji: '🚗', nombre: 'Transporte', predefinida: true },
+                            { id: 3, emoji: '🎬', nombre: 'Entretenimiento', predefinida: true },
+                            { id: 4, emoji: '🏠', nombre: 'Hogar', predefinida: true },
+                            { id: 5, emoji: '💊', nombre: 'Salud', predefinida: true },
+                            { id: 6, emoji: '👕', nombre: 'Compras', predefinida: true },
+                            { id: 7, emoji: '💰', nombre: 'Otros', predefinida: true },
                         ];
+                        // Mark existing categories as predefined and add Compras if missing
+                        if (parsed.categoriasGasto) {
+                            const predefinidaNames = ['Comida','Transporte','Entretenimiento','Hogar','Salud','Otros'];
+                            parsed.categoriasGasto = parsed.categoriasGasto.map(c =>
+                                predefinidaNames.includes(c.nombre) ? {...c, predefinida: true} : c
+                            );
+                            if (!parsed.categoriasGasto.find(c => c.nombre === 'Compras')) {
+                                const maxId = Math.max(...parsed.categoriasGasto.map(c => c.id));
+                                parsed.categoriasGasto.push({ id: maxId + 1, emoji: '👕', nombre: 'Compras', predefinida: true });
+                            }
+                        }
                         if (parsed.isPremium === undefined) parsed.isPremium = false;
                         if (parsed.premiumCode === undefined) parsed.premiumCode = null;
                         if (parsed.premiumActivadoEn === undefined) parsed.premiumActivadoEn = null;
@@ -136,12 +148,13 @@
                     categoriasExtra: [],
                     coloresCategorias: {},
                     categoriasGasto: [
-                        { id: 1, emoji: '🍕', nombre: 'Comida' },
-                        { id: 2, emoji: '🚗', nombre: 'Transporte' },
-                        { id: 3, emoji: '🎬', nombre: 'Entretenimiento' },
-                        { id: 4, emoji: '🏠', nombre: 'Hogar' },
-                        { id: 5, emoji: '💊', nombre: 'Salud' },
-                        { id: 6, emoji: '💰', nombre: 'Otros' },
+                        { id: 1, emoji: '🍕', nombre: 'Comida', predefinida: true },
+                        { id: 2, emoji: '🚗', nombre: 'Transporte', predefinida: true },
+                        { id: 3, emoji: '🎬', nombre: 'Entretenimiento', predefinida: true },
+                        { id: 4, emoji: '🏠', nombre: 'Hogar', predefinida: true },
+                        { id: 5, emoji: '💊', nombre: 'Salud', predefinida: true },
+                        { id: 6, emoji: '👕', nombre: 'Compras', predefinida: true },
+                        { id: 7, emoji: '💰', nombre: 'Otros', predefinida: true },
                     ],
                     isPremium: false,
                     premiumCode: null,
@@ -1018,18 +1031,11 @@
                                             <div key={gasto.id} className="bg-gray-50 rounded-xl p-4 border-2 border-gray-200">
                                                 <div className="flex justify-between items-start">
                                                     <div>
-                                                        <p className="font-bold text-gray-800">{catEmoji && <span className="mr-1">{catEmoji}</span>}{gasto.concepto}</p>
-                                                        <p className="text-sm text-gray-600">{formatearFecha(gasto.fecha)}</p>
-                                                        <div className="flex gap-2 mt-1 flex-wrap">
-                                                            {catNombre && (
-                                                                <span className={`inline-block px-2 py-1 text-xs font-bold ${t.badge} rounded-full`}>
-                                                                    {catNombre}
-                                                                </span>
-                                                            )}
-                                                            <span className="inline-block px-2 py-1 text-xs font-bold bg-gray-200 text-gray-700 rounded-full">
-                                                                {getNombreFuente(gasto.fuente)}
-                                                            </span>
-                                                        </div>
+                                                        <p className="font-bold text-gray-800">
+                                                            {catEmoji && <span className="mr-1">{catEmoji}</span>}
+                                                            {catNombre}{gasto.concepto ? ` - ${gasto.concepto}` : ''}
+                                                        </p>
+                                                        <p className="text-sm text-gray-500">{formatearFecha(gasto.fecha)} · {getNombreFuente(gasto.fuente)}</p>
                                                     </div>
                                                     <div className="text-right flex items-start gap-2">
                                                         <p className="text-2xl font-bold text-red-600">${Math.round(gasto.monto)}</p>
@@ -2303,11 +2309,14 @@
                                 const fuente = f.fuente.value;
                                 const monto = parseFloat(f.monto.value);
 
+                                const catId = form.categoriaIdSeleccionada && form.categoriaIdSeleccionada !== '__nueva__'
+                                    ? parseInt(form.categoriaIdSeleccionada)
+                                    : parseInt(f.categoriaId.value);
                                 const nuevoGasto = {
                                     id: maxId + 1,
                                     fecha: f.fechaGasto.value || calcularFechaActual().toISOString().split('T')[0],
                                     concepto: f.concepto.value,
-                                    categoriaId: parseInt(f.categoriaId.value),
+                                    categoriaId: catId,
                                     monto: monto,
                                     fuente: fuente
                                 };
@@ -2335,11 +2344,49 @@
                                 <div className="space-y-3 mb-4">
                                     <div>
                                         <label className="block text-gray-700 font-bold mb-2">Categoría</label>
-                                        <select name="categoriaId" required className="w-full px-4 py-3 border-2 rounded-xl text-base">
+                                        <select name="categoriaId" required
+                                            value={form.categoriaIdSeleccionada || String((estado.categoriasGasto || [])[0]?.id || '')}
+                                            onChange={(e) => {
+                                                if (e.target.value === '__nueva__') {
+                                                    setForm({...form, categoriaIdSeleccionada: '__nueva__', mostrarNuevaCat: true, nuevaCatEmoji: '📦', nuevaCatNombre: ''});
+                                                } else {
+                                                    setForm({...form, categoriaIdSeleccionada: e.target.value, mostrarNuevaCat: false});
+                                                }
+                                            }}
+                                            className="w-full px-4 py-3 border-2 rounded-xl text-base">
                                             {(estado.categoriasGasto || []).map(cat => (
-                                                <option key={cat.id} value={cat.id}>{cat.emoji} {cat.nombre}</option>
+                                                <option key={cat.id} value={String(cat.id)}>{cat.emoji} {cat.nombre}</option>
                                             ))}
+                                            <option value="__nueva__">➕ Agregar nueva categoría</option>
                                         </select>
+                                        {form.mostrarNuevaCat && (
+                                            <div className="mt-2 p-3 bg-gray-50 border-2 border-gray-200 rounded-xl space-y-2">
+                                                <p className="text-sm font-bold text-gray-700">Nueva categoría</p>
+                                                <div className="flex gap-2">
+                                                    <input type="text" placeholder="Emoji" maxLength={2}
+                                                        value={form.nuevaCatEmoji || ''}
+                                                        onChange={(e) => setForm({...form, nuevaCatEmoji: e.target.value})}
+                                                        className="w-16 px-3 py-2 border-2 rounded-xl text-center text-xl" />
+                                                    <input type="text" placeholder="Nombre de la categoría"
+                                                        value={form.nuevaCatNombre || ''}
+                                                        onChange={(e) => setForm({...form, nuevaCatNombre: e.target.value})}
+                                                        className="flex-1 px-3 py-2 border-2 rounded-xl" />
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <button type="button" onClick={() => setForm({...form, mostrarNuevaCat: false, categoriaIdSeleccionada: String((estado.categoriasGasto || [])[0]?.id || '')})}
+                                                        className="flex-1 bg-gray-200 hover:bg-gray-300 px-3 py-2 rounded-xl text-sm font-bold">Cancelar</button>
+                                                    <button type="button" onClick={() => {
+                                                        const nombre = (form.nuevaCatNombre || '').trim();
+                                                        if (!nombre) { alert('Escribe el nombre de la categoría'); return; }
+                                                        const maxId = (estado.categoriasGasto || []).length > 0 ? Math.max(...estado.categoriasGasto.map(c => c.id)) : 0;
+                                                        const newId = maxId + 1;
+                                                        const newCat = { id: newId, emoji: form.nuevaCatEmoji || '📦', nombre };
+                                                        setEstado(prev => ({...prev, categoriasGasto: [...(prev.categoriasGasto || []), newCat]}));
+                                                        setForm({...form, mostrarNuevaCat: false, categoriaIdSeleccionada: String(newId), nuevaCatEmoji: '', nuevaCatNombre: ''});
+                                                    }} className="flex-1 bg-gray-700 hover:bg-gray-800 text-white px-3 py-2 rounded-xl text-sm font-bold">Guardar</button>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                     <input type="text" name="concepto" required placeholder="Descripción (ej: Pizza con amigos)" className="w-full px-4 py-3 border-2 rounded-xl" />
                                     <input type="number" step="0.01" name="monto" required placeholder="Monto" className="w-full px-4 py-3 border-2 rounded-xl text-2xl" />
@@ -2604,18 +2651,24 @@
                                         {(estado.categoriasGasto || []).map(cat => (
                                             <div key={cat.id} className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3 border border-gray-200">
                                                 <span className="font-medium text-gray-800">{cat.emoji} {cat.nombre}</span>
-                                                <div className="flex gap-2">
-                                                    <button type="button"
-                                                        onClick={() => { setForm({...cat}); setModal('editarCategoria'); }}
-                                                        className="text-blue-600 hover:text-blue-800 text-sm">✏️</button>
-                                                    <button type="button"
-                                                        onClick={() => {
-                                                            if ((estado.categoriasGasto || []).length <= 1) { alert('Debe haber al menos una categoría.'); return; }
-                                                            if (confirm(`¿Eliminar "${cat.nombre}"?`)) {
-                                                                setEstado({...estado, categoriasGasto: estado.categoriasGasto.filter(c => c.id !== cat.id)});
-                                                            }
-                                                        }}
-                                                        className="text-red-600 hover:text-red-800 text-sm">🗑️</button>
+                                                <div className="flex gap-2 items-center">
+                                                    {cat.predefinida ? (
+                                                        <span className="text-gray-400 text-sm" title="Categoría predefinida">🔒</span>
+                                                    ) : (
+                                                        <>
+                                                            <button type="button"
+                                                                onClick={() => { setForm({...cat}); setModal('editarCategoria'); }}
+                                                                className="text-blue-600 hover:text-blue-800 text-sm">✏️</button>
+                                                            <button type="button"
+                                                                onClick={() => {
+                                                                    if ((estado.categoriasGasto || []).filter(c => !c.predefinida).length <= 0 && (estado.categoriasGasto || []).length <= 1) { alert('Debe haber al menos una categoría.'); return; }
+                                                                    if (confirm(`¿Eliminar "${cat.nombre}"?`)) {
+                                                                        setEstado({...estado, categoriasGasto: estado.categoriasGasto.filter(c => c.id !== cat.id)});
+                                                                    }
+                                                                }}
+                                                                className="text-red-600 hover:text-red-800 text-sm">🗑️</button>
+                                                        </>
+                                                    )}
                                                 </div>
                                             </div>
                                         ))}
