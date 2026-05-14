@@ -2431,6 +2431,9 @@
                                 const nuevoMonto = parseFloat(f.monto.value);
                                 const diff = nuevoMonto - form.monto;
                                 const fuente = form.fuente;
+                                const catId = form.categoriaIdSeleccionada && form.categoriaIdSeleccionada !== '__nueva__'
+                                    ? parseInt(form.categoriaIdSeleccionada)
+                                    : form.categoriaId;
                                 let nuevaBilletera = {...estado.billetera};
                                 if (fuente === 'usd') {
                                     nuevaBilletera.usd = nuevaBilletera.usd - diff;
@@ -2444,12 +2447,76 @@
                                     );
                                 }
                                 const nuevosGastos = estado.gastosExtras.map(g =>
-                                    g.id === form.id ? {...g, concepto: f.concepto.value, monto: nuevoMonto, categoria: f.categoria.value} : g
+                                    g.id === form.id ? {...g, concepto: f.concepto.value, monto: nuevoMonto, categoriaId: catId} : g
                                 );
                                 setEstado({...estado, gastosExtras: nuevosGastos, billetera: nuevaBilletera});
                                 setModal(null);
                             }}>
                                 <div className="space-y-3 mb-4">
+                                    <div>
+                                        <label className="block text-gray-700 font-bold mb-2">Categoría</label>
+                                        <select name="categoriaId" required
+                                            value={form.categoriaIdSeleccionada !== undefined ? form.categoriaIdSeleccionada : String(form.categoriaId || (estado.categoriasGasto || [])[0]?.id || '')}
+                                            onChange={(e) => {
+                                                if (e.target.value === '__nueva__') {
+                                                    setForm({...form, categoriaIdSeleccionada: '__nueva__', mostrarNuevaCat: true, nuevaCatEmoji: '', nuevaCatNombre: ''});
+                                                } else {
+                                                    setForm({...form, categoriaIdSeleccionada: e.target.value, mostrarNuevaCat: false});
+                                                }
+                                            }}
+                                            className="w-full px-4 py-3 border-2 rounded-xl text-base">
+                                            {(estado.categoriasGasto || []).map(cat => (
+                                                <option key={cat.id} value={String(cat.id)}>{cat.emoji} {cat.nombre}</option>
+                                            ))}
+                                            <option value="__nueva__">➕ Agregar nueva categoría</option>
+                                        </select>
+                                        {form.mostrarNuevaCat && (() => {
+                                            const EMOJIS_CAT = ['🍕','🍔','🍿','🎬','🚗','⛽','🏠','💡','📱','👕','👟','🎮','📚','✈️','🏥','💊','🛒','🎁','☕','🍺','🚕','🏋️','💇','🎵','🐕','🌳','💼','📝','🔧','🎨','🏖️','🎓'];
+                                            return (
+                                            <div className="mt-2 p-3 bg-gray-50 border-2 border-gray-200 rounded-xl space-y-3">
+                                                <p className="text-sm font-bold text-gray-700">Nueva categoría</p>
+                                                <div>
+                                                    <p className="text-xs text-gray-500 mb-2">Selecciona un emoji</p>
+                                                    <div className="grid grid-cols-8 gap-1">
+                                                        {EMOJIS_CAT.map(em => (
+                                                            <button key={em} type="button"
+                                                                onClick={() => setForm({...form, nuevaCatEmoji: em})}
+                                                                className={`w-9 h-9 text-lg rounded-lg border-2 flex items-center justify-center transition-all ${form.nuevaCatEmoji === em ? 'border-gray-700 bg-gray-200 scale-110' : 'border-gray-200 bg-white hover:border-gray-400 hover:bg-gray-100'}`}>
+                                                                {em}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                    {!form.nuevaCatEmoji && (
+                                                        <p className="text-xs text-red-500 mt-1">Selecciona un emoji para la categoría</p>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs text-gray-500 mb-1">
+                                                        {form.nuevaCatEmoji ? `${form.nuevaCatEmoji} Nombre de la categoría` : 'Nombre de la categoría'}
+                                                    </label>
+                                                    <input type="text" placeholder="Ej: Mascota"
+                                                        value={form.nuevaCatNombre || ''}
+                                                        onChange={(e) => setForm({...form, nuevaCatNombre: e.target.value})}
+                                                        className="w-full px-3 py-2 border-2 rounded-xl" />
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <button type="button" onClick={() => setForm({...form, mostrarNuevaCat: false, categoriaIdSeleccionada: String(form.categoriaId || (estado.categoriasGasto || [])[0]?.id || '')})}
+                                                        className="flex-1 bg-gray-200 hover:bg-gray-300 px-3 py-2 rounded-xl text-sm font-bold">Cancelar</button>
+                                                    <button type="button" onClick={() => {
+                                                        const nombre = (form.nuevaCatNombre || '').trim();
+                                                        if (!form.nuevaCatEmoji) { alert('Selecciona un emoji para la categoría'); return; }
+                                                        if (!nombre) { alert('Escribe el nombre de la categoría'); return; }
+                                                        const maxId = (estado.categoriasGasto || []).length > 0 ? Math.max(...estado.categoriasGasto.map(c => c.id)) : 0;
+                                                        const newId = maxId + 1;
+                                                        const newCat = { id: newId, emoji: form.nuevaCatEmoji, nombre };
+                                                        setEstado(prev => ({...prev, categoriasGasto: [...(prev.categoriasGasto || []), newCat]}));
+                                                        setForm({...form, mostrarNuevaCat: false, categoriaIdSeleccionada: String(newId), nuevaCatEmoji: '', nuevaCatNombre: ''});
+                                                    }} className="flex-1 bg-gray-700 hover:bg-gray-800 text-white px-3 py-2 rounded-xl text-sm font-bold">Guardar</button>
+                                                </div>
+                                            </div>
+                                            );
+                                        })()}
+                                    </div>
                                     <div>
                                         <label className="block text-gray-700 font-bold mb-2">Concepto</label>
                                         <input type="text" name="concepto" defaultValue={form.concepto} required className="w-full px-4 py-3 border-2 rounded-xl" />
@@ -2457,21 +2524,6 @@
                                     <div>
                                         <label className="block text-gray-700 font-bold mb-2">Monto</label>
                                         <input type="number" name="monto" step="0.01" defaultValue={form.monto} required className="w-full px-4 py-3 border-2 rounded-xl text-2xl" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-gray-700 font-bold mb-2">Categoría</label>
-                                        <select name="categoria" defaultValue={form.categoria} className="w-full px-4 py-3 border-2 rounded-xl">
-                                            <option value="Comida">🍔 Comida</option>
-                                            <option value="Transporte">🚗 Transporte</option>
-                                            <option value="Entretenimiento">🎬 Entretenimiento</option>
-                                            <option value="Salud">💊 Salud</option>
-                                            <option value="Ropa">👕 Ropa</option>
-                                            {(estado.categoriasExtra || []).map(cat => (
-                                                <option key={cat} value={cat}>{cat}</option>
-                                            ))}
-                                            <option value="Gasto Fijo">📋 Gasto Fijo</option>
-                                            <option value="Otro">📦 Otro</option>
-                                        </select>
                                     </div>
                                 </div>
                                 <div className="flex gap-3">
