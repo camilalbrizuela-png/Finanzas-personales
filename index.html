@@ -92,6 +92,14 @@
                         if (!parsed.monedaPrincipal) parsed.monedaPrincipal = 'MXN';
                         if (!parsed.categoriasExtra) parsed.categoriasExtra = [];
                         if (!parsed.coloresCategorias) parsed.coloresCategorias = {};
+                        if (!parsed.categoriasGasto) parsed.categoriasGasto = [
+                            { id: 1, emoji: '🍕', nombre: 'Comida' },
+                            { id: 2, emoji: '🚗', nombre: 'Transporte' },
+                            { id: 3, emoji: '🎬', nombre: 'Entretenimiento' },
+                            { id: 4, emoji: '🏠', nombre: 'Hogar' },
+                            { id: 5, emoji: '💊', nombre: 'Salud' },
+                            { id: 6, emoji: '💰', nombre: 'Otros' },
+                        ];
                         if (parsed.isPremium === undefined) parsed.isPremium = false;
                         if (parsed.premiumCode === undefined) parsed.premiumCode = null;
                         if (parsed.premiumActivadoEn === undefined) parsed.premiumActivadoEn = null;
@@ -127,6 +135,14 @@
                     gastosExtras: [],
                     categoriasExtra: [],
                     coloresCategorias: {},
+                    categoriasGasto: [
+                        { id: 1, emoji: '🍕', nombre: 'Comida' },
+                        { id: 2, emoji: '🚗', nombre: 'Transporte' },
+                        { id: 3, emoji: '🎬', nombre: 'Entretenimiento' },
+                        { id: 4, emoji: '🏠', nombre: 'Hogar' },
+                        { id: 5, emoji: '💊', nombre: 'Salud' },
+                        { id: 6, emoji: '💰', nombre: 'Otros' },
+                    ],
                     isPremium: false,
                     premiumCode: null,
                     premiumActivadoEn: null,
@@ -994,16 +1010,20 @@
                                     </div>
                                 ) : (
                                     <div className="space-y-3 max-h-96 overflow-y-auto">
-                                        {[...estado.gastosExtras].sort((a, b) => new Date(b.fecha || 0) - new Date(a.fecha || 0)).map((gasto) => (
+                                        {[...estado.gastosExtras].sort((a, b) => new Date(b.fecha || 0) - new Date(a.fecha || 0)).map((gasto) => {
+                                            const catGasto = (estado.categoriasGasto || []).find(c => c.id === gasto.categoriaId);
+                                            const catEmoji = catGasto ? catGasto.emoji : (gasto.emoji || '');
+                                            const catNombre = catGasto ? catGasto.nombre : gasto.categoria;
+                                            return (
                                             <div key={gasto.id} className="bg-gray-50 rounded-xl p-4 border-2 border-gray-200">
                                                 <div className="flex justify-between items-start">
                                                     <div>
-                                                        <p className="font-bold text-gray-800">{gasto.emoji && <span className="mr-1">{gasto.emoji}</span>}{gasto.concepto}</p>
+                                                        <p className="font-bold text-gray-800">{catEmoji && <span className="mr-1">{catEmoji}</span>}{gasto.concepto}</p>
                                                         <p className="text-sm text-gray-600">{formatearFecha(gasto.fecha)}</p>
                                                         <div className="flex gap-2 mt-1 flex-wrap">
-                                                            {gasto.categoria && (
+                                                            {catNombre && (
                                                                 <span className={`inline-block px-2 py-1 text-xs font-bold ${t.badge} rounded-full`}>
-                                                                    {gasto.categoria}
+                                                                    {catNombre}
                                                                 </span>
                                                             )}
                                                             <span className="inline-block px-2 py-1 text-xs font-bold bg-gray-200 text-gray-700 rounded-full">
@@ -1037,7 +1057,8 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 )}
                             </div>
@@ -1179,7 +1200,8 @@
                 const gastosFilt = estado.gastosExtras.filter(g => filtrar(g.fecha));
                 const totalGastado = gastosFilt.reduce((s, g) => s + g.monto, 0);
                 const porCategoria = gastosFilt.reduce((acc, g) => {
-                    const cat = g.categoria || 'Sin categoría';
+                    const catObj = (estado.categoriasGasto || []).find(c => c.id === g.categoriaId);
+                    const cat = catObj ? `${catObj.emoji} ${catObj.nombre}` : (g.emoji ? `${g.emoji} ${g.categoria || 'Otros'}` : (g.categoria || 'Otros'));
                     acc[cat] = (acc[cat] || 0) + g.monto;
                     return acc;
                 }, {});
@@ -2285,9 +2307,8 @@
                                     id: maxId + 1,
                                     fecha: f.fechaGasto.value || calcularFechaActual().toISOString().split('T')[0],
                                     concepto: f.concepto.value,
-                                    emoji: form.emoji || '',
+                                    categoriaId: parseInt(f.categoriaId.value),
                                     monto: monto,
-                                    categoria: f.categoria.value,
                                     fuente: fuente
                                 };
 
@@ -2313,58 +2334,18 @@
                                 <input type="hidden" name="fuente" defaultValue={form.fuente || 'mxn'} />
                                 <div className="space-y-3 mb-4">
                                     <div>
-                                        <label className="block text-gray-600 text-sm font-medium mb-2">Emoji</label>
-                                        <div className="flex flex-wrap gap-1 mb-2">
-                                            {['🍕','🍔','🍿','🎬','🚗','⛽','🏠','💡','📱','👕','👟','🎮','📚','✈️','🏥','💊','🛒','🎁','☕','🍺','🚕','🏋️','🐶','🎵','🍜','🍣','🥗','💈','🎨','🏊'].map(e => (
-                                                <button key={e} type="button"
-                                                    onClick={() => setForm({...form, emoji: form.emoji === e ? '' : e})}
-                                                    className={`text-xl w-9 h-9 rounded-lg flex items-center justify-center transition-all ${form.emoji === e ? 'bg-gray-700 ring-2 ring-gray-400 scale-110' : 'bg-gray-100 hover:bg-gray-200'}`}>
-                                                    {e}
-                                                </button>
+                                        <label className="block text-gray-700 font-bold mb-2">Categoría</label>
+                                        <select name="categoriaId" required className="w-full px-4 py-3 border-2 rounded-xl text-base">
+                                            {(estado.categoriasGasto || []).map(cat => (
+                                                <option key={cat.id} value={cat.id}>{cat.emoji} {cat.nombre}</option>
                                             ))}
-                                        </div>
-                                        {form.emoji && (
-                                            <button type="button" onClick={() => setForm({...form, emoji: ''})}
-                                                className="text-xs text-gray-400 hover:text-gray-600 underline">
-                                                Quitar emoji
-                                            </button>
-                                        )}
+                                        </select>
                                     </div>
-                                    <input type="text" name="concepto" required placeholder="Concepto" className="w-full px-4 py-3 border-2 rounded-xl" />
+                                    <input type="text" name="concepto" required placeholder="Descripción (ej: Pizza con amigos)" className="w-full px-4 py-3 border-2 rounded-xl" />
                                     <input type="number" step="0.01" name="monto" required placeholder="Monto" className="w-full px-4 py-3 border-2 rounded-xl text-2xl" />
                                     <div>
                                         <label className="block text-gray-600 text-sm font-medium mb-1">Fecha del gasto</label>
                                         <input type="date" name="fechaGasto" defaultValue={new Date().toISOString().split('T')[0]} max={new Date().toISOString().split('T')[0]} className="w-full px-4 py-3 border-2 rounded-xl" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-gray-700 font-bold mb-2">Categoría</label>
-                                        <select name="categoria" className="w-full px-4 py-3 border-2 rounded-xl mb-2">
-                                            <option value="Comida">🍔 Comida</option>
-                                            <option value="Transporte">🚗 Transporte</option>
-                                            <option value="Entretenimiento">🎬 Entretenimiento</option>
-                                            <option value="Salud">💊 Salud</option>
-                                            <option value="Ropa">👕 Ropa</option>
-                                            {(estado.categoriasExtra || []).map(cat => (
-                                                <option key={cat} value={cat}>{cat}</option>
-                                            ))}
-                                            <option value="Otro">📦 Otro</option>
-                                        </select>
-                                        <div className="flex gap-2">
-                                            <input type="text" id="nuevaCatInput" placeholder="+ Nueva categoría" className="flex-1 px-3 py-2 border-2 rounded-xl text-sm" />
-                                            <button type="button" onClick={() => {
-                                                const val = document.getElementById('nuevaCatInput').value.trim();
-                                                if (!val) return;
-                                                if ((estado.categoriasExtra || []).length >= LIMITES.categoriasExtra && !(estado.categoriasExtra || []).includes(val)) {
-                                                    setForm({ razon: 'categorias', actual: (estado.categoriasExtra || []).length, limite: LIMITES.categoriasExtra });
-                                                    setModal('upgradePremium');
-                                                    return;
-                                                }
-                                                if (val && !(estado.categoriasExtra || []).includes(val)) {
-                                                    setEstado({...estado, categoriasExtra: [...(estado.categoriasExtra || []), val]});
-                                                    document.getElementById('nuevaCatInput').value = '';
-                                                }
-                                            }} className="bg-gray-200 hover:bg-gray-300 px-3 py-2 rounded-xl text-sm font-bold">➕</button>
-                                        </div>
                                     </div>
                                 </div>
                                 <div className="flex gap-3">
@@ -2608,6 +2589,37 @@
                                             })}
                                         </div>
                                     )}
+                                </div>
+
+                                {/* Categorías de gastos */}
+                                <div className="mb-6">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <h3 className="text-xl font-bold">📋 Categorías de gastos</h3>
+                                        <button type="button" onClick={() => { setForm({emoji:'', nombre:''}); setModal('nuevaCategoria'); }}
+                                            className="bg-gray-700 hover:bg-gray-800 text-white text-sm px-3 py-2 rounded-xl font-bold">
+                                            ➕ Nueva
+                                        </button>
+                                    </div>
+                                    <div className="space-y-2">
+                                        {(estado.categoriasGasto || []).map(cat => (
+                                            <div key={cat.id} className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3 border border-gray-200">
+                                                <span className="font-medium text-gray-800">{cat.emoji} {cat.nombre}</span>
+                                                <div className="flex gap-2">
+                                                    <button type="button"
+                                                        onClick={() => { setForm({...cat}); setModal('editarCategoria'); }}
+                                                        className="text-blue-600 hover:text-blue-800 text-sm">✏️</button>
+                                                    <button type="button"
+                                                        onClick={() => {
+                                                            if ((estado.categoriasGasto || []).length <= 1) { alert('Debe haber al menos una categoría.'); return; }
+                                                            if (confirm(`¿Eliminar "${cat.nombre}"?`)) {
+                                                                setEstado({...estado, categoriasGasto: estado.categoriasGasto.filter(c => c.id !== cat.id)});
+                                                            }
+                                                        }}
+                                                        className="text-red-600 hover:text-red-800 text-sm">🗑️</button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
 
                                 {/* Selector de Temas */}
@@ -2969,6 +2981,67 @@
                             </form>
                         </Modal>
                     )}
+                    {modal === 'nuevaCategoria' && (
+                        <Modal onClose={() => setModal(null)}>
+                            <h2 className="text-xl font-bold mb-4">➕ Nueva categoría</h2>
+                            <div className="mb-3">
+                                <label className="block text-gray-600 text-sm font-medium mb-2">Emoji</label>
+                                <div className="flex flex-wrap gap-1 mb-1">
+                                    {['🍕','🍔','🚗','⛽','🎬','🎮','🏠','💡','📱','👕','👟','📚','✈️','🏥','💊','🛒','🎁','☕','🍺','🏋️','💰','🐶','🎵','🍜','💈','🎨'].map(e => (
+                                        <button key={e} type="button"
+                                            onClick={() => setForm({...form, emoji: form.emoji === e ? '' : e})}
+                                            className={`text-xl w-9 h-9 rounded-lg flex items-center justify-center transition-all ${form.emoji === e ? 'bg-gray-700 ring-2 ring-gray-400 scale-110' : 'bg-gray-100 hover:bg-gray-200'}`}>
+                                            {e}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            <input type="text" placeholder="Nombre de la categoría" defaultValue={form.nombre}
+                                id="nuevaCatNombre" className="w-full px-4 py-3 border-2 rounded-xl mb-4" />
+                            <div className="flex gap-3">
+                                <button onClick={() => setModal(null)} className="flex-1 bg-gray-200 hover:bg-gray-300 px-4 py-3 rounded-xl font-bold">Cancelar</button>
+                                <button onClick={() => {
+                                    const nombre = document.getElementById('nuevaCatNombre').value.trim();
+                                    if (!nombre) return;
+                                    const maxId = (estado.categoriasGasto || []).length > 0 ? Math.max(...estado.categoriasGasto.map(c => c.id)) : 0;
+                                    setEstado({...estado, categoriasGasto: [...(estado.categoriasGasto || []), { id: maxId + 1, emoji: form.emoji || '📦', nombre }]});
+                                    setModal('config');
+                                }} className="flex-1 bg-gray-700 hover:bg-gray-800 text-white px-4 py-3 rounded-xl font-bold">Guardar</button>
+                            </div>
+                        </Modal>
+                    )}
+
+                    {modal === 'editarCategoria' && (
+                        <Modal onClose={() => setModal(null)}>
+                            <h2 className="text-xl font-bold mb-4">✏️ Editar categoría</h2>
+                            <div className="mb-3">
+                                <label className="block text-gray-600 text-sm font-medium mb-2">Emoji</label>
+                                <div className="flex flex-wrap gap-1 mb-1">
+                                    {['🍕','🍔','🚗','⛽','🎬','🎮','🏠','💡','📱','👕','👟','📚','✈️','🏥','💊','🛒','🎁','☕','🍺','🏋️','💰','🐶','🎵','🍜','💈','🎨'].map(e => (
+                                        <button key={e} type="button"
+                                            onClick={() => setForm({...form, emoji: form.emoji === e ? '' : e})}
+                                            className={`text-xl w-9 h-9 rounded-lg flex items-center justify-center transition-all ${form.emoji === e ? 'bg-gray-700 ring-2 ring-gray-400 scale-110' : 'bg-gray-100 hover:bg-gray-200'}`}>
+                                            {e}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            <input type="text" placeholder="Nombre de la categoría" defaultValue={form.nombre}
+                                id="editCatNombre" className="w-full px-4 py-3 border-2 rounded-xl mb-4" />
+                            <div className="flex gap-3">
+                                <button onClick={() => setModal('config')} className="flex-1 bg-gray-200 hover:bg-gray-300 px-4 py-3 rounded-xl font-bold">Cancelar</button>
+                                <button onClick={() => {
+                                    const nombre = document.getElementById('editCatNombre').value.trim();
+                                    if (!nombre) return;
+                                    setEstado({...estado, categoriasGasto: estado.categoriasGasto.map(c =>
+                                        c.id === form.id ? {...c, emoji: form.emoji || c.emoji, nombre } : c
+                                    )});
+                                    setModal('config');
+                                }} className="flex-1 bg-gray-700 hover:bg-gray-800 text-white px-4 py-3 rounded-xl font-bold">Guardar</button>
+                            </div>
+                        </Modal>
+                    )}
+
                     {modal === 'confirmarCiclo' && (
                         <Modal onClose={() => setModal(null)}>
                             <h2 className="text-2xl font-bold mb-4">✅ Ciclo Completo</h2>
