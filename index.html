@@ -998,7 +998,7 @@
                                             <div key={gasto.id} className="bg-gray-50 rounded-xl p-4 border-2 border-gray-200">
                                                 <div className="flex justify-between items-start">
                                                     <div>
-                                                        <p className="font-bold text-gray-800">{gasto.concepto}</p>
+                                                        <p className="font-bold text-gray-800">{gasto.emoji && <span className="mr-1">{gasto.emoji}</span>}{gasto.concepto}</p>
                                                         <p className="text-sm text-gray-600">{formatearFecha(gasto.fecha)}</p>
                                                         <div className="flex gap-2 mt-1 flex-wrap">
                                                             {gasto.categoria && (
@@ -2285,6 +2285,7 @@
                                     id: maxId + 1,
                                     fecha: f.fechaGasto.value || calcularFechaActual().toISOString().split('T')[0],
                                     concepto: f.concepto.value,
+                                    emoji: form.emoji || '',
                                     monto: monto,
                                     categoria: f.categoria.value,
                                     fuente: fuente
@@ -2311,6 +2312,24 @@
                             }}>
                                 <input type="hidden" name="fuente" defaultValue={form.fuente || 'mxn'} />
                                 <div className="space-y-3 mb-4">
+                                    <div>
+                                        <label className="block text-gray-600 text-sm font-medium mb-2">Emoji</label>
+                                        <div className="flex flex-wrap gap-1 mb-2">
+                                            {['🍕','🍔','🍿','🎬','🚗','⛽','🏠','💡','📱','👕','👟','🎮','📚','✈️','🏥','💊','🛒','🎁','☕','🍺','🚕','🏋️','🐶','🎵','🍜','🍣','🥗','💈','🎨','🏊'].map(e => (
+                                                <button key={e} type="button"
+                                                    onClick={() => setForm({...form, emoji: form.emoji === e ? '' : e})}
+                                                    className={`text-xl w-9 h-9 rounded-lg flex items-center justify-center transition-all ${form.emoji === e ? 'bg-gray-700 ring-2 ring-gray-400 scale-110' : 'bg-gray-100 hover:bg-gray-200'}`}>
+                                                    {e}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        {form.emoji && (
+                                            <button type="button" onClick={() => setForm({...form, emoji: ''})}
+                                                className="text-xs text-gray-400 hover:text-gray-600 underline">
+                                                Quitar emoji
+                                            </button>
+                                        )}
+                                    </div>
                                     <input type="text" name="concepto" required placeholder="Concepto" className="w-full px-4 py-3 border-2 rounded-xl" />
                                     <input type="number" step="0.01" name="monto" required placeholder="Monto" className="w-full px-4 py-3 border-2 rounded-xl text-2xl" />
                                     <div>
