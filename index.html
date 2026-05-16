@@ -3435,20 +3435,58 @@
                                         min={(() => { const m = new Date(calcularFechaActual()); m.setDate(m.getDate() + 1); return m.toISOString().split('T')[0]; })()}
                                         className="w-full px-4 py-3 border-2 rounded-xl focus:border-gray-500 outline-none" />
                                 </div>
-                                <div className="flex gap-3">
-                                    <button type="button" onClick={() => {
-                                        if (confirm(`¿Estás segura de que querés ELIMINAR "${form.gastoNombre}"?\n\nEsta acción no se puede deshacer.`)) {
-                                            setEstado({...estado, gastosFijos: estado.gastosFijos.filter(g => g.id !== form.gastoId)});
-                                            setModal(null);
-                                            setVista('dashboard');
-                                        }
-                                    }} className="flex-1 bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl font-bold">
-                                        🗑️ Eliminar Gasto
-                                    </button>
+                                <div className="space-y-3">
                                     <button type="submit"
-                                        className="flex-1 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-bold">
-                                        ✅ Reiniciar Ciclo
+                                        className="w-full bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-bold">
+                                        🔄 Reiniciar Ciclo
                                     </button>
+                                    <p className="text-xs text-center text-gray-500">El ciclo comenzará de nuevo con la fecha objetivo que ingresaste arriba</p>
+
+                                    <div className="border-t-2 border-gray-200 pt-3"></div>
+
+                                    <button type="button" onClick={() => {
+                                        const fechaActual = calcularFechaActual().toISOString().split('T')[0];
+                                        const maxId = estado.gastosExtras.length > 0 ? Math.max(...estado.gastosExtras.map(g => g.id)) : 0;
+                                        const gastoSeleccionado = estado.gastosFijos.find(g => g.id === form.gastoId);
+                                        let montoTotalMXN = gastoSeleccionado.monto;
+                                        if (gastoSeleccionado.moneda && gastoSeleccionado.moneda !== (estado.monedaPrincipal || 'MXN')) {
+                                            montoTotalMXN = convertirMoneda(gastoSeleccionado.monto, gastoSeleccionado.moneda, estado.monedaPrincipal || 'MXN');
+                                        }
+                                        const esAhorro = gastoSeleccionado.categoria === 'Ahorro';
+                                        let nuevosIngresos = [...estado.ingresosDiarios];
+                                        if ((form.cicloCompleto?.montoSueldoAsignado || 0) > 0) {
+                                            nuevosIngresos.push({
+                                                dia: estado.diasAcumulados,
+                                                fecha: fechaActual,
+                                                propinas: form.cicloCompleto.montoSueldoAsignado,
+                                                usd: 0, ars: 0,
+                                                concepto: `Sueldo asignado a ${form.gastoNombre}`
+                                            });
+                                        }
+                                        const nuevoGastoExtra = {
+                                            id: maxId + 1,
+                                            fecha: fechaActual,
+                                            concepto: `${form.gastoNombre} (${esAhorro ? 'meta alcanzada' : 'ciclo completo'})`,
+                                            monto: Math.round(montoTotalMXN),
+                                            categoriaId: esAhorro ? (estado.categoriasGasto || []).find(c => c.nombre === 'Otros')?.id : undefined,
+                                            fuente: 'mxn'
+                                        };
+                                        setEstado({
+                                            ...estado,
+                                            gastosFijos: estado.gastosFijos.filter(g => g.id !== form.gastoId),
+                                            gastosExtras: [...estado.gastosExtras, nuevoGastoExtra],
+                                            ingresosDiarios: nuevosIngresos
+                                        });
+                                        setModal(null);
+                                        setVista('dashboard');
+                                    }}
+                                        className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold">
+                                        ✓ Finalizar (no reiniciar)
+                                    </button>
+                                    <p className="text-xs text-center text-gray-500">
+                                        {(() => { const g = estado.gastosFijos.find(g => g.id === form.gastoId); return g?.categoria === 'Ahorro' ? 'El ahorro' : 'El gasto'; })()}
+                                        {' '}se marcará como completado y no volverá a aparecer
+                                    </p>
                                 </div>
                             </form>
                         </Modal>
