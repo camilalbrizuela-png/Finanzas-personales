@@ -2115,6 +2115,7 @@
                                 const usd = parseFloat(e.target.usd.value) || 0;
                                 const ars = parseFloat(e.target.ars.value) || 0;
                                 const concepto = e.target.concepto.value;
+                                const fecha = e.target.fecha.value;
 
                                 const nuevosIngresos = [...estado.ingresosDiarios];
                                 nuevosIngresos[form.index] = {
@@ -2122,12 +2123,17 @@
                                     propinas,
                                     usd,
                                     ars,
-                                    concepto
+                                    concepto,
+                                    fecha
                                 };
 
                                 setEstado({...estado, ingresosDiarios: nuevosIngresos});
                                 setModal(null);
                             }}>
+                                <div className="mb-3">
+                                    <label className="block text-gray-700 font-bold mb-2">Fecha</label>
+                                    <input type="date" name="fecha" defaultValue={form.fecha || new Date().toISOString().split('T')[0]} max={new Date().toISOString().split('T')[0]} required className="w-full px-4 py-3 border-2 rounded-xl" />
+                                </div>
                                 <div className="mb-3">
                                     <label className="block text-gray-700 font-bold mb-2">💵 MXN</label>
                                     <input type="number" name="propinas" step="0.01" defaultValue={form.propinas} className="w-full px-4 py-3 border-2 rounded-xl" />
@@ -2446,13 +2452,18 @@
                                         (s.id === fuente || s.id === parseInt(fuente)) ? {...s, monto: s.monto - diff} : s
                                     );
                                 }
+                                const nuevaFecha = f.fecha.value;
                                 const nuevosGastos = estado.gastosExtras.map(g =>
-                                    g.id === form.id ? {...g, concepto: f.concepto.value, monto: nuevoMonto, categoriaId: catId} : g
+                                    g.id === form.id ? {...g, concepto: f.concepto.value, monto: nuevoMonto, categoriaId: catId, fecha: nuevaFecha} : g
                                 );
                                 setEstado({...estado, gastosExtras: nuevosGastos, billetera: nuevaBilletera});
                                 setModal(null);
                             }}>
                                 <div className="space-y-3 mb-4">
+                                    <div>
+                                        <label className="block text-gray-700 font-bold mb-2">Fecha</label>
+                                        <input type="date" name="fecha" defaultValue={form.fecha || new Date().toISOString().split('T')[0]} max={new Date().toISOString().split('T')[0]} required className="w-full px-4 py-3 border-2 rounded-xl" />
+                                    </div>
                                     <div>
                                         <label className="block text-gray-700 font-bold mb-2">Categoría</label>
                                         <select name="categoriaId" required
