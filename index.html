@@ -585,10 +585,10 @@
                                 </div>
                             </div>
 
-                            <div className="bg-white rounded-3xl shadow-2xl p-6">
-                                <h2 className="text-2xl font-bold text-gray-800 mb-6">📊 Gastos Fijos</h2>
+                            <div className="bg-white rounded-3xl shadow-2xl p-6 mb-6">
+                                <h2 className="text-2xl font-bold text-gray-800 mb-6">📋 Gastos Fijos</h2>
                                 <div className="grid md:grid-cols-2 gap-4">
-                                    {estado.gastosFijos.map(gasto => {
+                                    {estado.gastosFijos.filter(g => g.categoria !== 'Ahorro').map(gasto => {
                                         const ciclo = calcularCiclo(gasto);
                                         return (
                                             <div key={gasto.id} onClick={() => { setSeleccionado(gasto); setVista('detalle'); }}
@@ -656,6 +656,85 @@
                                         );
                                     })}
                                 </div>
+                                {estado.gastosFijos.filter(g => g.categoria !== 'Ahorro').length === 0 && (
+                                    <p className="text-center text-gray-500 py-8">No hay gastos fijos registrados</p>
+                                )}
+                            </div>
+
+                            <div className="bg-white rounded-3xl shadow-2xl p-6 mb-6">
+                                <h2 className="text-2xl font-bold text-gray-800 mb-6">🎯 Planificación de Ahorros</h2>
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    {estado.gastosFijos.filter(g => g.categoria === 'Ahorro').map(gasto => {
+                                        const ciclo = calcularCiclo(gasto);
+                                        return (
+                                            <div key={gasto.id} onClick={() => { setSeleccionado(gasto); setVista('detalle'); }}
+                                                className={`rounded-2xl p-5 cursor-pointer hover:shadow-lg transition-all border-2 border-gray-200 ${t.cardHover} ${gasto.color || 'bg-white'}`}>
+                                                <div className="flex justify-between items-start mb-3">
+                                                    <div>
+                                                        <h3 className="text-lg font-bold text-gray-800">{gasto.nombre}</h3>
+                                                        <p className="text-sm text-gray-600">{gasto.periodicidad}</p>
+                                                        <p className="text-xs text-gray-500">📅 {formatearFecha(ciclo.fechaInicioCiclo)} → {formatearFecha(ciclo.fechaVencimiento)}</p>
+                                                    </div>
+                                                    <div className="flex flex-col gap-1 items-end">
+                                                        <span className="px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
+                                                            🎯 Ahorro
+                                                        </span>
+                                                        {ciclo.porcentajeCostoDiario < 100 && (
+                                                            <span className="px-2 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-700">
+                                                                {ciclo.porcentajeCostoDiario}% 💵 / {100-ciclo.porcentajeCostoDiario}% 💰
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                {ciclo.cicloCompleto && (
+                                                    <div className="bg-green-50 border-l-4 border-green-500 p-3 mb-3 rounded">
+                                                        <p className="text-green-800 font-bold text-sm">✅ Meta alcanzada - ${Math.round(gasto.monto)}</p>
+                                                    </div>
+                                                )}
+                                                <div className="mb-3">
+                                                    <div className="flex justify-between text-sm mb-1">
+                                                        <span className="text-gray-600">Día {ciclo.residuo}/{ciclo.diasDelCiclo}</span>
+                                                        <span className="font-bold text-green-700">
+                                                            ${Math.round(ciclo.montoAcumulado)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
+                                                        <div className="bg-gradient-to-r from-green-400 to-emerald-500 h-3 rounded-full"
+                                                            style={{width: `${Math.min(100, ciclo.progreso)}%`}}></div>
+                                                    </div>
+                                                    <div className="flex justify-between text-xs text-gray-600">
+                                                        <span>💵 Acumulado: ${Math.round(ciclo.montoAcumuladoPropinas)}</span>
+                                                        {ciclo.porcentajeCostoDiario < 100 && (
+                                                            <span>💰 Sueldo: ${Math.round(ciclo.montoSueldoAsignado)}</span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div className="text-sm">
+                                                    {ciclo.porcentajeCostoDiario === 100 ? (
+                                                        <div className="flex justify-between">
+                                                            <span className="text-gray-500">💵 Ahorro diario:</span>
+                                                            <span className="font-bold text-green-700">${Math.round(ciclo.montoDiarioCostoDiario)}</span>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="space-y-1">
+                                                            <div className="flex justify-between">
+                                                                <span className="text-gray-500">💵 Ingresos diarios:</span>
+                                                                <span className="font-bold text-green-700">${Math.round(ciclo.montoDiarioCostoDiario)}/día</span>
+                                                            </div>
+                                                            <div className="flex justify-between">
+                                                                <span className="text-gray-500">💰 Sueldo:</span>
+                                                                <span className="font-bold text-blue-800">${Math.round((ciclo.montoDiarioMXN * ciclo.diasDelCiclo) * ((100 - ciclo.porcentajeCostoDiario) / 100))}</span>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                {estado.gastosFijos.filter(g => g.categoria === 'Ahorro').length === 0 && (
+                                    <p className="text-center text-gray-500 py-8">No hay ahorros planificados</p>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -950,7 +1029,7 @@
                             {/* Botones de acción */}
                             <div className="bg-white rounded-3xl shadow-2xl p-6 mb-6">
                                 <h1 className="text-2xl font-bold text-gray-800 mb-4">🛒 Registrar gasto</h1>
-                                <div className="grid grid-cols-2 gap-3">
+                                <div className="grid grid-cols-2 gap-3 mb-3">
                                     <button onClick={() => {
                                         if (estado.gastosFijos.length >= LIMITES.gastosFijos) {
                                             setForm({ razon: 'gastos_fijos', actual: estado.gastosFijos.length, limite: LIMITES.gastosFijos });
@@ -960,15 +1039,31 @@
                                         setForm({nombre:'', monto:'', moneda:'MXN', periodicidad:'Mensual', vencimiento:'', categoria:'Fijo', porcentajeCostoDiario: 100, color: null});
                                         setModal('nuevo');
                                     }}
-                                        className={`flex flex-col items-center bg-gradient-to-br ${t.card1} text-white rounded-2xl p-5 shadow-md transition-all hover:scale-[1.02]`}>
+                                        className="flex flex-col items-center bg-gradient-to-br from-red-500 to-orange-600 hover:from-red-600 hover:to-orange-700 text-white rounded-2xl p-5 shadow-md transition-all hover:scale-[1.02]">
                                         <span className="text-3xl mb-2">📋</span>
                                         <span className="font-bold text-lg">Gasto Fijo</span>
-                                        <span className="text-xs opacity-80 mt-1">Agrega a gastos fijos</span>
+                                        <span className="text-xs opacity-80 mt-1">Obligaciones mensuales</span>
                                     </button>
+                                    <button onClick={() => {
+                                        if (estado.gastosFijos.length >= LIMITES.gastosFijos) {
+                                            setForm({ razon: 'gastos_fijos', actual: estado.gastosFijos.length, limite: LIMITES.gastosFijos });
+                                            setModal('upgradePremium');
+                                            return;
+                                        }
+                                        setForm({nombre:'', monto:'', moneda:'MXN', periodicidad:'Mensual', vencimiento:'', categoria:'Ahorro', porcentajeCostoDiario: 100, color: null});
+                                        setModal('nuevo');
+                                    }}
+                                        className="flex flex-col items-center bg-gradient-to-br from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-2xl p-5 shadow-md transition-all hover:scale-[1.02]">
+                                        <span className="text-3xl mb-2">🎯</span>
+                                        <span className="font-bold text-lg">Planificación</span>
+                                        <span className="text-xs opacity-80 mt-1">Metas y objetivos</span>
+                                    </button>
+                                </div>
+                                <div className="grid grid-cols-1 gap-3">
                                     <button onClick={() => { setForm({}); setModal('seleccionarFuenteGasto'); }}
                                         className="flex flex-col items-center bg-gradient-to-br from-red-400 to-orange-500 hover:from-red-500 hover:to-orange-600 text-white rounded-2xl p-5 shadow-md transition-all">
                                         <span className="text-3xl mb-2">🛍️</span>
-                                        <span className="font-bold text-lg">Otros</span>
+                                        <span className="font-bold text-lg">Otros Gastos</span>
                                         <span className="text-xs opacity-80 mt-1">Gasto puntual</span>
                                     </button>
                                 </div>
@@ -3085,10 +3180,7 @@
                                             <span>100% = Todo ingresos diarios</span>
                                         </div>
                                     </div>
-                                    <select name="categoria" defaultValue={form.categoria} className="w-full px-4 py-3 border-2 rounded-xl">
-                                        <option value="Fijo">Fijo</option>
-                                        <option value="No Negociable">No Negociable</option>
-                                    </select>
+                                    <input type="hidden" name="categoria" value={form.categoria || 'Fijo'} />
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">Color</label>
                                         <div className="flex gap-2 flex-wrap">
