@@ -647,26 +647,51 @@
                                                 </div>
                                                 {(() => {
                                                     const porcentaje = gasto.porcentajeCostoDiario !== undefined ? gasto.porcentajeCostoDiario : 100;
-                                                    let montoTotalMXN = gasto.monto;
-                                                    if (gasto.moneda && gasto.moneda !== 'MXN') {
-                                                        montoTotalMXN = convertirMoneda(gasto.monto, gasto.moneda, estado.monedaPrincipal || 'MXN');
+                                                    let montoDiarios, montoQuincenal, montoMensual;
+                                                    if (gasto.montosDivididos) {
+                                                        montoDiarios = gasto.montosDivididos.diarios || 0;
+                                                        montoQuincenal = gasto.montosDivididos.quincenal || 0;
+                                                        montoMensual = gasto.montosDivididos.mensual || 0;
+                                                    } else {
+                                                        let montoTotalMXN = gasto.monto;
+                                                        if (gasto.moneda && gasto.moneda !== 'MXN') {
+                                                            montoTotalMXN = convertirMoneda(gasto.monto, gasto.moneda, estado.monedaPrincipal || 'MXN');
+                                                        }
+                                                        montoDiarios = Math.round(montoTotalMXN * porcentaje / 100);
+                                                        montoQuincenal = 0;
+                                                        montoMensual = Math.round(montoTotalMXN - montoDiarios);
                                                     }
-                                                    const montoDiarios = Math.round(montoTotalMXN * porcentaje / 100);
-                                                    const montoSueldo = Math.round(montoTotalMXN - montoDiarios);
+                                                    const montoSueldoTotal = montoQuincenal + montoMensual;
                                                     const acumuladoDiarios = Math.round(ciclo.montoAcumuladoPropinas || 0);
                                                     const acumuladoSueldo = Math.round(ciclo.montoSueldoAsignado || 0);
                                                     if (porcentaje > 0 && porcentaje < 100) {
                                                         return (
                                                             <div className="mt-2 bg-blue-50 rounded-lg p-3 space-y-1 text-xs">
                                                                 <p className="font-bold text-gray-700 mb-1">Fuente de pago:</p>
-                                                                <div className="flex justify-between items-center">
-                                                                    <span className="text-gray-600">💵 Ingresos diarios</span>
-                                                                    <span className="font-bold text-blue-800">${acumuladoDiarios.toLocaleString()} / ${montoDiarios.toLocaleString()}</span>
-                                                                </div>
-                                                                <div className="flex justify-between items-center">
-                                                                    <span className="text-gray-600">💰 Sueldo</span>
-                                                                    <span className="font-bold text-blue-800">${acumuladoSueldo.toLocaleString()} / ${montoSueldo.toLocaleString()}</span>
-                                                                </div>
+                                                                {montoDiarios > 0 && (
+                                                                    <div className="flex justify-between items-center">
+                                                                        <span className="text-gray-600">💵 Ingresos diarios</span>
+                                                                        <span className="font-bold text-blue-800">${acumuladoDiarios.toLocaleString()} / ${montoDiarios.toLocaleString()}</span>
+                                                                    </div>
+                                                                )}
+                                                                {montoQuincenal > 0 && (
+                                                                    <div className="flex justify-between items-center">
+                                                                        <span className="text-gray-600">💰 Quincenal</span>
+                                                                        <span className="font-bold text-blue-800">${Math.min(acumuladoSueldo, montoQuincenal).toLocaleString()} / ${montoQuincenal.toLocaleString()}</span>
+                                                                    </div>
+                                                                )}
+                                                                {montoMensual > 0 && (
+                                                                    <div className="flex justify-between items-center">
+                                                                        <span className="text-gray-600">💼 Mensual</span>
+                                                                        <span className="font-bold text-blue-800">${Math.max(0, acumuladoSueldo - montoQuincenal).toLocaleString()} / ${montoMensual.toLocaleString()}</span>
+                                                                    </div>
+                                                                )}
+                                                                {montoQuincenal === 0 && montoMensual === 0 && montoSueldoTotal > 0 && (
+                                                                    <div className="flex justify-between items-center">
+                                                                        <span className="text-gray-600">💰 Sueldo</span>
+                                                                        <span className="font-bold text-blue-800">${acumuladoSueldo.toLocaleString()} / ${montoSueldoTotal.toLocaleString()}</span>
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         );
                                                     } else if (porcentaje === 0) {
@@ -1292,6 +1317,19 @@
                                         )}
                                     </div>
                                 </div>
+
+                                {seleccionado.categoria !== 'Ahorro' && seleccionado.porcentajeCostoDiario > 0 && ciclo.montoDiarioCostoDiario > 0 && (
+                                    <div className="bg-gray-50 rounded-xl p-4 mb-6">
+                                        <p className="text-gray-500 text-sm mb-1">💵 Diario desde ingresos</p>
+                                        <p className="text-2xl font-bold text-gray-800">${Math.round(ciclo.montoDiarioCostoDiario).toLocaleString()}/día</p>
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            {seleccionado.porcentajeCostoDiario === 100
+                                                ? 'Todo el gasto se paga con ingresos diarios'
+                                                : `${seleccionado.porcentajeCostoDiario}% del gasto`
+                                            }
+                                        </p>
+                                    </div>
+                                )}
 
                                 <div className="bg-gradient-to-br from-orange-50 to-yellow-50 rounded-2xl p-6">
                                     <h3 className="text-lg font-bold text-gray-800 mb-4">💳 Cómo se cubre este gasto</h3>
