@@ -595,7 +595,7 @@
                                     <p className="text-4xl font-bold">${Math.round(superavit)}</p>
                                     <p className="text-xs text-gray-600 mt-1">En {estado.monedaPrincipal || 'MXN'}</p>
                                 </div>
-                                <div onClick={() => setVista('billetera')} className="bg-gradient-to-br from-orange-300 to-red-300 rounded-3xl shadow-xl p-6 text-gray-800 cursor-pointer hover:scale-105 transition-all">
+                                <div onClick={() => setVista('billetera')} className="bg-gradient-to-br from-green-300 to-green-400 rounded-3xl shadow-xl p-6 text-gray-800 cursor-pointer hover:scale-105 transition-all">
                                     <p className="text-sm text-gray-700 mb-2">Billetera Total</p>
                                     <p className="text-4xl font-bold">${Math.round(superavit + convertirMoneda(estado.billetera.usd, 'USD', estado.monedaPrincipal || 'MXN') + convertirMoneda(estado.billetera.ars, 'ARS', estado.monedaPrincipal || 'MXN') + estado.billetera.tanda)}</p>
                                     <p className="text-xs text-gray-600 mt-1">
@@ -629,7 +629,7 @@
                                                     </div>
                                                 </div>
                                                 {ciclo.cicloCompleto && (
-                                                    <div className="bg-green-50 border-l-4 border-green-500 p-3 mb-3 rounded">
+                                                    <div className="bg-green-10 border-l-4 border-green-500 p-3 mb-3 rounded">
                                                         <p className="text-green-800 font-bold text-sm">✅ Completo - ${Math.round(gasto.monto)}</p>
                                                     </div>
                                                 )}
@@ -3549,7 +3549,7 @@
 
                     {(modal === 'nuevo' || modal === 'editar') && (
                         <Modal onClose={() => setModal(null)}>
-                            <h2 className="text-2xl font-bold mb-4">{modal === 'nuevo' ? '➕ Nuevo objetivo' : '✏️ Editar'}</h2>
+                            <h2 className="text-2xl font-bold mb-4">{modal === 'nuevo' ? '➕ Nuevo ' : '✏️ Editar'}</h2>
                             <form onSubmit={(e) => {
                                 e.preventDefault();
                                 const f = e.target;
