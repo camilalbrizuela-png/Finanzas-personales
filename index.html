@@ -629,7 +629,7 @@
                                                     </div>
                                                 </div>
                                                 {ciclo.cicloCompleto && (
-                                                    <div className="bg-green-10 border-l-4 border-green-500 p-3 mb-3 rounded">
+                                                    <div className="bg-green-50 border-l-4 border-green-500 p-3 mb-3 rounded">
                                                         <p className="text-green-800 font-bold text-sm">✅ Completo - ${Math.round(gasto.monto)}</p>
                                                     </div>
                                                 )}
@@ -1336,7 +1336,7 @@
                                     setForm({nombre:'', monto:'', moneda:'MXN', vencimiento:'', categoria:'Ahorro', porcentajeCostoDiario: 100, color: null});
                                     setModal('nuevo');
                                 }}
-                                    className="w-full flex flex-col items-center bg-gradient-to-br from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-2xl p-5 shadow-md transition-all hover:scale-[1.01]">
+                                    className="w-full flex flex-col items-center bg-gradient-to-br from-green-400 to-emerald-500 hover:from-green-400 hover:to-emerald-500 text-white rounded-2xl p-5 shadow-md transition-all hover:scale-[1.01]">
                                     <span className="text-3xl mb-2">🎯</span>
                                     <span className="font-bold text-lg">Nueva Meta de Ahorro</span>
                                     <span className="text-xs opacity-80 mt-1">Planifica tus objetivos financieros</span>
@@ -1783,7 +1783,7 @@
                 const totalIngEquivMXN = Object.values(porMonedaIng).reduce((s, v) => s + v, 0);
 
                 // --- Colores ---
-                const PALETTE = ['#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899','#06b6d4','#84cc16','#f43f5e'];
+                const PALETTE = ['#f87171','#fb923c','#facc15','#4ade80','#60a5fa','#a78bfa','#f472b6','#22d3ee','#a3e635','#fb7185'];
                 const getColor = (cat, idx) => (estado.coloresCategorias || {})[cat] || PALETTE[idx % PALETTE.length];
                 const setColor = (cat, color) => setEstado({...estado, coloresCategorias: {...(estado.coloresCategorias || {}), [cat]: color}});
 
