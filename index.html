@@ -391,8 +391,12 @@
                 
                 const montoAcumuladoPropinas = residuo * montoDiarioCostoDiario;
                 const montoSueldoAsignado = gasto.montoSueldoAsignado || 0;
-                const montoInicial = gasto.montoInicial || 0;
-                const montoAcumuladoTotal = montoInicial + montoAcumuladoPropinas + montoSueldoAsignado;
+                const montoInicialRaw = gasto.montoInicial || 0;
+                let montoInicialMXN = montoInicialRaw;
+                if (gasto.moneda && gasto.moneda !== (estado.monedaPrincipal || 'MXN')) {
+                    montoInicialMXN = convertirMoneda(montoInicialRaw, gasto.moneda, estado.monedaPrincipal || 'MXN');
+                }
+                const montoAcumuladoTotal = montoInicialMXN + montoAcumuladoPropinas + montoSueldoAsignado;
                 
                 const progreso = (montoAcumuladoTotal / (gasto.monto * (montoDiarioMXN / montoDiario))) * 100;
                 
@@ -402,7 +406,8 @@
                     montoAcumulado: montoAcumuladoTotal,
                     montoAcumuladoPropinas,
                     montoSueldoAsignado,
-                    montoInicial,
+                    montoInicial: montoInicialRaw,
+                    montoInicialMXN,
                     montoDiario,
                     montoDiarioMXN, 
                     montoDiarioCostoDiario, 
