@@ -437,7 +437,8 @@
                     montoAcumulado: montoAcumuladoTotal,
                     montoAcumuladoPropinas, montoSueldoAsignado,
                     montoDiario, montoDiarioMXN, montoDiarioCostoDiario, montoDiarioSueldo,
-                    porcentajeCostoDiario: porcentaje, cicloCompleto, diasDelCiclo,
+                    porcentajeCostoDiario: diasDelCiclo > 0 ? Math.round(montoTotalMXN / diasDelCiclo) : 0,  // ✅ Calcula monto diario real
+    cicloCompleto, diasDelCiclo,
                     fechaInicioCiclo: fechaInicioCiclo.toISOString().split('T')[0],
                     fechaVencimiento: gasto.vencimiento
                 };
@@ -461,7 +462,7 @@
                         montoTotalMXN = convertirMoneda(g.monto, 'USD', estado.monedaPrincipal || 'MXN');
                     }
                     // Solo contar la parte de propinas del monto total
-                    const montoPropinas = montoTotalMXN * (ciclo.porcentajeCostoDiario / 100);
+                    const montoPropinas = gasto.montosDivididos?.diarios || 0;
                     return total + montoPropinas;
                 }
                 // Si el ciclo está en progreso, solo sumar el acumulado de propinas
