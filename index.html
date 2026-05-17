@@ -128,6 +128,7 @@
                             }
                             if (!parsed.nombreUsuario) parsed.nombreUsuario = '';
                         }
+                        if (!parsed.ahorrosCompletados) parsed.ahorrosCompletados = [];
                         return parsed;
                     }
                 } catch(e) {
@@ -145,6 +146,7 @@
                     gastosFijos: [],
                     ingresosDiarios: [],
                     gastosExtras: [],
+                    ahorrosCompletados: [],
                     categoriasExtra: [],
                     coloresCategorias: {},
                     categoriasGasto: [
@@ -1344,6 +1346,38 @@
                                     </div>
                                 )}
                             </div>
+
+                            {(estado.ahorrosCompletados || []).length > 0 && (
+                                <div className="bg-white rounded-3xl shadow-2xl p-6">
+                                    <h2 className="text-xl font-bold text-gray-800 mb-4">✅ Ahorros Completados</h2>
+                                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                                        {[...(estado.ahorrosCompletados || [])]
+                                            .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
+                                            .map(ahorro => (
+                                            <div key={ahorro.id} className="bg-green-50 rounded-xl p-4 border-2 border-green-200">
+                                                <div className="flex justify-between items-start">
+                                                    <div>
+                                                        <p className="font-bold text-gray-800 text-lg">🎯 {ahorro.nombre}</p>
+                                                        <p className="text-sm text-gray-600">
+                                                            {formatearFecha(ahorro.fechaInicio)} → {formatearFecha(ahorro.fechaObjetivo)}
+                                                        </p>
+                                                        <p className="text-xs text-gray-500">Completado: {formatearFecha(ahorro.fecha)}</p>
+                                                        {ahorro.diasDelCiclo && <p className="text-xs text-gray-500">Duración: {ahorro.diasDelCiclo} días</p>}
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-2xl font-bold text-green-800">
+                                                            ${Math.round(ahorro.monto).toLocaleString()}
+                                                        </p>
+                                                        {ahorro.moneda && ahorro.moneda !== (estado.monedaPrincipal || 'MXN') && (
+                                                            <p className="text-xs text-gray-500">{ahorro.moneda}</p>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 );
@@ -3413,7 +3447,6 @@
 
                                     <button type="button" onClick={() => {
                                         const fechaActual = calcularFechaActual().toISOString().split('T')[0];
-                                        const maxId = estado.gastosExtras.length > 0 ? Math.max(...estado.gastosExtras.map(g => g.id)) : 0;
                                         const gastoSeleccionado = estado.gastosFijos.find(g => g.id === form.gastoId);
                                         let montoTotalMXN = gastoSeleccionado.monto;
                                         if (gastoSeleccionado.moneda && gastoSeleccionado.moneda !== (estado.monedaPrincipal || 'MXN')) {
@@ -3429,20 +3462,46 @@
                                                 concepto: `Sueldo asignado a ${form.gastoNombre}`
                                             });
                                         }
-                                        const nuevoGastoExtra = {
-                                            id: maxId + 1,
-                                            fecha: fechaActual,
-                                            concepto: `${form.gastoNombre} (${esAhorro ? 'meta alcanzada' : 'ciclo completo'})`,
-                                            monto: Math.round(montoTotalMXN),
-                                            categoriaId: esAhorro ? (estado.categoriasGasto || []).find(c => c.nombre === 'Otros')?.id : undefined,
-                                            fuente: 'mxn'
-                                        };
-                                        setEstado({
-                                            ...estado,
-                                            gastosFijos: estado.gastosFijos.filter(g => g.id !== form.gastoId),
-                                            gastosExtras: [...estado.gastosExtras, nuevoGastoExtra],
-                                            ingresosDiarios: nuevosIngresos
-                                        });
+                                        const nuevosGastosFijos = estado.gastosFijos.filter(g => g.id !== form.gastoId);
+                                        if (esAhorro) {
+                                            const maxId = (estado.ahorrosCompletados || []).length > 0
+                                                ? Math.max(...estado.ahorrosCompletados.map(a => a.id))
+                                                : 0;
+                                            const nuevoAhorroCompletado = {
+                                                id: maxId + 1,
+                                                fecha: fechaActual,
+                                                nombre: form.gastoNombre,
+                                                monto: Math.round(montoTotalMXN),
+                                                moneda: gastoSeleccionado.moneda || 'MXN',
+                                                diasDelCiclo: form.cicloCompleto?.diasDelCiclo,
+                                                fechaInicio: form.cicloCompleto?.fechaInicioCiclo,
+                                                fechaObjetivo: gastoSeleccionado.vencimiento
+                                            };
+                                            setEstado({
+                                                ...estado,
+                                                gastosFijos: nuevosGastosFijos,
+                                                ahorrosCompletados: [...(estado.ahorrosCompletados || []), nuevoAhorroCompletado],
+                                                ingresosDiarios: nuevosIngresos
+                                            });
+                                        } else {
+                                            const maxId = estado.gastosExtras.length > 0
+                                                ? Math.max(...estado.gastosExtras.map(g => g.id))
+                                                : 0;
+                                            const nuevoGastoExtra = {
+                                                id: maxId + 1,
+                                                fecha: fechaActual,
+                                                concepto: `${form.gastoNombre} (ciclo completo)`,
+                                                monto: Math.round(montoTotalMXN),
+                                                categoriaId: (estado.categoriasGasto || []).find(c => c.nombre === 'Otros')?.id,
+                                                fuente: 'mxn'
+                                            };
+                                            setEstado({
+                                                ...estado,
+                                                gastosFijos: nuevosGastosFijos,
+                                                gastosExtras: [...estado.gastosExtras, nuevoGastoExtra],
+                                                ingresosDiarios: nuevosIngresos
+                                            });
+                                        }
                                         setModal(null);
                                         setVista('dashboard');
                                     }}
