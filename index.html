@@ -3397,7 +3397,11 @@
                                 const fechaHoy = calcularFechaActual().toISOString().split('T')[0];
                                 if (nuevaFecha <= fechaHoy) { alert('La fecha de vencimiento debe ser posterior al día de hoy.'); return; }
                                 const fechaActual = calcularFechaActual().toISOString().split('T')[0];
-                                const maxId = estado.gastosExtras.length > 0 ? Math.max(...estado.gastosExtras.map(g => g.id)) : 0;
+                                const gastoSeleccionado = estado.gastosFijos.find(g => g.id === form.gastoId);
+                                let montoTotalMXN = gastoSeleccionado.monto;
+                                if (gastoSeleccionado.moneda && gastoSeleccionado.moneda !== (estado.monedaPrincipal || 'MXN')) {
+                                    montoTotalMXN = convertirMoneda(gastoSeleccionado.monto, gastoSeleccionado.moneda, estado.monedaPrincipal || 'MXN');
+                                }
                                 let nuevoEstado = {...estado};
                                 if ((form.cicloCompleto?.montoSueldoAsignado || 0) > 0) {
                                     nuevoEstado.ingresosDiarios = [...estado.ingresosDiarios, {
@@ -3408,24 +3412,38 @@
                                         concepto: `Sueldo asignado a ${form.gastoNombre}`
                                     }];
                                 }
+                                if (esAhorro) {
+                                    const maxId = (estado.ahorrosCompletados || []).length > 0
+                                        ? Math.max(...estado.ahorrosCompletados.map(a => a.id))
+                                        : 0;
+                                    nuevoEstado.ahorrosCompletados = [...(estado.ahorrosCompletados || []), {
+                                        id: maxId + 1,
+                                        fecha: fechaActual,
+                                        nombre: form.gastoNombre,
+                                        monto: Math.round(montoTotalMXN),
+                                        moneda: gastoSeleccionado.moneda || 'MXN',
+                                        diasDelCiclo: form.cicloCompleto?.diasDelCiclo,
+                                        fechaInicio: form.cicloCompleto?.fechaInicioCiclo,
+                                        fechaObjetivo: gastoSeleccionado.vencimiento
+                                    }];
+                                } else {
+                                    const maxId = estado.gastosExtras.length > 0
+                                        ? Math.max(...estado.gastosExtras.map(g => g.id))
+                                        : 0;
+                                    nuevoEstado.gastosExtras = [...(nuevoEstado.gastosExtras || estado.gastosExtras), {
+                                        id: maxId + 1,
+                                        fecha: fechaActual,
+                                        concepto: `${form.gastoNombre} (ciclo completo)`,
+                                        monto: Math.round(montoTotalMXN),
+                                        categoriaId: (estado.categoriasGasto || []).find(c => c.nombre === 'Otros')?.id,
+                                        fuente: 'mxn'
+                                    }];
+                                }
                                 nuevoEstado.gastosFijos = estado.gastosFijos.map(g =>
                                     g.id === form.gastoId
                                         ? {...g, diaInicioCiclo: estado.diasAcumulados, montoSueldoAsignado: 0, vencimiento: nuevaFecha}
                                         : g
                                 );
-                                const gastoSeleccionado = estado.gastosFijos.find(g => g.id === form.gastoId);
-                                let montoTotalMXN = gastoSeleccionado.monto;
-                                if (gastoSeleccionado.moneda && gastoSeleccionado.moneda !== (estado.monedaPrincipal || 'MXN')) {
-                                    montoTotalMXN = convertirMoneda(gastoSeleccionado.monto, gastoSeleccionado.moneda, estado.monedaPrincipal || 'MXN');
-                                }
-                                nuevoEstado.gastosExtras = [...(nuevoEstado.gastosExtras || estado.gastosExtras), {
-                                    id: maxId + 1,
-                                    fecha: fechaActual,
-                                    concepto: `${form.gastoNombre} (ciclo completo)`,
-                                    monto: Math.round(montoTotalMXN),
-                                    categoria: 'Gasto Fijo',
-                                    fuente: 'mxn'
-                                }];
                                 setEstado(nuevoEstado);
                                 setModal(null);
                                 setVista('dashboard');
