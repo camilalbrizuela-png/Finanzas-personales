@@ -503,7 +503,7 @@
 
             const MenuNav = () => (
                 <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 shadow-lg">
-                    <div className="max-w-6xl mx-auto grid grid-cols-7 gap-0 p-1">
+                    <div className="max-w-6xl mx-auto grid grid-cols-5 gap-0 p-1">
                         <button onClick={() => setVista('dashboard')} className={`flex flex-col items-center py-2 rounded-xl ${vista === 'dashboard' ? t.navActive : 'text-gray-600'}`}>
                             <span className="text-lg">🏠</span>
                             <span className="text-xs font-semibold">Inicio</span>
@@ -512,17 +512,9 @@
                             <span className="text-lg">💰</span>
                             <span className="text-xs font-semibold">Billetera</span>
                         </button>
-                        <button onClick={() => setVista('ingresos')} className={`flex flex-col items-center py-2 rounded-xl ${vista === 'ingresos' ? t.navActive : 'text-gray-600'}`}>
-                            <span className="text-lg">📥</span>
-                            <span className="text-xs font-semibold">Ingresos</span>
-                        </button>
-                        <button onClick={() => setVista('gastos')} className={`flex flex-col items-center py-2 rounded-xl ${vista === 'gastos' ? t.navActive : 'text-gray-600'}`}>
-                            <span className="text-lg">🛒</span>
-                            <span className="text-xs font-semibold">Gastos</span>
-                        </button>
-                        <button onClick={() => setVista('ahorros')} className={`flex flex-col items-center py-2 rounded-xl ${vista === 'ahorros' ? t.navActive : 'text-gray-600'}`}>
-                            <span className="text-lg">🎯</span>
-                            <span className="text-xs font-semibold">Ahorros</span>
+                        <button onClick={() => setVista('movimientos')} className={`flex flex-col items-center py-2 rounded-xl ${'movimientos ingresos gastos ahorros'.includes(vista) ? t.navActive : 'text-gray-600'}`}>
+                            <span className="text-lg">💸</span>
+                            <span className="text-xs font-semibold">Movimientos</span>
                         </button>
                         <button onClick={() => setVista('reporte')} className={`flex flex-col items-center py-2 rounded-xl ${vista === 'reporte' ? t.navActive : 'text-gray-600'}`}>
                             <span className="text-lg">📊</span>
@@ -866,7 +858,7 @@
                                                 <div key={moneda} className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6">
                                                     <div className="flex justify-between items-center mb-2">
                                                         <p className="text-gray-700 font-bold">{esMonedaPrincipal ? '💰 Ahorros' : `💰 Ahorros ${moneda}`}</p>
-                                                        <button onClick={() => setVista('ahorros')} className="text-green-600 hover:text-green-800 text-sm">Ver detalle →</button>
+                                                        <button onClick={() => setVista('movimientos')} className="text-green-600 hover:text-green-800 text-sm">Ver detalle →</button>
                                                     </div>
                                                     <p className="text-4xl font-bold text-green-800">{fmt(total)}</p>
                                                     <div className="mt-2 text-xs text-gray-600 space-y-1">
@@ -1479,6 +1471,29 @@
                                     </div>
                                 )}
                             </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            // Vista Movimientos (tabs: Ingresos / Gastos / Ahorros)
+            const VistaMovimientos = () => {
+                const [tabActivo, setTabActivo] = React.useState('ingresos');
+                return (
+                    <div className="pb-24">
+                        <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-6 rounded-b-3xl shadow-xl mb-6">
+                            <h1 className="text-3xl font-bold">💸 Movimientos</h1>
+                            <p className="text-indigo-100">Ingresos, gastos y ahorros</p>
+                        </div>
+                        <div className="bg-white rounded-3xl shadow-xl mx-4 mb-6 p-2 grid grid-cols-3 gap-2">
+                            <button onClick={() => setTabActivo('ingresos')} className={`py-3 px-4 rounded-xl font-bold transition-all ${tabActivo === 'ingresos' ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>📥 Ingresos</button>
+                            <button onClick={() => setTabActivo('gastos')} className={`py-3 px-4 rounded-xl font-bold transition-all ${tabActivo === 'gastos' ? 'bg-gradient-to-r from-red-500 to-pink-600 text-white shadow-lg' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>🛒 Gastos</button>
+                            <button onClick={() => setTabActivo('ahorros')} className={`py-3 px-4 rounded-xl font-bold transition-all ${tabActivo === 'ahorros' ? 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white shadow-lg' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>🎯 Ahorros</button>
+                        </div>
+                        <div className="px-4">
+                            {tabActivo === 'ingresos' && <VistaIngresos />}
+                            {tabActivo === 'gastos' && <VistaGastos />}
+                            {tabActivo === 'ahorros' && <VistaAhorros />}
                         </div>
                     </div>
                 );
@@ -2327,9 +2342,7 @@
                     <>
                     {vista === 'dashboard' && <Dashboard />}
                     {vista === 'billetera' && <VistaBilletera />}
-                    {vista === 'ingresos' && <VistaIngresos />}
-                    {vista === 'gastos' && <VistaGastos />}
-                    {vista === 'ahorros' && <VistaAhorros />}
+                    {(vista === 'movimientos' || vista === 'ingresos' || vista === 'gastos' || vista === 'ahorros') && <VistaMovimientos />}
                     {vista === 'reporte' && <VistaReporte />}
                     {vista === 'detalle' && seleccionado && <Detalle />}
 
