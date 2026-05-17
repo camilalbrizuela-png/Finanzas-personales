@@ -375,19 +375,15 @@
                 const montoDiario = gasto.monto / diasDelCiclo;
                 const montoInicialRaw = gasto.montoInicial || 0;
 
-                // AHORROS: trabajar en su propia moneda sin convertir
+                // AHORROS: solo contar aportes manuales (no todos los ingresos)
                 if (esAhorro) {
-                    let ingresosEnMoneda = 0;
-                    if (monedaDelGasto === 'MXN' || monedaDelGasto === estado.monedaPrincipal) {
-                        ingresosEnMoneda = estado.ingresosDiarios.reduce((sum, ing) => sum + (ing.propinas || 0), 0);
-                    } else if (monedaDelGasto === 'USD') {
-                        ingresosEnMoneda = estado.ingresosDiarios.reduce((sum, ing) => sum + (ing.usd || 0), 0);
-                    } else if (monedaDelGasto === 'ARS') {
-                        ingresosEnMoneda = estado.ingresosDiarios.reduce((sum, ing) => sum + (ing.ars || 0), 0);
-                    } else {
-                        ingresosEnMoneda = estado.ingresosDiarios.reduce((sum, ing) => sum + (ing[monedaDelGasto.toLowerCase()] || 0), 0);
-                    }
-                    const montoAcumuladoTotal = montoInicialRaw + ingresosEnMoneda;
+                    const monedaAhorro = monedaDelGasto;
+                    const principal = estado.monedaPrincipal || 'MXN';
+                    const fuente = monedaAhorro === principal ? 'mxn' : monedaAhorro.toLowerCase();
+                    const aportesAlAhorro = (estado.gastosExtras || [])
+                        .filter(g => g.esAporteAhorro && g.ahorroId === gasto.id && g.fuente === fuente)
+                        .reduce((sum, g) => sum + g.monto, 0);
+                    const montoAcumuladoTotal = montoInicialRaw + aportesAlAhorro;
                     const fechaActual = calcularFechaActual();
                     const diasRestantes = Math.max(0, Math.ceil((fechaVenc - fechaActual) / (1000 * 60 * 60 * 24)));
                     const montoFaltante = Math.max(0, gasto.monto - montoAcumuladoTotal);
@@ -400,7 +396,7 @@
                         residuo, diasDelCiclo,
                         progreso: (montoAcumuladoTotal / gasto.monto) * 100,
                         montoAcumulado: montoAcumuladoTotal,
-                        montoAcumuladoPropinas: ingresosEnMoneda,
+                        montoAcumuladoPropinas: aportesAlAhorro,
                         montoSueldoAsignado: 0,
                         montoDiario, montoDiarioMXN: montoDiario,
                         montoDiarioCostoDiario: 0, montoDiarioSueldo: 0,
@@ -615,55 +611,6 @@
                                     </p>
                                 </div>
                             </div>
-
-                            {(() => {
-                                const metaAhorroDiarioMXN = estado.gastosFijos
-                                    .filter(g => g.categoria === 'Ahorro')
-                                    .reduce((sum, g) => {
-                                        const ciclo = calcularCiclo(g);
-                                        if (ciclo.diasRestantes > 0 && ciclo.diarioRecomendado > 0) {
-                                            const moneda = g.moneda || 'MXN';
-                                            const principal = estado.monedaPrincipal || 'MXN';
-                                            const recomendadoMXN = moneda !== principal
-                                                ? convertirMoneda(ciclo.diarioRecomendado, moneda, principal)
-                                                : ciclo.diarioRecomendado;
-                                            return sum + recomendadoMXN;
-                                        }
-                                        return sum;
-                                    }, 0);
-                                if (metaAhorroDiarioMXN <= 0) return null;
-                                const ingresoRecomendado = costoVidaDiario + metaAhorroDiarioMXN;
-                                return (
-                                    <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-3xl shadow-xl p-6 mb-6">
-                                        <div className="flex justify-between items-center mb-2">
-                                            <p className="text-sm text-blue-700">💡 Ingreso recomendado hoy</p>
-                                            {superavit >= metaAhorroDiarioMXN && (
-                                                <span className="bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-full">✓ Puedes ahorrar</span>
-                                            )}
-                                        </div>
-                                        <p className="text-4xl font-bold text-blue-800">${Math.round(ingresoRecomendado).toLocaleString()}</p>
-                                        <div className="mt-3 pt-3 border-t border-blue-200">
-                                            <div className="grid grid-cols-2 gap-3 text-sm">
-                                                <div>
-                                                    <p className="text-blue-600">📋 Gastos fijos</p>
-                                                    <p className="text-xl font-bold text-gray-800">${Math.round(costoVidaDiario).toLocaleString()}</p>
-                                                </div>
-                                                <div>
-                                                    <p className="text-blue-600">🎯 Meta de ahorro</p>
-                                                    <p className="text-xl font-bold text-gray-800">${Math.round(metaAhorroDiarioMXN).toLocaleString()}</p>
-                                                </div>
-                                            </div>
-                                            {superavit < metaAhorroDiarioMXN && (
-                                                <div className="mt-3 bg-orange-50 border-l-4 border-orange-400 p-3 rounded">
-                                                    <p className="text-orange-800 text-sm font-semibold">
-                                                        ⚠️ Faltan ${Math.round(metaAhorroDiarioMXN - superavit).toLocaleString()} para cubrir gastos + ahorros
-                                                    </p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                );
-                            })()}
 
                             <div className="bg-white rounded-3xl shadow-2xl p-6 mb-6">
                                 <h2 className="text-2xl font-bold text-gray-800 mb-6">📋 Gastos Fijos</h2>
@@ -3548,20 +3495,12 @@
                                     monto: montoAporte,
                                     categoriaId: (estado.categoriasGasto || []).find(c => c.nombre === 'Otros')?.id,
                                     fuente: ahorroMoneda === principal ? 'mxn' : ahorroMoneda.toLowerCase(),
-                                    esAporteAhorro: true
-                                };
-                                const nuevoIngreso = {
-                                    dia: estado.diasAcumulados,
-                                    fecha: fechaActual,
-                                    propinas: ahorroMoneda === principal ? montoAporte : 0,
-                                    usd: ahorroMoneda === 'USD' ? montoAporte : 0,
-                                    ars: ahorroMoneda === 'ARS' ? montoAporte : 0,
-                                    concepto: `Aporte a ${form.ahorroNombre}`
+                                    esAporteAhorro: true,
+                                    ahorroId: form.ahorroId
                                 };
                                 setEstado({
                                     ...estado,
-                                    gastosExtras: [...estado.gastosExtras, nuevoAporte],
-                                    ingresosDiarios: [...estado.ingresosDiarios, nuevoIngreso]
+                                    gastosExtras: [...estado.gastosExtras, nuevoAporte]
                                 });
                                 setModal(null);
                             }}>
