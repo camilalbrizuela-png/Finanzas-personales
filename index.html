@@ -1355,28 +1355,6 @@
                                     return null;
                                 })()}
 
-                                <div className="bg-gradient-to-br from-orange-50 to-yellow-50 rounded-2xl p-6">
-                                    <h3 className="text-lg font-bold text-gray-800 mb-4">💳 Cómo se cubre este gasto</h3>
-                                    <div className="grid grid-cols-2 gap-4 mb-4">
-                                        <div>
-                                            <p className="text-sm text-gray-600 mb-1">💵 Con ingresos diarios</p>
-                                            <p className="text-3xl font-bold text-green-800">{ciclo.porcentajeCostoDiario}%</p>
-                                            <p className="text-sm text-gray-600">${Math.round(ciclo.montoDiarioCostoDiario)} MXN/día</p>
-                                            <p className="text-xs text-gray-500 mt-1">Total: ${Math.round(ciclo.montoDiarioCostoDiario * ciclo.diasDelCiclo)} MXN</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-sm text-gray-600 mb-1">💰 Con sueldo quincenal</p>
-                                            <p className="text-3xl font-bold text-blue-800">{100 - ciclo.porcentajeCostoDiario}%</p>
-                                            <p className="text-sm font-bold text-gray-700">${Math.round((ciclo.montoDiarioMXN * ciclo.diasDelCiclo) * ((100 - ciclo.porcentajeCostoDiario) / 100))} MXN</p>
-                                            <p className="text-xs text-gray-500 mt-1">Del sueldo de la quincena</p>
-                                        </div>
-                                    </div>
-                                    {ciclo.porcentajeCostoDiario < 100 && (
-                                        <div className="bg-blue-50 rounded-lg p-3 text-sm text-blue-800">
-                                            💡 <strong>Recordá:</strong> Cuando cobres el sueldo, asigná ${Math.round((ciclo.montoDiarioMXN * ciclo.diasDelCiclo) * ((100 - ciclo.porcentajeCostoDiario) / 100))} MXN usando "💰 Asignar Sueldo"
-                                        </div>
-                                    )}
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -3639,16 +3617,18 @@
                                     const montoQuincenal = parseFloat(f.montoQuincenal.value) || 0;
                                     const montoMensual = parseFloat(f.montoMensual.value) || 0;
                                     const total = montoDiarios + montoQuincenal + montoMensual;
-                                    if (Math.abs(total - datos.monto) > 0.01) {
-                                        alert('La suma de las fuentes de pago debe ser igual al monto total');
+                                    if (Math.abs(total - datos.monto) > 1) {
+                                        alert('La suma debe ser igual al monto total: $' + Math.round(datos.monto));
                                         return;
                                     }
-                                    datos.porcentajeCostoDiario = Math.round((montoDiarios / datos.monto) * 100);
                                     datos.montosDivididos = { diarios: montoDiarios, quincenal: montoQuincenal, mensual: montoMensual };
+                                    datos.porcentajeCostoDiario = datos.monto > 0 ? Math.round((montoDiarios / datos.monto) * 100) : 100;
                                 } else if (tipoPago === 'diarios') {
                                     datos.porcentajeCostoDiario = 100;
+                                    datos.montosDivididos = { diarios: datos.monto, quincenal: 0, mensual: 0 };
                                 } else {
                                     datos.porcentajeCostoDiario = 0;
+                                    datos.montosDivididos = { diarios: 0, quincenal: 0, mensual: 0 };
                                 }
                                 if (modal === 'nuevo') {
                                     const maxId = estado.gastosFijos.length > 0 ? Math.max(...estado.gastosFijos.map(g => g.id)) : 0;
@@ -3740,7 +3720,7 @@
                                             <div>
                                                 <label className="text-sm text-gray-700 mb-1 block">💵 Ingresos diarios</label>
                                                 <input type="number" step="0.01" name="montoDiarios"
-                                                    defaultValue={Math.round((form.monto || 0) * (form.porcentajeCostoDiario || 50) / 100)}
+                                                    defaultValue={form.montosDivididos ? (form.montosDivididos.diarios || 0) : 0}
                                                     className="w-full px-3 py-2 border-2 rounded-lg text-lg font-bold"
                                                     onInput={(e) => {
                                                         const d = parseFloat(e.target.value) || 0;
@@ -3757,7 +3737,7 @@
                                             <div>
                                                 <label className="text-sm text-gray-700 mb-1 block">💰 Sueldo quincenal</label>
                                                 <input type="number" step="0.01" name="montoQuincenal"
-                                                    defaultValue={Math.round((form.monto || 0) * (100 - (form.porcentajeCostoDiario || 50)) / 200)}
+                                                    defaultValue={form.montosDivididos ? (form.montosDivididos.quincenal || 0) : 0}
                                                     className="w-full px-3 py-2 border-2 rounded-lg text-lg font-bold"
                                                     onInput={(e) => {
                                                         const d = parseFloat(document.querySelector('[name="montoDiarios"]').value) || 0;
@@ -3774,7 +3754,7 @@
                                             <div>
                                                 <label className="text-sm text-gray-700 mb-1 block">💼 Sueldo mensual</label>
                                                 <input type="number" step="0.01" name="montoMensual"
-                                                    defaultValue={Math.round((form.monto || 0) * (100 - (form.porcentajeCostoDiario || 50)) / 200)}
+                                                    defaultValue={form.montosDivididos ? (form.montosDivididos.mensual || 0) : 0}
                                                     className="w-full px-3 py-2 border-2 rounded-lg text-lg font-bold"
                                                     onInput={(e) => {
                                                         const d = parseFloat(document.querySelector('[name="montoDiarios"]').value) || 0;
