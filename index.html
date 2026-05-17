@@ -520,7 +520,7 @@
                             <span className="text-lg">📊</span>
                             <span className="text-xs font-semibold">Reporte</span>
                         </button>
-                        <button onClick={() => setModal('config')} className="flex flex-col items-center py-2 rounded-xl text-gray-600">
+                        <button onClick={() => setVista('config')} className={`flex flex-col items-center py-2 rounded-xl ${vista === 'config' ? t.navActive : 'text-gray-600'}`}>
                             <span className="text-lg">⚙️</span>
                             <span className="text-xs font-semibold">Config</span>
                         </button>
@@ -1499,6 +1499,231 @@
                 );
             };
 
+            // Vista Configuración
+            const VistaConfiguracion = () => {
+                const [seccionAbierta, setSeccionAbierta] = React.useState(null);
+                const [fechaInicioLocal, setFechaInicioLocal] = React.useState(estado.fechaInicio || '');
+                const [diasLocal, setDiasLocal] = React.useState(estado.diasAcumulados || 0);
+
+                const toggleSeccion = (seccion) => {
+                    setSeccionAbierta(seccionAbierta === seccion ? null : seccion);
+                };
+
+                const AccordionHeader = ({ id, emoji, titulo }) => (
+                    <button onClick={() => toggleSeccion(id)}
+                        className="w-full p-4 flex justify-between items-center hover:bg-gray-50 transition-all">
+                        <div className="flex items-center gap-3">
+                            <span className="text-2xl">{emoji}</span>
+                            <span className="font-bold text-gray-800">{titulo}</span>
+                        </div>
+                        <span className="text-gray-400 font-bold text-lg">{seccionAbierta === id ? '▾' : '▸'}</span>
+                    </button>
+                );
+
+                return (
+                    <div className="pb-24">
+                        <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white p-6 rounded-b-3xl shadow-xl mb-6">
+                            <h1 className="text-3xl font-bold">⚙️ Configuración</h1>
+                            <p className="text-purple-100">Personaliza tu experiencia</p>
+                        </div>
+
+                        <div className="px-4 space-y-3">
+
+                            {/* Regional */}
+                            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+                                <AccordionHeader id="regional" emoji="🌍" titulo="Regional" />
+                                {seccionAbierta === 'regional' && (
+                                    <div className="p-4 border-t border-gray-200 space-y-4">
+                                        <div>
+                                            <label className="block text-gray-700 font-bold mb-2">Fecha de inicio</label>
+                                            <input type="date" value={fechaInicioLocal} onChange={e => setFechaInicioLocal(e.target.value)}
+                                                className="w-full px-4 py-3 border-2 rounded-xl" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-gray-700 font-bold mb-2">Día actual</label>
+                                            <input type="number" value={diasLocal} onChange={e => setDiasLocal(parseInt(e.target.value) || 0)}
+                                                className="w-full px-4 py-3 border-2 rounded-xl" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-bold mb-3">💱 Tipos de Cambio</h3>
+                                            {(estado.monedasSecundarias || []).length === 0 ? (
+                                                <p className="text-sm text-gray-500 bg-gray-50 rounded-xl p-3">No hay monedas secundarias configuradas.</p>
+                                            ) : (
+                                                <div className="space-y-3">
+                                                    {(estado.monedasSecundarias || []).map(moneda => {
+                                                        const tc = (estado.tiposCambio || {})[moneda];
+                                                        if (!tc) return null;
+                                                        const principal = estado.monedaPrincipal || 'MXN';
+                                                        const base = tc.monedaBase || (tc.direccion || '').split('_TO_')[0];
+                                                        const textoTC = base === moneda
+                                                            ? `1 ${moneda} = ${tc.valor} ${principal}`
+                                                            : `1 ${principal} = ${tc.valor} ${moneda}`;
+                                                        return (
+                                                            <div key={moneda} className="bg-gray-50 rounded-xl p-4 flex justify-between items-center">
+                                                                <div>
+                                                                    <p className="font-bold text-gray-800">{monedaConf(moneda).emoji} {moneda}</p>
+                                                                    <p className="text-sm text-gray-600">{textoTC}</p>
+                                                                </div>
+                                                                <div className="flex gap-2">
+                                                                    <button type="button" onClick={() => {
+                                                                        setForm({ moneda, valor: tc.valor, direccion: base === moneda ? `${moneda}_TO_${principal}` : `${principal}_TO_${moneda}` });
+                                                                        setModal('editarMoneda');
+                                                                    }} className="text-blue-600 hover:text-blue-800 font-bold text-sm">✏️ Editar</button>
+                                                                    <button type="button" onClick={() => {
+                                                                        if (confirm(`¿Eliminar ${moneda}?\n\nSe eliminará de tus monedas secundarias.`)) {
+                                                                            const nuevosTCs = {...estado.tiposCambio};
+                                                                            delete nuevosTCs[moneda];
+                                                                            setEstado({...estado, monedasSecundarias: estado.monedasSecundarias.filter(m => m !== moneda), tiposCambio: nuevosTCs});
+                                                                        }
+                                                                    }} className="text-red-600 hover:text-red-800 font-bold text-sm">🗑️</button>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <button type="button" onClick={() => {
+                                            setEstado({...estado, diasAcumulados: diasLocal, fechaInicio: fechaInicioLocal});
+                                            alert('✅ Cambios guardados');
+                                        }} className={`w-full ${t.btn} text-white px-6 py-3 rounded-xl font-bold`}>
+                                            💾 Guardar cambios
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Apariencia */}
+                            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+                                <AccordionHeader id="apariencia" emoji="🎨" titulo="Apariencia" />
+                                {seccionAbierta === 'apariencia' && (
+                                    <div className="p-4 border-t border-gray-200 space-y-4">
+                                        <div>
+                                            <h3 className="text-lg font-bold mb-3">🎨 Tema</h3>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                {Object.entries(TEMAS).map(([key, tema]) => (
+                                                    <button key={key} type="button"
+                                                        onClick={() => {
+                                                            if (!tema.libre && !estado.isPremium) {
+                                                                alert('Esta función es solo para usuarios Premium. Activa Premium para desbloquear todos los temas.');
+                                                                return;
+                                                            }
+                                                            setEstado({...estado, tema: key});
+                                                        }}
+                                                        className={`relative p-3 rounded-xl border-2 text-left transition-all ${estado.tema === key ? 'border-gray-500 shadow-lg' : 'border-gray-200 hover:border-gray-300'}`}>
+                                                        {!tema.libre && !estado.isPremium && (
+                                                            <span className="absolute top-2 right-2 text-base">🔒</span>
+                                                        )}
+                                                        <div className={`h-5 rounded-lg bg-gradient-to-r ${tema.previewGrad} mb-2`} />
+                                                        <p className="font-bold text-sm">{tema.nombre}</p>
+                                                        {estado.tema === key && <p className={`text-xs ${t.accentText}`}>✓ Activo</p>}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-bold mb-3">💎 Premium</h3>
+                                            {estado.isPremium ? (
+                                                <div className="bg-green-50 border-2 border-green-200 rounded-xl p-4">
+                                                    <p className="font-bold text-green-800 mb-1">⭐ Premium Activo</p>
+                                                    {estado.premiumCode && <p className="text-sm text-gray-600">Código: {estado.premiumCode}</p>}
+                                                    {estado.premiumEmail && <p className="text-sm text-gray-600">Email: {estado.premiumEmail}</p>}
+                                                    {estado.premiumActivadoEn && (
+                                                        <p className="text-xs text-gray-500 mt-1">
+                                                            Activado el {new Date(estado.premiumActivadoEn).toLocaleDateString('es-MX')}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <div className="bg-gray-50 border-2 border-gray-200 rounded-xl p-4">
+                                                    <p className="font-semibold mb-3">Versión: Basic (Gratis)</p>
+                                                    <button type="button"
+                                                        onClick={() => setModal('activarPremium')}
+                                                        className="w-full bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-500 hover:to-orange-500 text-white px-4 py-3 rounded-xl font-bold">
+                                                        🌟 Activar Premium
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Categorías */}
+                            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+                                <AccordionHeader id="categorias" emoji="📋" titulo="Categorías" />
+                                {seccionAbierta === 'categorias' && (
+                                    <div className="p-4 border-t border-gray-200 space-y-3">
+                                        <div className="flex justify-between items-center">
+                                            <h3 className="text-lg font-bold">Categorías de gastos</h3>
+                                            <button type="button" onClick={() => { setForm({emoji:'', nombre:''}); setModal('nuevaCategoria'); }}
+                                                className="bg-gray-700 hover:bg-gray-800 text-white text-sm px-3 py-2 rounded-xl font-bold">
+                                                ➕ Nueva
+                                            </button>
+                                        </div>
+                                        <div className="space-y-2">
+                                            {(estado.categoriasGasto || []).map(cat => (
+                                                <div key={cat.id} className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3 border border-gray-200">
+                                                    <span className="font-medium text-gray-800">{cat.emoji} {cat.nombre}</span>
+                                                    <div className="flex gap-2 items-center">
+                                                        {cat.predefinida ? (
+                                                            <span className="text-gray-400 text-sm" title="Categoría predefinida">🔒</span>
+                                                        ) : (
+                                                            <>
+                                                                <button type="button"
+                                                                    onClick={() => { setForm({...cat}); setModal('editarCategoria'); }}
+                                                                    className="text-blue-600 hover:text-blue-800 text-sm">✏️</button>
+                                                                <button type="button"
+                                                                    onClick={() => {
+                                                                        if ((estado.categoriasGasto || []).filter(c => !c.predefinida).length <= 0 && (estado.categoriasGasto || []).length <= 1) { alert('Debe haber al menos una categoría.'); return; }
+                                                                        if (confirm(`¿Eliminar "${cat.nombre}"?`)) {
+                                                                            setEstado({...estado, categoriasGasto: estado.categoriasGasto.filter(c => c.id !== cat.id)});
+                                                                        }
+                                                                    }}
+                                                                    className="text-red-600 hover:text-red-800 text-sm">🗑️</button>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Datos */}
+                            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+                                <AccordionHeader id="datos" emoji="💾" titulo="Datos" />
+                                {seccionAbierta === 'datos' && (
+                                    <div className="p-4 border-t border-gray-200 space-y-3">
+                                        <button onClick={handleInstallApp}
+                                            className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white p-5 rounded-2xl font-bold text-lg shadow-lg transition-all">
+                                            <div className="flex items-center justify-center gap-3">
+                                                <span className="text-3xl">📱</span>
+                                                <div className="text-left">
+                                                    <div>Instalar Aplicación</div>
+                                                    <div className="text-xs opacity-90 font-normal">Descarga directa en tu dispositivo</div>
+                                                </div>
+                                            </div>
+                                        </button>
+                                        <button onClick={() => {
+                                            if (confirm('⚠️ ¿Estás segura? Esto borrará TODOS los datos guardados y empezarás de cero.')) {
+                                                localStorage.removeItem('finanzasAppData');
+                                                localStorage.removeItem('tutorialCompletado');
+                                                window.location.reload();
+                                            }
+                                        }} type="button" className="w-full bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl font-bold">
+                                            🗑️ Borrar todos los datos
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                        </div>
+                    </div>
+                );
+            };
+
             // Vista Reporte
             const VistaReporte = () => {
                 const [subTab, setSubTab] = useState('gastos');
@@ -2344,6 +2569,7 @@
                     {vista === 'billetera' && <VistaBilletera />}
                     {(vista === 'movimientos' || vista === 'ingresos' || vista === 'gastos' || vista === 'ahorros') && <VistaMovimientos />}
                     {vista === 'reporte' && <VistaReporte />}
+                    {vista === 'config' && <VistaConfiguracion />}
                     {vista === 'detalle' && seleccionado && <Detalle />}
 
                     {vista === 'dashboard' && (
