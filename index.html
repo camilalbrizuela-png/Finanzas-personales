@@ -3568,10 +3568,26 @@
                                     moneda: f.moneda.value,
                                     vencimiento: f.vencimiento.value || '-',
                                     categoria: f.categoria.value,
-                                    porcentajeCostoDiario: parseInt(f.porcentaje.value),
                                     color: form.color || null,
                                     montoInicial: f.montoInicial ? (parseFloat(f.montoInicial.value) || 0) : (form.montoInicial || 0),
                                 };
+                                const tipoPago = f.tipoPago ? f.tipoPago.value : 'diarios';
+                                if (tipoPago === 'mixto') {
+                                    const montoDiarios = parseFloat(f.montoDiarios.value) || 0;
+                                    const montoQuincenal = parseFloat(f.montoQuincenal.value) || 0;
+                                    const montoMensual = parseFloat(f.montoMensual.value) || 0;
+                                    const total = montoDiarios + montoQuincenal + montoMensual;
+                                    if (Math.abs(total - datos.monto) > 0.01) {
+                                        alert('La suma de las fuentes de pago debe ser igual al monto total');
+                                        return;
+                                    }
+                                    datos.porcentajeCostoDiario = Math.round((montoDiarios / datos.monto) * 100);
+                                    datos.montosDivididos = { diarios: montoDiarios, quincenal: montoQuincenal, mensual: montoMensual };
+                                } else if (tipoPago === 'diarios') {
+                                    datos.porcentajeCostoDiario = 100;
+                                } else {
+                                    datos.porcentajeCostoDiario = 0;
+                                }
                                 if (modal === 'nuevo') {
                                     const maxId = estado.gastosFijos.length > 0 ? Math.max(...estado.gastosFijos.map(g => g.id)) : 0;
                                     setEstado({...estado, gastosFijos: [...estado.gastosFijos, {...datos, id: maxId + 1, diaInicioCiclo: estado.diasAcumulados, montoSueldoAsignado: 0}]});
@@ -3613,12 +3629,7 @@
                                             <label className="flex items-center gap-3 p-3 border-2 rounded-xl cursor-pointer hover:bg-gray-50 transition-all">
                                                 <input type="radio" name="tipoPago" value="diarios"
                                                     defaultChecked={(form.porcentajeCostoDiario ?? 100) === 100}
-                                                    onChange={(e) => {
-                                                        if (e.target.checked) {
-                                                            document.querySelector('[name="porcentaje"]').value = 100;
-                                                            document.getElementById('mixtoControls').style.display = 'none';
-                                                        }
-                                                    }}
+                                                    onChange={(e) => { if (e.target.checked) document.getElementById('mixtoControls').style.display = 'none'; }}
                                                     className="w-5 h-5" />
                                                 <div>
                                                     <p className="font-bold text-gray-800">💵 Ingresos diarios</p>
@@ -3628,12 +3639,7 @@
                                             <label className="flex items-center gap-3 p-3 border-2 rounded-xl cursor-pointer hover:bg-gray-50 transition-all">
                                                 <input type="radio" name="tipoPago" value="quincenal"
                                                     defaultChecked={(form.porcentajeCostoDiario ?? 100) === 0}
-                                                    onChange={(e) => {
-                                                        if (e.target.checked) {
-                                                            document.querySelector('[name="porcentaje"]').value = 0;
-                                                            document.getElementById('mixtoControls').style.display = 'none';
-                                                        }
-                                                    }}
+                                                    onChange={(e) => { if (e.target.checked) document.getElementById('mixtoControls').style.display = 'none'; }}
                                                     className="w-5 h-5" />
                                                 <div>
                                                     <p className="font-bold text-gray-800">💰 Sueldo quincenal</p>
@@ -3643,12 +3649,7 @@
                                             <label className="flex items-center gap-3 p-3 border-2 rounded-xl cursor-pointer hover:bg-gray-50 transition-all">
                                                 <input type="radio" name="tipoPago" value="mensual"
                                                     defaultChecked={false}
-                                                    onChange={(e) => {
-                                                        if (e.target.checked) {
-                                                            document.querySelector('[name="porcentaje"]').value = 0;
-                                                            document.getElementById('mixtoControls').style.display = 'none';
-                                                        }
-                                                    }}
+                                                    onChange={(e) => { if (e.target.checked) document.getElementById('mixtoControls').style.display = 'none'; }}
                                                     className="w-5 h-5" />
                                                 <div>
                                                     <p className="font-bold text-gray-800">💼 Sueldo mensual</p>
@@ -3673,26 +3674,66 @@
                                         <div id="mixtoControls"
                                             style={{display: ((form.porcentajeCostoDiario ?? 100) > 0 && (form.porcentajeCostoDiario ?? 100) < 100) ? 'block' : 'none'}}
                                             className="bg-blue-50 rounded-xl p-4 space-y-3">
+                                            <p className="text-sm text-gray-700 font-bold">Distribuye el monto:</p>
                                             <div>
-                                                <div className="flex justify-between mb-1">
-                                                    <span className="text-sm text-gray-700">💵 Ingresos diarios</span>
-                                                    <span id="porcentajeDiarios" className="text-sm font-bold text-blue-800">{form.porcentajeCostoDiario ?? 50}%</span>
-                                                </div>
-                                                <input type="range" name="porcentaje" min="0" max="100" step="10"
-                                                    defaultValue={form.porcentajeCostoDiario ?? 50}
-                                                    className="w-full"
+                                                <label className="text-sm text-gray-700 mb-1 block">💵 Ingresos diarios</label>
+                                                <input type="number" step="0.01" name="montoDiarios"
+                                                    defaultValue={Math.round((form.monto || 0) * (form.porcentajeCostoDiario || 50) / 100)}
+                                                    className="w-full px-3 py-2 border-2 rounded-lg text-lg font-bold"
                                                     onInput={(e) => {
-                                                        const val = parseInt(e.target.value);
-                                                        const montoTotal = parseFloat(document.querySelector('[name="monto"]').value) || 0;
-                                                        const montoDiarios = Math.round(montoTotal * val / 100);
-                                                        const montoSueldo = Math.round(montoTotal - montoDiarios);
-                                                        document.getElementById('porcentajeDiarios').textContent = val + '% ($' + montoDiarios.toLocaleString() + ')';
-                                                        document.getElementById('porcentajeSueldo').textContent = (100 - val) + '% ($' + montoSueldo.toLocaleString() + ')';
+                                                        const d = parseFloat(e.target.value) || 0;
+                                                        const q = parseFloat(document.querySelector('[name="montoQuincenal"]').value) || 0;
+                                                        const m = parseFloat(document.querySelector('[name="montoMensual"]').value) || 0;
+                                                        const total = d + q + m;
+                                                        const orig = parseFloat(document.querySelector('[name="monto"]').value) || 0;
+                                                        const el = document.getElementById('totalMixto');
+                                                        el.textContent = '$' + Math.round(total).toLocaleString();
+                                                        el.className = Math.abs(total - orig) < 0.01 ? 'text-lg font-bold text-green-600' : 'text-lg font-bold text-red-600';
+                                                        document.getElementById('warningMixto').style.display = Math.abs(total - orig) < 0.01 ? 'none' : 'block';
                                                     }} />
                                             </div>
-                                            <div className="flex justify-between">
-                                                <span className="text-sm text-gray-700">💰 Sueldo</span>
-                                                <span id="porcentajeSueldo" className="text-sm font-bold text-blue-800">{100 - (form.porcentajeCostoDiario ?? 50)}%</span>
+                                            <div>
+                                                <label className="text-sm text-gray-700 mb-1 block">💰 Sueldo quincenal</label>
+                                                <input type="number" step="0.01" name="montoQuincenal"
+                                                    defaultValue={Math.round((form.monto || 0) * (100 - (form.porcentajeCostoDiario || 50)) / 200)}
+                                                    className="w-full px-3 py-2 border-2 rounded-lg text-lg font-bold"
+                                                    onInput={(e) => {
+                                                        const d = parseFloat(document.querySelector('[name="montoDiarios"]').value) || 0;
+                                                        const q = parseFloat(e.target.value) || 0;
+                                                        const m = parseFloat(document.querySelector('[name="montoMensual"]').value) || 0;
+                                                        const total = d + q + m;
+                                                        const orig = parseFloat(document.querySelector('[name="monto"]').value) || 0;
+                                                        const el = document.getElementById('totalMixto');
+                                                        el.textContent = '$' + Math.round(total).toLocaleString();
+                                                        el.className = Math.abs(total - orig) < 0.01 ? 'text-lg font-bold text-green-600' : 'text-lg font-bold text-red-600';
+                                                        document.getElementById('warningMixto').style.display = Math.abs(total - orig) < 0.01 ? 'none' : 'block';
+                                                    }} />
+                                            </div>
+                                            <div>
+                                                <label className="text-sm text-gray-700 mb-1 block">💼 Sueldo mensual</label>
+                                                <input type="number" step="0.01" name="montoMensual"
+                                                    defaultValue={Math.round((form.monto || 0) * (100 - (form.porcentajeCostoDiario || 50)) / 200)}
+                                                    className="w-full px-3 py-2 border-2 rounded-lg text-lg font-bold"
+                                                    onInput={(e) => {
+                                                        const d = parseFloat(document.querySelector('[name="montoDiarios"]').value) || 0;
+                                                        const q = parseFloat(document.querySelector('[name="montoQuincenal"]').value) || 0;
+                                                        const m = parseFloat(e.target.value) || 0;
+                                                        const total = d + q + m;
+                                                        const orig = parseFloat(document.querySelector('[name="monto"]').value) || 0;
+                                                        const el = document.getElementById('totalMixto');
+                                                        el.textContent = '$' + Math.round(total).toLocaleString();
+                                                        el.className = Math.abs(total - orig) < 0.01 ? 'text-lg font-bold text-green-600' : 'text-lg font-bold text-red-600';
+                                                        document.getElementById('warningMixto').style.display = Math.abs(total - orig) < 0.01 ? 'none' : 'block';
+                                                    }} />
+                                            </div>
+                                            <div className="pt-3 border-t-2 border-blue-200 flex justify-between items-center">
+                                                <span className="text-sm text-gray-700 font-bold">Total:</span>
+                                                <span id="totalMixto" className="text-lg font-bold text-green-600">
+                                                    ${Math.round(form.monto || 0).toLocaleString()}
+                                                </span>
+                                            </div>
+                                            <div id="warningMixto" style={{display:'none'}} className="bg-orange-100 border-l-4 border-orange-500 p-3 rounded">
+                                                <p className="text-orange-800 text-xs">⚠️ La suma debe ser igual al monto total del gasto</p>
                                             </div>
                                         </div>
                                     </div>
