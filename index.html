@@ -417,18 +417,17 @@
                 } else if (gasto.moneda === 'USD') {
                     montoDiarioMXN = convertirMoneda(montoDiario, 'USD', estado.monedaPrincipal || 'MXN');
                 }
-                let montoDiarioCostoDiario, montoDiarioSueldo;
-                if (gasto.montosDivididos) {
-                    const totalDiarios = gasto.montosDivididos.diarios || 0;
-                    const totalSueldo = (gasto.montosDivididos.quincenal || 0) + (gasto.montosDivididos.mensual || 0);
-                    const diarioSinRedondear = diasDelCiclo > 0 ? totalDiarios / diasDelCiclo : 0;
-                    montoDiarioCostoDiario = Math.ceil(diarioSinRedondear / 10) * 10;
-                    const sueldoSinRedondear = diasDelCiclo > 0 ? totalSueldo / diasDelCiclo : 0;
-                    montoDiarioSueldo = Math.ceil(sueldoSinRedondear / 10) * 10;
-                } else {
-                    montoDiarioCostoDiario = Math.ceil((montoDiarioMXN * (porcentaje / 100)) / 10) * 10;
-                    montoDiarioSueldo = Math.ceil((montoDiarioMXN * ((100 - porcentaje) / 100)) / 10) * 10;
+                // SIEMPRE usar montosDivididos (auto-migrar si no existe)
+                let montosDivididosActual = gasto.montosDivididos;
+                if (!montosDivididosActual) {
+                    const montoDiariosLegacy = Math.round(montoDiarioMXN * diasDelCiclo * porcentaje / 100);
+                    const montoSueldoLegacy = Math.round(montoDiarioMXN * diasDelCiclo * (100 - porcentaje) / 100);
+                    montosDivididosActual = { diarios: montoDiariosLegacy, quincenal: 0, mensual: montoSueldoLegacy };
                 }
+                const totalDiarios = montosDivididosActual.diarios || 0;
+                const totalSueldo = (montosDivididosActual.quincenal || 0) + (montosDivididosActual.mensual || 0);
+                const montoDiarioCostoDiario = diasDelCiclo > 0 ? Math.ceil((totalDiarios / diasDelCiclo) / 10) * 10 : 0;
+                const montoDiarioSueldo = diasDelCiclo > 0 ? Math.ceil((totalSueldo / diasDelCiclo) / 10) * 10 : 0;
                 const montoAcumuladoPropinas = residuo * montoDiarioCostoDiario;
                 const montoSueldoAsignado = gasto.montoSueldoAsignado || 0;
                 const montoAcumuladoTotal = montoAcumuladoPropinas + montoSueldoAsignado;
@@ -1272,7 +1271,7 @@
                                         <p className="text-gray-600">📅 Duración: {ciclo.diasDelCiclo} días</p>
                                     </div>
                                     <div className="flex gap-2">
-                                        <button onClick={() => { setForm(seleccionado); setModal('editar'); }} className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-bold">✏️</button>
+                                        <button onClick={() => { setForm({...seleccionado, montosDivididos: seleccionado.montosDivididos || { diarios: seleccionado.monto, quincenal: 0, mensual: 0 }}); setModal('editar'); }} className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-bold">✏️</button>
                                         <button onClick={() => { if(confirm(esAhorro ? `¿Eliminar el ahorro "${seleccionado.nombre}"?` : `¿Eliminar "${seleccionado.nombre}"?`)) { setEstado({...estado, gastosFijos: estado.gastosFijos.filter(g => g.id !== seleccionado.id)}); setVista('dashboard'); }}}
                                             className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-bold">🗑️</button>
                                     </div>
@@ -3445,16 +3444,16 @@
                                 </div>
 
                                 <div className="space-y-3 mb-4 max-h-64 overflow-y-auto">
-                                    {estado.gastosFijos.filter(g => calcularCiclo(g).porcentajeCostoDiario < 100).map(gasto => {
+                                    {estado.gastosFijos.filter(g => g.categoria !== 'Ahorro' && ((g.montosDivididos?.quincenal || 0) + (g.montosDivididos?.mensual || 0)) > 0).map(gasto => {
                                         const ciclo = calcularCiclo(gasto);
-                                        const montoNecesario = Math.round((ciclo.montoDiarioMXN * ciclo.diasDelCiclo) * ((100 - ciclo.porcentajeCostoDiario) / 100));
+                                        const montoNecesario = (gasto.montosDivididos?.quincenal || 0) + (gasto.montosDivididos?.mensual || 0);
                                         const yaAsignado = gasto.montoSueldoAsignado || 0;
                                         const falta = Math.max(0, montoNecesario - yaAsignado);
                                         return (
                                             <div key={gasto.id} className="bg-blue-50 rounded-xl p-3 border border-blue-200">
                                                 <div className="flex justify-between items-center mb-2">
                                                     <span className="font-bold text-gray-800 text-sm">{gasto.nombre}</span>
-                                                    <span className="text-xs text-blue-800">{100 - ciclo.porcentajeCostoDiario}% sueldo · necesita ${montoNecesario}</span>
+                                                    <span className="text-xs text-blue-800">💰 Sueldo · necesita ${montoNecesario.toLocaleString()}</span>
                                                 </div>
                                                 {yaAsignado > 0 && <p className="text-xs text-green-600 mb-1">✓ Ya asignado: ${Math.round(yaAsignado)}</p>}
                                                 <input type="number" name={`gasto_${gasto.id}`} step="0.01" defaultValue={falta} placeholder="0" className="w-full px-3 py-2 border-2 rounded-lg text-base font-bold" />
@@ -3616,7 +3615,8 @@
                                     color: form.color || null,
                                     montoInicial: f.montoInicial ? (parseFloat(f.montoInicial.value) || 0) : (form.montoInicial || 0),
                                 };
-                                const tipoPago = f.tipoPago ? f.tipoPago.value : 'diarios';
+                                const tipoPago = document.querySelector('input[name="tipoPago"]:checked')?.value || 'diarios';
+
                                 if (tipoPago === 'mixto') {
                                     const montoDiarios = parseFloat(f.montoDiarios.value) || 0;
                                     const montoQuincenal = parseFloat(f.montoQuincenal.value) || 0;
@@ -3627,17 +3627,16 @@
                                         return;
                                     }
                                     datos.montosDivididos = { diarios: montoDiarios, quincenal: montoQuincenal, mensual: montoMensual };
-                                    datos.porcentajeCostoDiario = datos.monto > 0 ? Math.round((montoDiarios / datos.monto) * 100) : 100;
                                 } else if (tipoPago === 'diarios') {
-                                    datos.porcentajeCostoDiario = 100;
                                     datos.montosDivididos = { diarios: datos.monto, quincenal: 0, mensual: 0 };
                                 } else if (tipoPago === 'quincenal') {
-                                    datos.porcentajeCostoDiario = 0;
                                     datos.montosDivididos = { diarios: 0, quincenal: datos.monto, mensual: 0 };
                                 } else {
-                                    datos.porcentajeCostoDiario = 0;
                                     datos.montosDivididos = { diarios: 0, quincenal: 0, mensual: datos.monto };
                                 }
+                                datos.porcentajeCostoDiario = datos.monto > 0 && datos.montosDivididos
+                                    ? Math.round((datos.montosDivididos.diarios / datos.monto) * 100)
+                                    : 100;
                                 if (modal === 'nuevo') {
                                     const maxId = estado.gastosFijos.length > 0 ? Math.max(...estado.gastosFijos.map(g => g.id)) : 0;
                                     setEstado({...estado, gastosFijos: [...estado.gastosFijos, {...datos, id: maxId + 1, diaInicioCiclo: estado.diasAcumulados, montoSueldoAsignado: 0}]});
