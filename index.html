@@ -645,6 +645,25 @@
                                                             style={{width: `${Math.min(100, ciclo.progreso)}%`}}></div>
                                                     </div>
                                                 </div>
+                                                <div className="mt-2 space-y-1">
+                                                    {gasto.categoria !== 'Ahorro' && (() => {
+                                                        const montoDiarios = gasto.montosDivididos ? (gasto.montosDivididos.diarios || 0) : 0;
+                                                        if (montoDiarios > 0 && ciclo.diasDelCiclo > 0) {
+                                                            const ingresoDiario = Math.ceil((montoDiarios / ciclo.diasDelCiclo) / 10) * 10;
+                                                            return (
+                                                                <div className="flex justify-between items-center text-xs">
+                                                                    <span className="text-gray-600">Ingreso diario:</span>
+                                                                    <span className="font-bold text-gray-800">${ingresoDiario}/día</span>
+                                                                </div>
+                                                            );
+                                                        }
+                                                        return null;
+                                                    })()}
+                                                    <div className="flex justify-between items-center text-xs">
+                                                        <span className="text-gray-600">Acumulado:</span>
+                                                        <span className="font-bold text-gray-800">${Math.round(ciclo.montoAcumulado).toLocaleString()}</span>
+                                                    </div>
+                                                </div>
                                                 {(() => {
                                                     const porcentaje = gasto.porcentajeCostoDiario !== undefined ? gasto.porcentajeCostoDiario : 100;
                                                     let montoDiarios, montoQuincenal, montoMensual;
@@ -1284,8 +1303,8 @@
 
                                 <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl p-8 mb-6">
                                     <p className="text-gray-600 text-sm mb-2">Acumulado total</p>
-                                    <p className={`text-5xl font-bold ${t.accentTextDark}`}>${Math.round(ciclo.montoAcumulado)}</p>
-                                    <p className="text-gray-600 mb-3">de ${Math.round(seleccionado.monto)}</p>
+                                    <p className={`text-5xl font-bold ${t.accentTextDark}`}>${Math.round(ciclo.montoAcumulado).toLocaleString()}</p>
+                                    <p className="text-gray-600 mb-3">de ${Math.round(seleccionado.monto).toLocaleString()}</p>
                                     
                                     <div className="grid grid-cols-2 gap-3 text-sm">
                                         <div className="bg-white bg-opacity-60 rounded-lg p-3">
@@ -1318,18 +1337,23 @@
                                     </div>
                                 </div>
 
-                                {seleccionado.categoria !== 'Ahorro' && seleccionado.porcentajeCostoDiario > 0 && ciclo.montoDiarioCostoDiario > 0 && (
-                                    <div className="bg-gray-50 rounded-xl p-4 mb-6">
-                                        <p className="text-gray-500 text-sm mb-1">💵 Diario desde ingresos</p>
-                                        <p className="text-2xl font-bold text-gray-800">${Math.round(ciclo.montoDiarioCostoDiario).toLocaleString()}/día</p>
-                                        <p className="text-xs text-gray-500 mt-1">
-                                            {seleccionado.porcentajeCostoDiario === 100
-                                                ? 'Todo el gasto se paga con ingresos diarios'
-                                                : `${seleccionado.porcentajeCostoDiario}% del gasto`
-                                            }
-                                        </p>
-                                    </div>
-                                )}
+
+                                {seleccionado.categoria !== 'Ahorro' && (() => {
+                                    const montoDiarios = seleccionado.montosDivididos ? (seleccionado.montosDivididos.diarios || 0) : 0;
+                                    if (montoDiarios > 0 && ciclo.diasDelCiclo > 0) {
+                                        const ingresoDiario = Math.ceil((montoDiarios / ciclo.diasDelCiclo) / 10) * 10;
+                                        return (
+                                            <div className="bg-gray-50 rounded-xl p-4 mb-6">
+                                                <p className="text-gray-500 text-sm mb-1">💵 Ingresos diarios necesarios</p>
+                                                <p className="text-2xl font-bold text-gray-800">${ingresoDiario.toLocaleString()}/día</p>
+                                                <p className="text-xs text-gray-500 mt-1">
+                                                    Para cubrir ${montoDiarios.toLocaleString()} en {ciclo.diasDelCiclo} días
+                                                </p>
+                                            </div>
+                                        );
+                                    }
+                                    return null;
+                                })()}
 
                                 <div className="bg-gradient-to-br from-orange-50 to-yellow-50 rounded-2xl p-6">
                                     <h3 className="text-lg font-bold text-gray-800 mb-4">💳 Cómo se cubre este gasto</h3>
