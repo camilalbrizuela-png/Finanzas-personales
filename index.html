@@ -128,6 +128,7 @@
                             }
                             if (!parsed.nombreUsuario) parsed.nombreUsuario = '';
                         }
+                        if (!parsed.ahorrosCompletados) parsed.ahorrosCompletados = [];
                         return parsed;
                     }
                 } catch(e) {
@@ -145,6 +146,7 @@
                     gastosFijos: [],
                     ingresosDiarios: [],
                     gastosExtras: [],
+                    ahorrosCompletados: [],
                     categoriasExtra: [],
                     coloresCategorias: {},
                     categoriasGasto: [
@@ -333,9 +335,12 @@
             };
 
             const calcularCiclo = (gasto) => {
-                const porcentaje = (gasto.porcentajeCostoDiario !== undefined && gasto.porcentajeCostoDiario !== null) 
-                    ? gasto.porcentajeCostoDiario 
+                const porcentaje = (gasto.porcentajeCostoDiario !== undefined && gasto.porcentajeCostoDiario !== null)
+                    ? gasto.porcentajeCostoDiario
                     : 100;
+
+                const esAhorro = gasto.categoria === 'Ahorro';
+                const monedaDelGasto = gasto.moneda || 'MXN';
 
                 if (!gasto.vencimiento || gasto.vencimiento === '-') {
                     let montoDiarioMXN = gasto.monto;
@@ -344,68 +349,86 @@
                     } else if (gasto.moneda === 'USD') {
                         montoDiarioMXN = convertirMoneda(gasto.monto, 'USD', estado.monedaPrincipal || 'MXN');
                     }
-                    
                     const montoDiarioCostoDiario = montoDiarioMXN * (porcentaje / 100);
                     const montoDiarioSueldo = montoDiarioMXN * ((100 - porcentaje) / 100);
-                    
-                    return { 
-                        residuo: 0, 
-                        progreso: 100, 
-                        montoAcumulado: gasto.monto, 
-                        montoAcumuladoPropinas: gasto.monto,
-                        montoSueldoAsignado: 0,
-                        montoDiario: gasto.monto, 
-                        montoDiarioMXN: montoDiarioMXN, 
-                        montoDiarioCostoDiario: montoDiarioCostoDiario,
-                        montoDiarioSueldo: montoDiarioSueldo,
-                        porcentajeCostoDiario: porcentaje, 
-                        diasDelCiclo: 1,
-                        fechaInicioCiclo: estado.fechaInicio,
-                        fechaVencimiento: '-'
+                    return {
+                        residuo: 0, progreso: 100,
+                        montoAcumulado: gasto.monto, montoAcumuladoPropinas: gasto.monto,
+                        montoSueldoAsignado: 0, montoDiario: gasto.monto,
+                        montoDiarioMXN, montoDiarioCostoDiario, montoDiarioSueldo,
+                        porcentajeCostoDiario: porcentaje, diasDelCiclo: 1,
+                        fechaInicioCiclo: estado.fechaInicio, fechaVencimiento: '-',
+                        monedaOriginal: monedaDelGasto
                     };
                 }
-                
+
                 const fechaInicio = new Date(estado.fechaInicio);
                 const fechaVenc = new Date(gasto.vencimiento);
                 const fechaInicioCiclo = new Date(fechaInicio);
-                fechaInicioCiclo.setDate(fechaInicio.getDate() + gasto.diaInicioCiclo);
-                
+                fechaInicioCiclo.setDate(fechaInicio.getDate() + (gasto.diaInicioCiclo || 0));
+
                 const diasDelCiclo = Math.max(1, Math.floor((fechaVenc - fechaInicioCiclo) / (1000 * 60 * 60 * 24)));
-                let residuo = (estado.diasAcumulados - gasto.diaInicioCiclo) % diasDelCiclo;
-                const cicloCompleto = residuo === 0 && estado.diasAcumulados > gasto.diaInicioCiclo;
+                let residuo = (estado.diasAcumulados - (gasto.diaInicioCiclo || 0)) % diasDelCiclo;
+                const cicloCompleto = residuo === 0 && estado.diasAcumulados > (gasto.diaInicioCiclo || 0);
                 if (cicloCompleto) residuo = diasDelCiclo;
-                
+
                 const montoDiario = gasto.monto / diasDelCiclo;
-                
+                const montoInicialRaw = gasto.montoInicial || 0;
+
+                // AHORROS: solo contar aportes manuales (no todos los ingresos)
+                if (esAhorro) {
+                    const monedaAhorro = monedaDelGasto;
+                    const principal = estado.monedaPrincipal || 'MXN';
+                    const fuente = monedaAhorro === principal ? 'mxn' : monedaAhorro.toLowerCase();
+                    const aportesAlAhorro = (estado.gastosExtras || [])
+                        .filter(g => g.esAporteAhorro && g.ahorroId === gasto.id && g.fuente === fuente)
+                        .reduce((sum, g) => sum + g.monto, 0);
+                    const montoAcumuladoTotal = montoInicialRaw + aportesAlAhorro;
+                    const fechaActual = calcularFechaActual();
+                    const diasRestantes = Math.max(0, Math.ceil((fechaVenc - fechaActual) / (1000 * 60 * 60 * 24)));
+                    const montoFaltante = Math.max(0, gasto.monto - montoAcumuladoTotal);
+                    const diarioRecomendado = diasRestantes > 0 ? montoFaltante / diasRestantes : 0;
+                    const diasTranscurridos = Math.max(0, Math.floor((fechaActual - fechaInicioCiclo) / (1000 * 60 * 60 * 24)));
+                    const montoEsperado = diasTranscurridos > 0 ? (gasto.monto / diasDelCiclo) * diasTranscurridos : 0;
+                    const diferencia = montoAcumuladoTotal - montoEsperado;
+                    const estadoAhorro = diferencia > 0 ? 'adelantado' : diferencia < -0.01 ? 'atrasado' : 'al_dia';
+                    return {
+                        residuo, diasDelCiclo,
+                        progreso: (montoAcumuladoTotal / gasto.monto) * 100,
+                        montoAcumulado: montoAcumuladoTotal,
+                        montoAcumuladoPropinas: aportesAlAhorro,
+                        montoSueldoAsignado: 0,
+                        montoDiario, montoDiarioMXN: montoDiario,
+                        montoDiarioCostoDiario: 0, montoDiarioSueldo: 0,
+                        porcentajeCostoDiario: 0,
+                        cicloCompleto: montoAcumuladoTotal >= gasto.monto,
+                        fechaInicioCiclo: fechaInicioCiclo.toISOString().split('T')[0],
+                        fechaVencimiento: gasto.vencimiento,
+                        montoInicial: montoInicialRaw, monedaOriginal: monedaDelGasto,
+                        diasRestantes, diarioRecomendado,
+                        diferencia: Math.abs(diferencia), estadoAhorro
+                    };
+                }
+
+                // GASTOS FIJOS: convertir todo a MXN
                 let montoDiarioMXN = montoDiario;
                 if (gasto.moneda === 'ARS') {
                     montoDiarioMXN = convertirMoneda(montoDiario, gasto.moneda, estado.monedaPrincipal || 'MXN');
                 } else if (gasto.moneda === 'USD') {
                     montoDiarioMXN = convertirMoneda(montoDiario, 'USD', estado.monedaPrincipal || 'MXN');
                 }
-                
                 const montoDiarioCostoDiario = montoDiarioMXN * (porcentaje / 100);
                 const montoDiarioSueldo = montoDiarioMXN * ((100 - porcentaje) / 100);
-                
                 const montoAcumuladoPropinas = residuo * montoDiarioCostoDiario;
                 const montoSueldoAsignado = gasto.montoSueldoAsignado || 0;
                 const montoAcumuladoTotal = montoAcumuladoPropinas + montoSueldoAsignado;
-                
                 const progreso = (montoAcumuladoTotal / (gasto.monto * (montoDiarioMXN / montoDiario))) * 100;
-                
-                return { 
-                    residuo, 
-                    progreso, 
+                return {
+                    residuo, progreso,
                     montoAcumulado: montoAcumuladoTotal,
-                    montoAcumuladoPropinas,
-                    montoSueldoAsignado,
-                    montoDiario, 
-                    montoDiarioMXN, 
-                    montoDiarioCostoDiario, 
-                    montoDiarioSueldo, 
-                    porcentajeCostoDiario: porcentaje, 
-                    cicloCompleto, 
-                    diasDelCiclo,
+                    montoAcumuladoPropinas, montoSueldoAsignado,
+                    montoDiario, montoDiarioMXN, montoDiarioCostoDiario, montoDiarioSueldo,
+                    porcentajeCostoDiario: porcentaje, cicloCompleto, diasDelCiclo,
                     fechaInicioCiclo: fechaInicioCiclo.toISOString().split('T')[0],
                     fechaVencimiento: gasto.vencimiento
                 };
@@ -480,7 +503,7 @@
 
             const MenuNav = () => (
                 <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 shadow-lg">
-                    <div className="max-w-6xl mx-auto grid grid-cols-6 gap-0 p-1">
+                    <div className="max-w-6xl mx-auto grid grid-cols-5 gap-0 p-1">
                         <button onClick={() => setVista('dashboard')} className={`flex flex-col items-center py-2 rounded-xl ${vista === 'dashboard' ? t.navActive : 'text-gray-600'}`}>
                             <span className="text-lg">🏠</span>
                             <span className="text-xs font-semibold">Inicio</span>
@@ -489,19 +512,15 @@
                             <span className="text-lg">💰</span>
                             <span className="text-xs font-semibold">Billetera</span>
                         </button>
-                        <button onClick={() => setVista('ingresos')} className={`flex flex-col items-center py-2 rounded-xl ${vista === 'ingresos' ? t.navActive : 'text-gray-600'}`}>
-                            <span className="text-lg">📥</span>
-                            <span className="text-xs font-semibold">Ingresos</span>
-                        </button>
-                        <button onClick={() => setVista('gastos')} className={`flex flex-col items-center py-2 rounded-xl ${vista === 'gastos' ? t.navActive : 'text-gray-600'}`}>
-                            <span className="text-lg">🛒</span>
-                            <span className="text-xs font-semibold">Gastos</span>
+                        <button onClick={() => setVista('movimientos')} className={`flex flex-col items-center py-2 rounded-xl ${'movimientos ingresos gastos ahorros'.includes(vista) ? t.navActive : 'text-gray-600'}`}>
+                            <span className="text-lg">💸</span>
+                            <span className="text-xs font-semibold">Movimientos</span>
                         </button>
                         <button onClick={() => setVista('reporte')} className={`flex flex-col items-center py-2 rounded-xl ${vista === 'reporte' ? t.navActive : 'text-gray-600'}`}>
                             <span className="text-lg">📊</span>
                             <span className="text-xs font-semibold">Reporte</span>
                         </button>
-                        <button onClick={() => setModal('config')} className="flex flex-col items-center py-2 rounded-xl text-gray-600">
+                        <button onClick={() => setVista('config')} className={`flex flex-col items-center py-2 rounded-xl ${vista === 'config' ? t.navActive : 'text-gray-600'}`}>
                             <span className="text-lg">⚙️</span>
                             <span className="text-xs font-semibold">Config</span>
                         </button>
@@ -571,12 +590,12 @@
                                         <p className="text-2xl font-bold">${Math.round(acumuladoEsperado)}</p>
                                     </div>
                                 </div>
-                                <div className="bg-gradient-to-br from-green-300 to-emerald-300 rounded-3xl shadow-xl p-6 text-gray-800">
+                                <div className="bg-gradient-to-br from-gray-200 to-gray-200 rounded-3xl shadow-xl p-6 text-gray-800">
                                     <p className="text-sm text-gray-700 mb-2">Disponible</p>
                                     <p className="text-4xl font-bold">${Math.round(superavit)}</p>
                                     <p className="text-xs text-gray-600 mt-1">En {estado.monedaPrincipal || 'MXN'}</p>
                                 </div>
-                                <div onClick={() => setVista('billetera')} className="bg-gradient-to-br from-orange-300 to-red-300 rounded-3xl shadow-xl p-6 text-gray-800 cursor-pointer hover:scale-105 transition-all">
+                                <div onClick={() => setVista('billetera')} className="bg-gradient-to-br from-blue-300 to-blue-300 rounded-3xl shadow-xl p-6 text-gray-800 cursor-pointer hover:scale-105 transition-all">
                                     <p className="text-sm text-gray-700 mb-2">Billetera Total</p>
                                     <p className="text-4xl font-bold">${Math.round(superavit + convertirMoneda(estado.billetera.usd, 'USD', estado.monedaPrincipal || 'MXN') + convertirMoneda(estado.billetera.ars, 'ARS', estado.monedaPrincipal || 'MXN') + estado.billetera.tanda)}</p>
                                     <p className="text-xs text-gray-600 mt-1">
@@ -585,10 +604,10 @@
                                 </div>
                             </div>
 
-                            <div className="bg-white rounded-3xl shadow-2xl p-6">
-                                <h2 className="text-2xl font-bold text-gray-800 mb-6">📊 Gastos Fijos</h2>
+                            <div className="bg-white rounded-3xl shadow-2xl p-6 mb-6">
+                                <h2 className="text-2xl font-bold text-gray-800 mb-6">📋 Gastos Fijos</h2>
                                 <div className="grid md:grid-cols-2 gap-4">
-                                    {estado.gastosFijos.map(gasto => {
+                                    {estado.gastosFijos.filter(g => g.categoria !== 'Ahorro').map(gasto => {
                                         const ciclo = calcularCiclo(gasto);
                                         return (
                                             <div key={gasto.id} onClick={() => { setSeleccionado(gasto); setVista('detalle'); }}
@@ -596,7 +615,6 @@
                                                 <div className="flex justify-between items-start mb-3">
                                                     <div>
                                                         <h3 className="text-lg font-bold text-gray-800">{gasto.nombre}</h3>
-                                                        <p className="text-sm text-gray-600">{gasto.periodicidad}</p>
                                                         <p className="text-xs text-gray-500">📅 {formatearFecha(ciclo.fechaInicioCiclo)} → {formatearFecha(ciclo.fechaVencimiento)}</p>
                                                     </div>
                                                     <div className="flex flex-col gap-1 items-end">
@@ -656,6 +674,72 @@
                                         );
                                     })}
                                 </div>
+                                {estado.gastosFijos.filter(g => g.categoria !== 'Ahorro').length === 0 && (
+                                    <p className="text-center text-gray-500 py-8">No hay gastos fijos registrados</p>
+                                )}
+                            </div>
+
+                            <div className="bg-white rounded-3xl shadow-2xl p-6 mb-6">
+                                <h2 className="text-2xl font-bold text-gray-800 mb-6">🎯 Planificación de Ahorros</h2>
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    {estado.gastosFijos.filter(g => g.categoria === 'Ahorro').map(gasto => {
+                                        const ciclo = calcularCiclo(gasto);
+                                        const moneda = gasto.moneda || 'MXN';
+                                        const principal = estado.monedaPrincipal || 'MXN';
+                                        const simbolo = moneda === principal ? '$' : `${moneda} `;
+                                        return (
+                                            <div key={gasto.id} onClick={() => { setSeleccionado(gasto); setVista('detalle'); }}
+                                                className={`rounded-2xl p-5 cursor-pointer hover:shadow-lg transition-all border-2 border-gray-200 ${t.cardHover} ${gasto.color || 'bg-white'}`}>
+                                                <div className="flex justify-between items-start mb-3">
+                                                    <div>
+                                                        <h3 className="text-lg font-bold text-gray-800">{gasto.nombre}</h3>
+                                                        <p className="text-xs text-gray-500">📅 Objetivo: {formatearFecha(ciclo.fechaVencimiento)}</p>
+                                                        <p className="text-xs text-gray-500">⏱️ {ciclo.diasRestantes} días restantes</p>
+                                                    </div>
+                                                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${t.badge}`}>Ahorro</span>
+                                                </div>
+                                                {ciclo.cicloCompleto && (
+                                                    <div className="bg-green-50 border-l-4 border-green-500 p-3 mb-3 rounded">
+                                                        <p className="text-green-800 font-bold text-sm">✅ Meta alcanzada - {simbolo}{Math.round(gasto.monto).toLocaleString()}</p>
+                                                    </div>
+                                                )}
+                                                <div className="mb-3">
+                                                    <div className="flex justify-between text-sm mb-1">
+                                                        <span className="text-gray-600">Progreso</span>
+                                                        <span className={`font-bold ${t.accentText}`}>{simbolo}{Math.round(ciclo.montoAcumulado).toLocaleString()}</span>
+                                                    </div>
+                                                    <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
+                                                        <div className={`bg-gradient-to-r ${t.progressBar} h-3 rounded-full`}
+                                                            style={{width: `${Math.min(100, ciclo.progreso)}%`}}></div>
+                                                    </div>
+                                                    <p className="text-xs text-gray-500 text-right">de {simbolo}{Math.round(gasto.monto).toLocaleString()}</p>
+                                                </div>
+                                                <div className="bg-blue-50 rounded-lg p-3">
+                                                    <p className="text-xs text-gray-600 mb-1">💡 Para llegar a tiempo:</p>
+                                                    <p className="text-sm font-bold text-gray-800">Ahorra {simbolo}{Math.round(ciclo.diarioRecomendado).toLocaleString()}/día</p>
+                                                </div>
+                                                {!ciclo.cicloCompleto && superavit > 0 && (
+                                                    <button onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setForm({
+                                                            ahorroId: gasto.id,
+                                                            ahorroNombre: gasto.nombre,
+                                                            ahorroMoneda: gasto.moneda || 'MXN',
+                                                            disponibleMXN: superavit,
+                                                            diarioRecomendado: ciclo.diarioRecomendado
+                                                        });
+                                                        setModal('aportarAhorro');
+                                                    }} className="w-full mt-3 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-xl font-bold text-sm flex items-center justify-center gap-2">
+                                                        💰 Aportar al ahorro
+                                                    </button>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                {estado.gastosFijos.filter(g => g.categoria === 'Ahorro').length === 0 && (
+                                    <p className="text-center text-gray-500 py-8">No hay ahorros planificados</p>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -749,6 +833,46 @@
                                             </div>
                                         );
                                     })}
+
+                                    {/* Ahorros por moneda */}
+                                    {(() => {
+                                        const ahorrosPorMoneda = {};
+                                        estado.gastosFijos.filter(g => g.categoria === 'Ahorro').forEach(g => {
+                                            const moneda = g.moneda || 'MXN';
+                                            const ciclo = calcularCiclo(g);
+                                            if (!ahorrosPorMoneda[moneda]) ahorrosPorMoneda[moneda] = { enProgreso: 0, completados: 0 };
+                                            ahorrosPorMoneda[moneda].enProgreso += ciclo.montoAcumulado;
+                                        });
+                                        (estado.ahorrosCompletados || []).filter(a => !a.pagado).forEach(a => {
+                                            const moneda = a.moneda || 'MXN';
+                                            if (!ahorrosPorMoneda[moneda]) ahorrosPorMoneda[moneda] = { enProgreso: 0, completados: 0 };
+                                            ahorrosPorMoneda[moneda].completados += a.monto;
+                                        });
+                                        return Object.entries(ahorrosPorMoneda).map(([moneda, datos]) => {
+                                            const total = datos.enProgreso + datos.completados;
+                                            if (total <= 0) return null;
+                                            const principal = estado.monedaPrincipal || 'MXN';
+                                            const esMonedaPrincipal = moneda === principal;
+                                            const fmt = (v) => esMonedaPrincipal ? `$${Math.round(v).toLocaleString()}` : `${moneda} ${Math.round(v).toLocaleString()}`;
+                                            return (
+                                                <div key={moneda} className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6">
+                                                    <div className="flex justify-between items-center mb-2">
+                                                        <p className="text-gray-700 font-bold">{esMonedaPrincipal ? '💰 Ahorros' : `💰 Ahorros ${moneda}`}</p>
+                                                        <button onClick={() => setVista('movimientos')} className="text-green-600 hover:text-green-800 text-sm">Ver detalle →</button>
+                                                    </div>
+                                                    <p className="text-4xl font-bold text-green-800">{fmt(total)}</p>
+                                                    <div className="mt-2 text-xs text-gray-600 space-y-1">
+                                                        <p>En progreso: {fmt(datos.enProgreso)}</p>
+                                                        <p>Completados: {fmt(datos.completados)}</p>
+                                                    </div>
+                                                    {!esMonedaPrincipal && (
+                                                        <p className="text-xs text-gray-500 mt-2">≈ ${Math.round(convertirMoneda(total, moneda, principal)).toLocaleString()} {principal}</p>
+                                                    )}
+                                                    <p className="text-xs text-gray-500 mt-1">Calculado automáticamente desde tus metas</p>
+                                                </div>
+                                            );
+                                        }).filter(Boolean);
+                                    })()}
 
                                     {/* Secciones personalizadas */}
                                     {(estado.billetera.secciones || []).map(seccion => (
@@ -957,18 +1081,18 @@
                                             setModal('upgradePremium');
                                             return;
                                         }
-                                        setForm({nombre:'', monto:'', moneda:'MXN', periodicidad:'Mensual', vencimiento:'', categoria:'Fijo', porcentajeCostoDiario: 100, color: null});
+                                        setForm({nombre:'', monto:'', moneda:'MXN', vencimiento:'', categoria:'Fijo', porcentajeCostoDiario: 100, color: null});
                                         setModal('nuevo');
                                     }}
-                                        className={`flex flex-col items-center bg-gradient-to-br ${t.card1} text-white rounded-2xl p-5 shadow-md transition-all hover:scale-[1.02]`}>
+                                        className="flex flex-col items-center bg-gradient-to-br from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 text-white rounded-2xl p-5 shadow-md transition-all hover:scale-[1.02]">
                                         <span className="text-3xl mb-2">📋</span>
                                         <span className="font-bold text-lg">Gasto Fijo</span>
-                                        <span className="text-xs opacity-80 mt-1">Agrega a gastos fijos</span>
+                                        <span className="text-xs opacity-80 mt-1">Obligaciones mensuales</span>
                                     </button>
                                     <button onClick={() => { setForm({}); setModal('seleccionarFuenteGasto'); }}
-                                        className="flex flex-col items-center bg-gradient-to-br from-red-400 to-orange-500 hover:from-red-500 hover:to-orange-600 text-white rounded-2xl p-5 shadow-md transition-all">
+                                        className="flex flex-col items-center bg-gradient-to-br from-blue-400 to-blue-300 hover:from-blue-500 hover:to-blue-400 text-white rounded-2xl p-5 shadow-md transition-all">
                                         <span className="text-3xl mb-2">🛍️</span>
-                                        <span className="font-bold text-lg">Otros</span>
+                                        <span className="font-bold text-lg">Otros Gastos</span>
                                         <span className="text-xs opacity-80 mt-1">Gasto puntual</span>
                                     </button>
                                 </div>
@@ -1076,6 +1200,7 @@
             // Vista Detalle (continúa igual pero actualizada)
             const Detalle = () => {
                 const ciclo = calcularCiclo(seleccionado);
+                const esAhorro = seleccionado.categoria === 'Ahorro';
                 return (
                     <div className={`min-h-screen bg-gradient-to-br ${t.bg} p-4 pb-24`}>
                         <div className="max-w-2xl mx-auto">
@@ -1085,12 +1210,12 @@
                                     <div>
                                         <h1 className="text-3xl font-bold text-gray-800">{seleccionado.nombre}</h1>
                                         <p className="text-gray-600 mt-2">📅 Inicio ciclo: {formatearFecha(ciclo.fechaInicioCiclo)}</p>
-                                        <p className="text-gray-600">📅 Vencimiento: {formatearFecha(ciclo.fechaVencimiento)}</p>
+                                        <p className="text-gray-600">{esAhorro ? '📅 Fecha objetivo:' : '📅 Vencimiento:'} {formatearFecha(ciclo.fechaVencimiento)}</p>
                                         <p className="text-gray-600">📅 Duración: {ciclo.diasDelCiclo} días</p>
                                     </div>
                                     <div className="flex gap-2">
                                         <button onClick={() => { setForm(seleccionado); setModal('editar'); }} className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-bold">✏️</button>
-                                        <button onClick={() => { if(confirm('¿Eliminar?')) { setEstado({...estado, gastosFijos: estado.gastosFijos.filter(g => g.id !== seleccionado.id)}); setVista('dashboard'); }}}
+                                        <button onClick={() => { if(confirm(esAhorro ? `¿Eliminar el ahorro "${seleccionado.nombre}"?` : `¿Eliminar "${seleccionado.nombre}"?`)) { setEstado({...estado, gastosFijos: estado.gastosFijos.filter(g => g.id !== seleccionado.id)}); setVista('dashboard'); }}}
                                             className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-bold">🗑️</button>
                                     </div>
                                 </div>
@@ -1105,7 +1230,7 @@
 
                                 {ciclo.cicloCompleto && (
                                     <div className="bg-green-50 border-l-4 border-green-500 p-6 mb-6 rounded-lg">
-                                        <h3 className="text-xl font-bold text-green-800 mb-2">✅ Ciclo Completo</h3>
+                                        <h3 className="text-xl font-bold text-green-800 mb-2">{esAhorro ? '✅ Meta Alcanzada' : '✅ Ciclo Completo'}</h3>
                                         <p className="text-sm text-green-800 mb-3">
                                             Ingresos diarios: ${Math.round(ciclo.montoAcumuladoPropinas)} · Sueldo: ${Math.round(ciclo.montoSueldoAsignado)}
                                             · <strong>Total: ${Math.round(ciclo.montoAcumulado)}</strong>
@@ -1117,7 +1242,9 @@
                                                 cicloCompleto: ciclo
                                             });
                                             setModal('confirmarCiclo');
-                                        }} className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-bold">Confirmar y reiniciar</button>
+                                        }} className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-bold">
+                                            {esAhorro ? 'Confirmar meta alcanzada' : 'Confirmar y reiniciar'}
+                                        </button>
                                     </div>
                                 )}
 
@@ -1185,6 +1312,418 @@
                 );
             };
 
+            // Vista Ahorros
+            const VistaAhorros = () => {
+                const totalAhorros = estado.gastosFijos
+                    .filter(g => g.categoria === 'Ahorro')
+                    .reduce((sum, g) => {
+                        const ciclo = calcularCiclo(g);
+                        return sum + ciclo.montoAcumulado;
+                    }, 0);
+
+                return (
+                    <div className={`min-h-screen bg-gradient-to-br ${t.bg} p-4 pb-24`}>
+                        <div className="max-w-4xl mx-auto">
+
+                            <div className="bg-white rounded-3xl shadow-2xl p-6 mb-6">
+                                <h1 className="text-2xl font-bold text-gray-800 mb-4">🎯 Planificación de Ahorros</h1>
+                                <button onClick={() => {
+                                    if (estado.gastosFijos.length >= LIMITES.gastosFijos) {
+                                        setForm({ razon: 'gastos_fijos', actual: estado.gastosFijos.length, limite: LIMITES.gastosFijos });
+                                        setModal('upgradePremium');
+                                        return;
+                                    }
+                                    setForm({nombre:'', monto:'', moneda:'MXN', vencimiento:'', categoria:'Ahorro', porcentajeCostoDiario: 100, color: null});
+                                    setModal('nuevo');
+                                }}
+                                    className="w-full flex flex-col items-center bg-gradient-to-br from-green-400 to-emerald-500 hover:from-green-400 hover:to-emerald-500 text-white rounded-2xl p-5 shadow-md transition-all hover:scale-[1.01]">
+                                    <span className="text-3xl mb-2">🎯</span>
+                                    <span className="font-bold text-lg">Nueva Meta de Ahorro</span>
+                                    <span className="text-xs opacity-80 mt-1">Planifica tus objetivos financieros</span>
+                                </button>
+                            </div>
+
+                            <div className="bg-white rounded-3xl shadow-2xl p-6">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h2 className="text-xl font-bold text-gray-800">📊 Mis Ahorros</h2>
+                                    <div className="bg-green-50 rounded-xl px-4 py-2">
+                                        <p className="text-xs text-gray-600">Total acumulado</p>
+                                        <p className="text-2xl font-bold text-green-800">${Math.round(totalAhorros).toLocaleString()}</p>
+                                    </div>
+                                </div>
+
+                                {estado.gastosFijos.filter(g => g.categoria === 'Ahorro').length === 0 ? (
+                                    <div className="text-center py-12 text-gray-500">
+                                        <p className="text-5xl mb-4">🎯</p>
+                                        <p className="text-lg font-semibold mb-2">No hay ahorros planificados</p>
+                                        <p className="text-sm">Crea tu primera meta de ahorro para empezar</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {estado.gastosFijos.filter(g => g.categoria === 'Ahorro').map(gasto => {
+                                            const ciclo = calcularCiclo(gasto);
+                                            const moneda = gasto.moneda || 'MXN';
+                                            const principal = estado.monedaPrincipal || 'MXN';
+                                            const simbolo = moneda === principal ? '$' : `${moneda} `;
+                                            return (
+                                                <div key={gasto.id} onClick={() => { setSeleccionado(gasto); setVista('detalle'); }}
+                                                    className="bg-gray-50 rounded-xl p-4 border-2 border-gray-200 hover:border-gray-400 cursor-pointer transition-all">
+                                                    <div className="flex justify-between items-center mb-2">
+                                                        <div className="flex-1">
+                                                            <h3 className="text-lg font-bold text-gray-800">{gasto.nombre}</h3>
+                                                            <p className="text-sm text-gray-600">
+                                                                Objetivo: {formatearFecha(gasto.vencimiento)} • {ciclo.diasRestantes} días
+                                                            </p>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <p className="text-2xl font-bold text-green-800">{simbolo}{Math.round(ciclo.montoAcumulado).toLocaleString()}</p>
+                                                            <p className="text-sm text-gray-500">de {simbolo}{Math.round(gasto.monto).toLocaleString()}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                                                        <div className={`bg-gradient-to-r ${t.progressBar} h-2 rounded-full transition-all`}
+                                                            style={{width: `${Math.min(100, ciclo.progreso)}%`}}></div>
+                                                    </div>
+                                                    <p className="text-xs text-gray-600">💡 {simbolo}{Math.round(ciclo.diarioRecomendado).toLocaleString()}/día</p>
+                                                    {ciclo.cicloCompleto && (
+                                                        <div className="mt-2 bg-green-50 border-l-4 border-green-500 p-2 rounded">
+                                                            <p className="text-green-800 font-bold text-sm">✅ Meta alcanzada</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="bg-white rounded-3xl shadow-2xl p-6">
+                                <h2 className="text-xl font-bold text-gray-800 mb-4">📋 Historial</h2>
+                                <div className="grid grid-cols-3 gap-2 mb-4">
+                                    <div className="bg-green-50 rounded-xl p-3 text-center">
+                                        <p className="text-xs text-gray-600">Total</p>
+                                        <p className="text-xl font-bold text-green-800">
+                                            ${Math.round((estado.ahorrosCompletados || []).reduce((sum, a) => sum + a.monto, 0)).toLocaleString()}
+                                        </p>
+                                    </div>
+                                    <div className="bg-blue-50 rounded-xl p-3 text-center">
+                                        <p className="text-xs text-gray-600">Disponible</p>
+                                        <p className="text-xl font-bold text-blue-800">
+                                            ${Math.round((estado.ahorrosCompletados || []).filter(a => !a.pagado).reduce((sum, a) => sum + a.monto, 0)).toLocaleString()}
+                                        </p>
+                                    </div>
+                                    <div className="bg-gray-50 rounded-xl p-3 text-center">
+                                        <p className="text-xs text-gray-600">Usado</p>
+                                        <p className="text-xl font-bold text-gray-600">
+                                            ${Math.round((estado.ahorrosCompletados || []).filter(a => a.pagado).reduce((sum, a) => sum + a.monto, 0)).toLocaleString()}
+                                        </p>
+                                    </div>
+                                </div>
+                                {(estado.ahorrosCompletados || []).length === 0 ? (
+                                    <div className="text-center py-12 text-gray-500">
+                                        <p className="text-5xl mb-4">📭</p>
+                                        <p>No hay ahorros completados aún</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                                        {[...(estado.ahorrosCompletados || [])]
+                                            .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
+                                            .map(ahorro => (
+                                            <div key={ahorro.id} className={`${ahorro.pagado ? 'bg-gray-100' : 'bg-gray-50'} rounded-xl p-4 border-2 ${ahorro.pagado ? 'border-gray-300' : 'border-gray-200'}`}>
+                                                <div className="flex justify-between items-start">
+                                                    <div className="flex-1">
+                                                        <p className="font-bold text-gray-800 text-lg">
+                                                            🎯 {ahorro.nombre}
+                                                            {ahorro.pagado && <span className="ml-2 text-sm font-normal">💸 Pagado</span>}
+                                                        </p>
+                                                        <p className="text-sm text-gray-600">
+                                                            {formatearFecha(ahorro.fechaInicio)} → {formatearFecha(ahorro.fechaObjetivo)}
+                                                        </p>
+                                                        <p className="text-xs text-gray-500">✅ Completado: {formatearFecha(ahorro.fecha)}</p>
+                                                        {ahorro.diasDelCiclo && <p className="text-xs text-gray-500">⏱️ Duración: {ahorro.diasDelCiclo} días</p>}
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className={`text-2xl font-bold ${ahorro.pagado ? 'text-gray-400 line-through' : 'text-green-800'}`}>
+                                                            ${Math.round(ahorro.monto).toLocaleString()}
+                                                        </p>
+                                                        {ahorro.moneda && ahorro.moneda !== (estado.monedaPrincipal || 'MXN') && (
+                                                            <p className="text-xs text-gray-500">{ahorro.moneda}</p>
+                                                        )}
+                                                        {!ahorro.pagado && (
+                                                            <button onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                if (confirm(`¿Marcar "${ahorro.nombre}" como pagado?\n\nEsto restará $${Math.round(ahorro.monto).toLocaleString()} de tus ahorros disponibles.`)) {
+                                                                    setEstado({
+                                                                        ...estado,
+                                                                        ahorrosCompletados: estado.ahorrosCompletados.map(a =>
+                                                                            a.id === ahorro.id ? {...a, pagado: true} : a
+                                                                        )
+                                                                    });
+                                                                }
+                                                            }} className="mt-2 bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-xs font-bold">
+                                                                💸 Marcar como pagado
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                );
+            };
+
+            // Vista Movimientos (tabs: Ingresos / Gastos / Ahorros)
+            const VistaMovimientos = () => {
+                const [tabActivo, setTabActivo] = React.useState('ingresos');
+                return (
+                    <div className="pb-24">
+                        <div className="bg-gradient-to-r from-gray-500 to-gray-600 text-white p-6 rounded-b-3xl shadow-xl mb-6">
+                            <h1 className="text-3xl font-bold">💸 Movimientos</h1>
+                            <p className="text-indigo-100">Ingresos, gastos y ahorros</p>
+                        </div>
+                        <div className="bg-white rounded-3xl shadow-xl mx-4 mb-6 p-2 grid grid-cols-3 gap-2">
+                            <button onClick={() => setTabActivo('ingresos')} className={`py-3 px-4 rounded-xl font-bold transition-all ${tabActivo === 'ingresos' ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>📥 Ingresos</button>
+                            <button onClick={() => setTabActivo('gastos')} className={`py-3 px-4 rounded-xl font-bold transition-all ${tabActivo === 'gastos' ? 'bg-gradient-to-r from-red-500 to-pink-600 text-white shadow-lg' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>🛒 Gastos</button>
+                            <button onClick={() => setTabActivo('ahorros')} className={`py-3 px-4 rounded-xl font-bold transition-all ${tabActivo === 'ahorros' ? 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white shadow-lg' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>🎯 Ahorros</button>
+                        </div>
+                        <div className="px-4">
+                            {tabActivo === 'ingresos' && <VistaIngresos />}
+                            {tabActivo === 'gastos' && <VistaGastos />}
+                            {tabActivo === 'ahorros' && <VistaAhorros />}
+                        </div>
+                    </div>
+                );
+            };
+
+            // Vista Configuración
+            const VistaConfiguracion = () => {
+                const [seccionAbierta, setSeccionAbierta] = React.useState(null);
+                const [fechaInicioLocal, setFechaInicioLocal] = React.useState(estado.fechaInicio || '');
+                const [diasLocal, setDiasLocal] = React.useState(estado.diasAcumulados || 0);
+
+                const toggleSeccion = (seccion) => {
+                    setSeccionAbierta(seccionAbierta === seccion ? null : seccion);
+                };
+
+                const AccordionHeader = ({ id, emoji, titulo }) => (
+                    <button onClick={() => toggleSeccion(id)}
+                        className="w-full p-4 flex justify-between items-center hover:bg-gray-50 transition-all">
+                        <div className="flex items-center gap-3">
+                            <span className="text-2xl">{emoji}</span>
+                            <span className="font-bold text-gray-800">{titulo}</span>
+                        </div>
+                        <span className="text-gray-400 font-bold text-lg">{seccionAbierta === id ? '▾' : '▸'}</span>
+                    </button>
+                );
+
+                return (
+                    <div className="pb-24">
+                        <div className="bg-gradient-to-r from-gray-600 to-gray-500 text-white p-6 rounded-b-3xl shadow-xl mb-6">
+                            <h1 className="text-3xl font-bold">⚙️ Configuración</h1>
+                            <p className="text-purple-100">Personaliza tu experiencia</p>
+                        </div>
+
+                        <div className="px-4 space-y-3">
+
+                            {/* Regional */}
+                            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+                                <AccordionHeader id="regional" emoji="🌍" titulo="Regional" />
+                                {seccionAbierta === 'regional' && (
+                                    <div className="p-4 border-t border-gray-200 space-y-4">
+                                        <div>
+                                            <label className="block text-gray-700 font-bold mb-2">Fecha de inicio</label>
+                                            <input type="date" value={fechaInicioLocal} onChange={e => setFechaInicioLocal(e.target.value)}
+                                                className="w-full px-4 py-3 border-2 rounded-xl" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-gray-700 font-bold mb-2">Día actual</label>
+                                            <input type="number" value={diasLocal} onChange={e => setDiasLocal(parseInt(e.target.value) || 0)}
+                                                className="w-full px-4 py-3 border-2 rounded-xl" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-bold mb-3">💱 Tipos de Cambio</h3>
+                                            {(estado.monedasSecundarias || []).length === 0 ? (
+                                                <p className="text-sm text-gray-500 bg-gray-50 rounded-xl p-3">No hay monedas secundarias configuradas.</p>
+                                            ) : (
+                                                <div className="space-y-3">
+                                                    {(estado.monedasSecundarias || []).map(moneda => {
+                                                        const tc = (estado.tiposCambio || {})[moneda];
+                                                        if (!tc) return null;
+                                                        const principal = estado.monedaPrincipal || 'MXN';
+                                                        const base = tc.monedaBase || (tc.direccion || '').split('_TO_')[0];
+                                                        const textoTC = base === moneda
+                                                            ? `1 ${moneda} = ${tc.valor} ${principal}`
+                                                            : `1 ${principal} = ${tc.valor} ${moneda}`;
+                                                        return (
+                                                            <div key={moneda} className="bg-gray-50 rounded-xl p-4 flex justify-between items-center">
+                                                                <div>
+                                                                    <p className="font-bold text-gray-800">{monedaConf(moneda).emoji} {moneda}</p>
+                                                                    <p className="text-sm text-gray-600">{textoTC}</p>
+                                                                </div>
+                                                                <div className="flex gap-2">
+                                                                    <button type="button" onClick={() => {
+                                                                        setForm({ moneda, valor: tc.valor, direccion: base === moneda ? `${moneda}_TO_${principal}` : `${principal}_TO_${moneda}` });
+                                                                        setModal('editarMoneda');
+                                                                    }} className="text-blue-600 hover:text-blue-800 font-bold text-sm">✏️ Editar</button>
+                                                                    <button type="button" onClick={() => {
+                                                                        if (confirm(`¿Eliminar ${moneda}?\n\nSe eliminará de tus monedas secundarias.`)) {
+                                                                            const nuevosTCs = {...estado.tiposCambio};
+                                                                            delete nuevosTCs[moneda];
+                                                                            setEstado({...estado, monedasSecundarias: estado.monedasSecundarias.filter(m => m !== moneda), tiposCambio: nuevosTCs});
+                                                                        }
+                                                                    }} className="text-red-600 hover:text-red-800 font-bold text-sm">🗑️</button>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <button type="button" onClick={() => {
+                                            setEstado({...estado, diasAcumulados: diasLocal, fechaInicio: fechaInicioLocal});
+                                            alert('✅ Cambios guardados');
+                                        }} className={`w-full ${t.btn} text-white px-6 py-3 rounded-xl font-bold`}>
+                                            💾 Guardar cambios
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Apariencia */}
+                            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+                                <AccordionHeader id="apariencia" emoji="🎨" titulo="Apariencia" />
+                                {seccionAbierta === 'apariencia' && (
+                                    <div className="p-4 border-t border-gray-200 space-y-4">
+                                        <div>
+                                            <h3 className="text-lg font-bold mb-3">🎨 Tema</h3>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                {Object.entries(TEMAS).map(([key, tema]) => (
+                                                    <button key={key} type="button"
+                                                        onClick={() => {
+                                                            if (!tema.libre && !estado.isPremium) {
+                                                                alert('Esta función es solo para usuarios Premium. Activa Premium para desbloquear todos los temas.');
+                                                                return;
+                                                            }
+                                                            setEstado({...estado, tema: key});
+                                                        }}
+                                                        className={`relative p-3 rounded-xl border-2 text-left transition-all ${estado.tema === key ? 'border-gray-500 shadow-lg' : 'border-gray-200 hover:border-gray-300'}`}>
+                                                        {!tema.libre && !estado.isPremium && (
+                                                            <span className="absolute top-2 right-2 text-base">🔒</span>
+                                                        )}
+                                                        <div className={`h-5 rounded-lg bg-gradient-to-r ${tema.previewGrad} mb-2`} />
+                                                        <p className="font-bold text-sm">{tema.nombre}</p>
+                                                        {estado.tema === key && <p className={`text-xs ${t.accentText}`}>✓ Activo</p>}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-bold mb-3">💎 Premium</h3>
+                                            {estado.isPremium ? (
+                                                <div className="bg-green-50 border-2 border-green-200 rounded-xl p-4">
+                                                    <p className="font-bold text-green-800 mb-1">⭐ Premium Activo</p>
+                                                    {estado.premiumCode && <p className="text-sm text-gray-600">Código: {estado.premiumCode}</p>}
+                                                    {estado.premiumEmail && <p className="text-sm text-gray-600">Email: {estado.premiumEmail}</p>}
+                                                    {estado.premiumActivadoEn && (
+                                                        <p className="text-xs text-gray-500 mt-1">
+                                                            Activado el {new Date(estado.premiumActivadoEn).toLocaleDateString('es-MX')}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <div className="bg-gray-50 border-2 border-gray-200 rounded-xl p-4">
+                                                    <p className="font-semibold mb-3">Versión: Basic (Gratis)</p>
+                                                    <button type="button"
+                                                        onClick={() => setModal('activarPremium')}
+                                                        className="w-full bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-500 hover:to-orange-500 text-white px-4 py-3 rounded-xl font-bold">
+                                                        🌟 Activar Premium
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Categorías */}
+                            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+                                <AccordionHeader id="categorias" emoji="📋" titulo="Categorías" />
+                                {seccionAbierta === 'categorias' && (
+                                    <div className="p-4 border-t border-gray-200 space-y-3">
+                                        <div className="flex justify-between items-center">
+                                            <h3 className="text-lg font-bold">Categorías de gastos</h3>
+                                            <button type="button" onClick={() => { setForm({emoji:'', nombre:''}); setModal('nuevaCategoria'); }}
+                                                className="bg-gray-700 hover:bg-gray-800 text-white text-sm px-3 py-2 rounded-xl font-bold">
+                                                ➕ Nueva
+                                            </button>
+                                        </div>
+                                        <div className="space-y-2">
+                                            {(estado.categoriasGasto || []).map(cat => (
+                                                <div key={cat.id} className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3 border border-gray-200">
+                                                    <span className="font-medium text-gray-800">{cat.emoji} {cat.nombre}</span>
+                                                    <div className="flex gap-2 items-center">
+                                                        {cat.predefinida ? (
+                                                            <span className="text-gray-400 text-sm" title="Categoría predefinida">🔒</span>
+                                                        ) : (
+                                                            <>
+                                                                <button type="button"
+                                                                    onClick={() => { setForm({...cat}); setModal('editarCategoria'); }}
+                                                                    className="text-blue-600 hover:text-blue-800 text-sm">✏️</button>
+                                                                <button type="button"
+                                                                    onClick={() => {
+                                                                        if ((estado.categoriasGasto || []).filter(c => !c.predefinida).length <= 0 && (estado.categoriasGasto || []).length <= 1) { alert('Debe haber al menos una categoría.'); return; }
+                                                                        if (confirm(`¿Eliminar "${cat.nombre}"?`)) {
+                                                                            setEstado({...estado, categoriasGasto: estado.categoriasGasto.filter(c => c.id !== cat.id)});
+                                                                        }
+                                                                    }}
+                                                                    className="text-red-600 hover:text-red-800 text-sm">🗑️</button>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Datos */}
+                            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+                                <AccordionHeader id="datos" emoji="💾" titulo="Datos" />
+                                {seccionAbierta === 'datos' && (
+                                    <div className="p-4 border-t border-gray-200 space-y-3">
+                                        <button onClick={handleInstallApp}
+                                            className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white p-5 rounded-2xl font-bold text-lg shadow-lg transition-all">
+                                            <div className="flex items-center justify-center gap-3">
+                                                <span className="text-3xl">📱</span>
+                                                <div className="text-left">
+                                                    <div>Instalar Aplicación</div>
+                                                    <div className="text-xs opacity-90 font-normal">Descarga directa en tu dispositivo</div>
+                                                </div>
+                                            </div>
+                                        </button>
+                                        <button onClick={() => {
+                                            if (confirm('⚠️ ¿Estás segura? Esto borrará TODOS los datos guardados y empezarás de cero.')) {
+                                                localStorage.removeItem('finanzasAppData');
+                                                localStorage.removeItem('tutorialCompletado');
+                                                window.location.reload();
+                                            }
+                                        }} type="button" className="w-full bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl font-bold">
+                                            🗑️ Borrar todos los datos
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
+                        </div>
+                    </div>
+                );
+            };
+
             // Vista Reporte
             const VistaReporte = () => {
                 const [subTab, setSubTab] = useState('gastos');
@@ -1244,7 +1783,7 @@
                 const totalIngEquivMXN = Object.values(porMonedaIng).reduce((s, v) => s + v, 0);
 
                 // --- Colores ---
-                const PALETTE = ['#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899','#06b6d4','#84cc16','#f43f5e'];
+                const PALETTE = ['#f87171','#fb923c','#facc15','#4ade80','#60a5fa','#a78bfa','#f472b6','#22d3ee','#a3e635','#fb7185'];
                 const getColor = (cat, idx) => (estado.coloresCategorias || {})[cat] || PALETTE[idx % PALETTE.length];
                 const setColor = (cat, color) => setEstado({...estado, coloresCategorias: {...(estado.coloresCategorias || {}), [cat]: color}});
 
@@ -1418,30 +1957,6 @@
                                             </div>
                                         )}
 
-                                        {/* Detalle del período */}
-                                        <div className="bg-white rounded-3xl shadow-2xl p-6 mb-4">
-                                            <h2 className="text-base font-bold text-gray-700 mb-4">📋 Detalle de ingresos</h2>
-                                            <div className="space-y-3 max-h-96 overflow-y-auto">
-                                                {[...ingresosFilt].reverse().map((ing, idx) => {
-                                                    const fechaIng = ing.fecha
-                                                        ? new Date(ing.fecha + 'T12:00:00')
-                                                        : (() => { const f2 = new Date(estado.fechaInicio); f2.setDate(f2.getDate() + ing.dia); return f2; })();
-                                                    return (
-                                                        <div key={idx} className="flex justify-between items-center bg-gray-50 rounded-xl p-3 border border-gray-200">
-                                                            <div>
-                                                                <p className="font-bold text-gray-800 text-sm">{formatearFecha(fechaIng.toISOString().split('T')[0])}</p>
-                                                                {ing.concepto && <p className="text-xs text-gray-500">{ing.concepto}</p>}
-                                                            </div>
-                                                            <div className="text-right">
-                                                                {(ing.propinas || 0) > 0 && <p className="text-green-800 font-bold text-sm">💵 ${Math.round(ing.propinas).toLocaleString()}</p>}
-                                                                {(ing.usd || 0) > 0 && <p className="text-blue-800 font-bold text-sm">💲 ${Math.round(ing.usd)}</p>}
-                                                                {(ing.ars || 0) > 0 && <p className="text-sky-700 font-bold text-sm">🇦🇷 {Math.round(ing.ars).toLocaleString()}</p>}
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
                                     </>
                                 )
                             )}
@@ -1553,7 +2068,6 @@
                         monto: parseFloat(datos.gastoMonto) || 0,
                         moneda: datos.gastoMoneda || 'MXN',
                         vencimiento: datos.gastoVencimiento || '-',
-                        periodicidad: 'Mensual',
                         categoria: 'Fijo',
                         porcentajeCostoDiario: 100,
                         montoSueldoAsignado: 0,
@@ -2053,9 +2567,9 @@
                     <>
                     {vista === 'dashboard' && <Dashboard />}
                     {vista === 'billetera' && <VistaBilletera />}
-                    {vista === 'ingresos' && <VistaIngresos />}
-                    {vista === 'gastos' && <VistaGastos />}
+                    {(vista === 'movimientos' || vista === 'ingresos' || vista === 'gastos' || vista === 'ahorros') && <VistaMovimientos />}
                     {vista === 'reporte' && <VistaReporte />}
+                    {vista === 'config' && <VistaConfiguracion />}
                     {vista === 'detalle' && seleccionado && <Detalle />}
 
                     {vista === 'dashboard' && (
@@ -2115,6 +2629,7 @@
                                 const usd = parseFloat(e.target.usd.value) || 0;
                                 const ars = parseFloat(e.target.ars.value) || 0;
                                 const concepto = e.target.concepto.value;
+                                const fecha = e.target.fecha.value;
 
                                 const nuevosIngresos = [...estado.ingresosDiarios];
                                 nuevosIngresos[form.index] = {
@@ -2122,12 +2637,17 @@
                                     propinas,
                                     usd,
                                     ars,
-                                    concepto
+                                    concepto,
+                                    fecha
                                 };
 
                                 setEstado({...estado, ingresosDiarios: nuevosIngresos});
                                 setModal(null);
                             }}>
+                                <div className="mb-3">
+                                    <label className="block text-gray-700 font-bold mb-2">Fecha</label>
+                                    <input type="date" name="fecha" defaultValue={form.fecha || new Date().toISOString().split('T')[0]} max={new Date().toISOString().split('T')[0]} required className="w-full px-4 py-3 border-2 rounded-xl" />
+                                </div>
                                 <div className="mb-3">
                                     <label className="block text-gray-700 font-bold mb-2">💵 MXN</label>
                                     <input type="number" name="propinas" step="0.01" defaultValue={form.propinas} className="w-full px-4 py-3 border-2 rounded-xl" />
@@ -2446,13 +2966,18 @@
                                         (s.id === fuente || s.id === parseInt(fuente)) ? {...s, monto: s.monto - diff} : s
                                     );
                                 }
+                                const nuevaFecha = f.fecha.value;
                                 const nuevosGastos = estado.gastosExtras.map(g =>
-                                    g.id === form.id ? {...g, concepto: f.concepto.value, monto: nuevoMonto, categoriaId: catId} : g
+                                    g.id === form.id ? {...g, concepto: f.concepto.value, monto: nuevoMonto, categoriaId: catId, fecha: nuevaFecha} : g
                                 );
                                 setEstado({...estado, gastosExtras: nuevosGastos, billetera: nuevaBilletera});
                                 setModal(null);
                             }}>
                                 <div className="space-y-3 mb-4">
+                                    <div>
+                                        <label className="block text-gray-700 font-bold mb-2">Fecha</label>
+                                        <input type="date" name="fecha" defaultValue={form.fecha || new Date().toISOString().split('T')[0]} max={new Date().toISOString().split('T')[0]} required className="w-full px-4 py-3 border-2 rounded-xl" />
+                                    </div>
                                     <div>
                                         <label className="block text-gray-700 font-bold mb-2">Categoría</label>
                                         <select name="categoriaId" required
@@ -3024,7 +3549,7 @@
 
                     {(modal === 'nuevo' || modal === 'editar') && (
                         <Modal onClose={() => setModal(null)}>
-                            <h2 className="text-2xl font-bold mb-4">{modal === 'nuevo' ? '➕ Nuevo gasto fijo' : '✏️ Editar'}</h2>
+                            <h2 className="text-2xl font-bold mb-4">{modal === 'nuevo' ? '➕ Nuevo ' : '✏️ Editar'}</h2>
                             <form onSubmit={(e) => {
                                 e.preventDefault();
                                 const f = e.target;
@@ -3032,11 +3557,11 @@
                                     nombre: f.nombre.value,
                                     monto: parseFloat(f.monto.value),
                                     moneda: f.moneda.value,
-                                    periodicidad: f.periodicidad.value,
                                     vencimiento: f.vencimiento.value || '-',
                                     categoria: f.categoria.value,
                                     porcentajeCostoDiario: parseInt(f.porcentaje.value),
                                     color: form.color || null,
+                                    montoInicial: f.montoInicial ? (parseFloat(f.montoInicial.value) || 0) : (form.montoInicial || 0),
                                 };
                                 if (modal === 'nuevo') {
                                     const maxId = estado.gastosFijos.length > 0 ? Math.max(...estado.gastosFijos.map(g => g.id)) : 0;
@@ -3058,9 +3583,18 @@
                                             ))}
                                         </select>
                                     </div>
-                                    <input type="text" name="periodicidad" defaultValue={form.periodicidad} required placeholder="Mensual" className="w-full px-4 py-3 border-2 rounded-xl" />
+                                    {form.categoria === 'Ahorro' && (
                                     <div>
-                                        <label className="block text-gray-700 font-bold mb-2">Fecha vencimiento</label>
+                                        <label className="block text-gray-700 font-bold mb-2">💰 ¿Ya tenés dinero ahorrado para esto?</label>
+                                        <input type="number" step="0.01" name="montoInicial" defaultValue={form.montoInicial || 0}
+                                            placeholder="0" className="w-full px-4 py-3 border-2 rounded-xl" />
+                                        <p className="text-xs text-gray-500 mt-1">Si ya tenés dinero guardado para este ahorro, ingresalo acá</p>
+                                    </div>
+                                    )}
+                                    <div>
+                                        <label className="block text-gray-700 font-bold mb-2">
+                                            {form.categoria === 'Ahorro' ? 'Fecha objetivo' : 'Fecha vencimiento'}
+                                        </label>
                                         <input type="date" name="vencimiento" defaultValue={form.vencimiento !== '-' ? form.vencimiento : ''} required className="w-full px-4 py-3 border-2 rounded-xl" />
                                     </div>
                                     <div>
@@ -3074,15 +3608,12 @@
                                             <span>100% = Todo ingresos diarios</span>
                                         </div>
                                     </div>
-                                    <select name="categoria" defaultValue={form.categoria} className="w-full px-4 py-3 border-2 rounded-xl">
-                                        <option value="Fijo">Fijo</option>
-                                        <option value="No Negociable">No Negociable</option>
-                                    </select>
+                                    <input type="hidden" name="categoria" value={form.categoria || 'Fijo'} />
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">Color</label>
                                         <div className="flex gap-2 flex-wrap">
-                                            {['bg-blue-300', 'bg-green-300', 'bg-yellow-300', 'bg-red-300',
-                                              'bg-purple-300', 'bg-pink-300', 'bg-indigo-300', 'bg-orange-300'].map(color => (
+                                            {['bg-blue-200', 'bg-green-200', 'bg-yellow-200', 'bg-red-200',
+                                              'bg-purple-200', 'bg-pink-200', 'bg-indigo-200', 'bg-orange-200'].map(color => (
                                                 <button key={color} type="button"
                                                     onClick={() => setForm({...form, color: color})}
                                                     className={`w-10 h-10 rounded-lg border-2 ${form.color === color ? 'border-gray-700 ring-2 ring-gray-400' : 'border-gray-300'} ${color}`}
@@ -3165,11 +3696,79 @@
                         </Modal>
                     )}
 
-                    {modal === 'confirmarCiclo' && (
+                    {modal === 'aportarAhorro' && (
                         <Modal onClose={() => setModal(null)}>
-                            <h2 className="text-2xl font-bold mb-4">✅ Ciclo Completo</h2>
+                            <h2 className="text-2xl font-bold mb-2">💰 Aportar al ahorro</h2>
+                            <p className="text-gray-600 mb-4">🎯 {form.ahorroNombre}</p>
+                            <form onSubmit={(e) => {
+                                e.preventDefault();
+                                const montoAporte = parseFloat(e.target.monto.value);
+                                const ahorroMoneda = form.ahorroMoneda || 'MXN';
+                                const principal = estado.monedaPrincipal || 'MXN';
+                                if (montoAporte <= 0) { alert('El monto debe ser mayor a 0'); return; }
+                                if ((ahorroMoneda === 'MXN' || ahorroMoneda === principal) && montoAporte > superavit) {
+                                    alert(`No tenés suficiente disponible. Disponible: $${Math.round(superavit)}`);
+                                    return;
+                                }
+                                const maxId = estado.gastosExtras.length > 0 ? Math.max(...estado.gastosExtras.map(g => g.id)) : 0;
+                                const fechaActual = calcularFechaActual().toISOString().split('T')[0];
+                                const nuevoAporte = {
+                                    id: maxId + 1,
+                                    fecha: fechaActual,
+                                    concepto: `Aporte a ${form.ahorroNombre}`,
+                                    monto: montoAporte,
+                                    categoriaId: (estado.categoriasGasto || []).find(c => c.nombre === 'Otros')?.id,
+                                    fuente: ahorroMoneda === principal ? 'mxn' : ahorroMoneda.toLowerCase(),
+                                    esAporteAhorro: true,
+                                    ahorroId: form.ahorroId
+                                };
+                                setEstado({
+                                    ...estado,
+                                    gastosExtras: [...estado.gastosExtras, nuevoAporte]
+                                });
+                                setModal(null);
+                            }}>
+                                <div className="bg-blue-50 rounded-xl p-4 mb-4">
+                                    <div className="grid grid-cols-2 gap-3 text-sm">
+                                        <div>
+                                            <p className="text-gray-600">Disponible</p>
+                                            <p className="text-xl font-bold text-gray-800">${Math.round(form.disponibleMXN).toLocaleString()}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-gray-600">Recomendado</p>
+                                            <p className="text-xl font-bold text-blue-800">
+                                                {form.ahorroMoneda !== (estado.monedaPrincipal || 'MXN') ? `${form.ahorroMoneda} ` : '$'}{Math.round(form.diarioRecomendado).toLocaleString()}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="mb-4">
+                                    <label className="block text-gray-700 font-bold mb-2">Monto a aportar ({form.ahorroMoneda})</label>
+                                    <input type="number" name="monto" step="0.01" required
+                                        defaultValue={Math.round(form.ahorroMoneda === (estado.monedaPrincipal || 'MXN') ? Math.min(form.diarioRecomendado, form.disponibleMXN) : form.diarioRecomendado)}
+                                        className="w-full px-4 py-3 border-2 rounded-xl text-2xl" placeholder="0" />
+                                    <p className="text-xs text-gray-500 mt-1">Esto se restará de tu disponible y se sumará al ahorro</p>
+                                </div>
+                                <div className="flex gap-3">
+                                    <button type="button" onClick={() => setModal(null)}
+                                        className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">Cancelar</button>
+                                    <button type="submit"
+                                        className="flex-1 bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-bold">Aportar</button>
+                                </div>
+                            </form>
+                        </Modal>
+                    )}
+
+                    {modal === 'confirmarCiclo' && (() => {
+                        const esAhorro = form.gastoNombre && estado.gastosFijos.find(g => g.id === form.gastoId)?.categoria === 'Ahorro';
+                        return (
+                        <Modal onClose={() => setModal(null)}>
+                            <h2 className="text-2xl font-bold mb-4">{esAhorro ? '✅ Meta Alcanzada' : '✅ Ciclo Completo'}</h2>
                             <p className="text-gray-600 mb-4">
-                                El ciclo de <strong>{form.gastoNombre}</strong> está completo.
+                                {esAhorro
+                                    ? <span>Alcanzaste la meta <strong>{form.gastoNombre}</strong>. ¡Felicitaciones!</span>
+                                    : <span>El ciclo de <strong>{form.gastoNombre}</strong> está completo.</span>
+                                }
                             </p>
                             <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-6 rounded">
                                 <p className="text-green-800 font-bold text-sm mb-1">💵 Ingresos diarios: ${Math.round(form.cicloCompleto?.montoAcumuladoPropinas || 0)}</p>
@@ -3179,11 +3778,15 @@
                             <form onSubmit={(e) => {
                                 e.preventDefault();
                                 const nuevaFecha = e.target.nuevaFecha.value;
-                                if (!nuevaFecha) { alert('Debés seleccionar una fecha de vencimiento.'); return; }
+                                if (!nuevaFecha) { alert(esAhorro ? 'Debés seleccionar una nueva fecha objetivo.' : 'Debés seleccionar una fecha de vencimiento.'); return; }
                                 const fechaHoy = calcularFechaActual().toISOString().split('T')[0];
                                 if (nuevaFecha <= fechaHoy) { alert('La fecha de vencimiento debe ser posterior al día de hoy.'); return; }
                                 const fechaActual = calcularFechaActual().toISOString().split('T')[0];
-                                const maxId = estado.gastosExtras.length > 0 ? Math.max(...estado.gastosExtras.map(g => g.id)) : 0;
+                                const gastoSeleccionado = estado.gastosFijos.find(g => g.id === form.gastoId);
+                                let montoTotalMXN = gastoSeleccionado.monto;
+                                if (gastoSeleccionado.moneda && gastoSeleccionado.moneda !== (estado.monedaPrincipal || 'MXN')) {
+                                    montoTotalMXN = convertirMoneda(gastoSeleccionado.monto, gastoSeleccionado.moneda, estado.monedaPrincipal || 'MXN');
+                                }
                                 let nuevoEstado = {...estado};
                                 if ((form.cicloCompleto?.montoSueldoAsignado || 0) > 0) {
                                     nuevoEstado.ingresosDiarios = [...estado.ingresosDiarios, {
@@ -3194,52 +3797,128 @@
                                         concepto: `Sueldo asignado a ${form.gastoNombre}`
                                     }];
                                 }
+                                if (esAhorro) {
+                                    const maxId = (estado.ahorrosCompletados || []).length > 0
+                                        ? Math.max(...estado.ahorrosCompletados.map(a => a.id))
+                                        : 0;
+                                    nuevoEstado.ahorrosCompletados = [...(estado.ahorrosCompletados || []), {
+                                        id: maxId + 1,
+                                        fecha: fechaActual,
+                                        nombre: form.gastoNombre,
+                                        monto: Math.round(montoTotalMXN),
+                                        moneda: gastoSeleccionado.moneda || 'MXN',
+                                        diasDelCiclo: form.cicloCompleto?.diasDelCiclo,
+                                        fechaInicio: form.cicloCompleto?.fechaInicioCiclo,
+                                        fechaObjetivo: gastoSeleccionado.vencimiento
+                                    }];
+                                } else {
+                                    const maxId = estado.gastosExtras.length > 0
+                                        ? Math.max(...estado.gastosExtras.map(g => g.id))
+                                        : 0;
+                                    nuevoEstado.gastosExtras = [...(nuevoEstado.gastosExtras || estado.gastosExtras), {
+                                        id: maxId + 1,
+                                        fecha: fechaActual,
+                                        concepto: `${form.gastoNombre} (ciclo completo)`,
+                                        monto: Math.round(montoTotalMXN),
+                                        categoriaId: (estado.categoriasGasto || []).find(c => c.nombre === 'Otros')?.id,
+                                        fuente: 'mxn'
+                                    }];
+                                }
                                 nuevoEstado.gastosFijos = estado.gastosFijos.map(g =>
                                     g.id === form.gastoId
                                         ? {...g, diaInicioCiclo: estado.diasAcumulados, montoSueldoAsignado: 0, vencimiento: nuevaFecha}
                                         : g
                                 );
-                                const gastoSeleccionado = estado.gastosFijos.find(g => g.id === form.gastoId);
-                                let montoTotalMXN = gastoSeleccionado.monto;
-                                if (gastoSeleccionado.moneda && gastoSeleccionado.moneda !== (estado.monedaPrincipal || 'MXN')) {
-                                    montoTotalMXN = convertirMoneda(gastoSeleccionado.monto, gastoSeleccionado.moneda, estado.monedaPrincipal || 'MXN');
-                                }
-                                nuevoEstado.gastosExtras = [...(nuevoEstado.gastosExtras || estado.gastosExtras), {
-                                    id: maxId + 1,
-                                    fecha: fechaActual,
-                                    concepto: `${form.gastoNombre} (ciclo completo)`,
-                                    monto: Math.round(montoTotalMXN),
-                                    categoria: 'Gasto Fijo',
-                                    fuente: 'mxn'
-                                }];
                                 setEstado(nuevoEstado);
                                 setModal(null);
                                 setVista('dashboard');
                             }}>
                                 <div className="mb-6">
-                                    <label className="block text-gray-700 font-bold mb-2">📅 Nueva fecha de vencimiento</label>
+                                    <label className="block text-gray-700 font-bold mb-2">{esAhorro ? '📅 Nueva fecha objetivo' : '📅 Nueva fecha de vencimiento'}</label>
                                     <input type="date" name="nuevaFecha" required
                                         min={(() => { const m = new Date(calcularFechaActual()); m.setDate(m.getDate() + 1); return m.toISOString().split('T')[0]; })()}
                                         className="w-full px-4 py-3 border-2 rounded-xl focus:border-gray-500 outline-none" />
                                 </div>
-                                <div className="flex gap-3">
-                                    <button type="button" onClick={() => {
-                                        if (confirm(`¿Estás segura de que querés ELIMINAR "${form.gastoNombre}"?\n\nEsta acción no se puede deshacer.`)) {
-                                            setEstado({...estado, gastosFijos: estado.gastosFijos.filter(g => g.id !== form.gastoId)});
-                                            setModal(null);
-                                            setVista('dashboard');
-                                        }
-                                    }} className="flex-1 bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-xl font-bold">
-                                        🗑️ Eliminar Gasto
-                                    </button>
+                                <div className="space-y-3">
                                     <button type="submit"
-                                        className="flex-1 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-bold">
-                                        ✅ Reiniciar Ciclo
+                                        className="w-full bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-bold">
+                                        {esAhorro ? '🔄 Reiniciar Meta' : '🔄 Reiniciar Ciclo'}
                                     </button>
+                                    <p className="text-xs text-center text-gray-500">{esAhorro ? 'La meta comenzará de nuevo con la fecha objetivo que ingresaste arriba' : 'El ciclo comenzará de nuevo con la fecha objetivo que ingresaste arriba'}</p>
+
+                                    <div className="border-t-2 border-gray-200 pt-3"></div>
+
+                                    <button type="button" onClick={() => {
+                                        const fechaActual = calcularFechaActual().toISOString().split('T')[0];
+                                        const gastoSeleccionado = estado.gastosFijos.find(g => g.id === form.gastoId);
+                                        let montoTotalMXN = gastoSeleccionado.monto;
+                                        if (gastoSeleccionado.moneda && gastoSeleccionado.moneda !== (estado.monedaPrincipal || 'MXN')) {
+                                            montoTotalMXN = convertirMoneda(gastoSeleccionado.monto, gastoSeleccionado.moneda, estado.monedaPrincipal || 'MXN');
+                                        }
+                                        let nuevosIngresos = [...estado.ingresosDiarios];
+                                        if ((form.cicloCompleto?.montoSueldoAsignado || 0) > 0) {
+                                            nuevosIngresos.push({
+                                                dia: estado.diasAcumulados,
+                                                fecha: fechaActual,
+                                                propinas: form.cicloCompleto.montoSueldoAsignado,
+                                                usd: 0, ars: 0,
+                                                concepto: `Sueldo asignado a ${form.gastoNombre}`
+                                            });
+                                        }
+                                        const nuevosGastosFijos = estado.gastosFijos.filter(g => g.id !== form.gastoId);
+                                        if (esAhorro) {
+                                            const maxId = (estado.ahorrosCompletados || []).length > 0
+                                                ? Math.max(...estado.ahorrosCompletados.map(a => a.id))
+                                                : 0;
+                                            const nuevoAhorroCompletado = {
+                                                id: maxId + 1,
+                                                fecha: fechaActual,
+                                                nombre: form.gastoNombre,
+                                                monto: Math.round(montoTotalMXN),
+                                                moneda: gastoSeleccionado.moneda || 'MXN',
+                                                diasDelCiclo: form.cicloCompleto?.diasDelCiclo,
+                                                fechaInicio: form.cicloCompleto?.fechaInicioCiclo,
+                                                fechaObjetivo: gastoSeleccionado.vencimiento
+                                            };
+                                            setEstado({
+                                                ...estado,
+                                                gastosFijos: nuevosGastosFijos,
+                                                ahorrosCompletados: [...(estado.ahorrosCompletados || []), nuevoAhorroCompletado],
+                                                ingresosDiarios: nuevosIngresos
+                                            });
+                                        } else {
+                                            const maxId = estado.gastosExtras.length > 0
+                                                ? Math.max(...estado.gastosExtras.map(g => g.id))
+                                                : 0;
+                                            const nuevoGastoExtra = {
+                                                id: maxId + 1,
+                                                fecha: fechaActual,
+                                                concepto: `${form.gastoNombre} (ciclo completo)`,
+                                                monto: Math.round(montoTotalMXN),
+                                                categoriaId: (estado.categoriasGasto || []).find(c => c.nombre === 'Otros')?.id,
+                                                fuente: 'mxn'
+                                            };
+                                            setEstado({
+                                                ...estado,
+                                                gastosFijos: nuevosGastosFijos,
+                                                gastosExtras: [...estado.gastosExtras, nuevoGastoExtra],
+                                                ingresosDiarios: nuevosIngresos
+                                            });
+                                        }
+                                        setModal(null);
+                                        setVista('dashboard');
+                                    }}
+                                        className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold">
+                                        {esAhorro ? '✓ Finalizar meta (no reiniciar)' : '✓ Finalizar (no reiniciar)'}
+                                    </button>
+                                    <p className="text-xs text-center text-gray-500">
+                                        {esAhorro ? 'El ahorro' : 'El gasto'}{' '}se marcará como completado y no volverá a aparecer
+                                    </p>
                                 </div>
                             </form>
                         </Modal>
-                    )}
+                        );
+                    })()}
                     {modal === 'agregarMoneda' && (
                         <Modal onClose={() => setModal(null)}>
                             <h2 className="text-2xl font-bold mb-2">💱 Agregar Nueva Moneda</h2>
