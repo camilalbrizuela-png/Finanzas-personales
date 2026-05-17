@@ -1345,22 +1345,36 @@
                                 )}
                             </div>
 
-                            {(estado.ahorrosCompletados || []).length > 0 && (
-                                <div className="bg-white rounded-3xl shadow-2xl p-6">
-                                    <h2 className="text-xl font-bold text-gray-800 mb-4">✅ Ahorros Completados</h2>
+                            <div className="bg-white rounded-3xl shadow-2xl p-6">
+                                <h2 className="text-xl font-bold text-gray-800 mb-4">📋 Historial</h2>
+                                <div className="bg-green-50 rounded-xl p-3 mb-4">
+                                    <p className="text-xs text-gray-600">Total ahorrado</p>
+                                    <p className="text-2xl font-bold text-green-800">
+                                        ${Math.round((estado.ahorrosCompletados || []).reduce((sum, a) => sum + a.monto, 0)).toLocaleString()}
+                                    </p>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        {(estado.ahorrosCompletados || []).length} {(estado.ahorrosCompletados || []).length === 1 ? 'ahorro completado' : 'ahorros completados'}
+                                    </p>
+                                </div>
+                                {(estado.ahorrosCompletados || []).length === 0 ? (
+                                    <div className="text-center py-12 text-gray-500">
+                                        <p className="text-5xl mb-4">📭</p>
+                                        <p>No hay ahorros completados aún</p>
+                                    </div>
+                                ) : (
                                     <div className="space-y-3 max-h-96 overflow-y-auto">
                                         {[...(estado.ahorrosCompletados || [])]
                                             .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))
                                             .map(ahorro => (
-                                            <div key={ahorro.id} className="bg-green-50 rounded-xl p-4 border-2 border-green-200">
+                                            <div key={ahorro.id} className="bg-gray-50 rounded-xl p-4 border-2 border-gray-200">
                                                 <div className="flex justify-between items-start">
                                                     <div>
                                                         <p className="font-bold text-gray-800 text-lg">🎯 {ahorro.nombre}</p>
                                                         <p className="text-sm text-gray-600">
                                                             {formatearFecha(ahorro.fechaInicio)} → {formatearFecha(ahorro.fechaObjetivo)}
                                                         </p>
-                                                        <p className="text-xs text-gray-500">Completado: {formatearFecha(ahorro.fecha)}</p>
-                                                        {ahorro.diasDelCiclo && <p className="text-xs text-gray-500">Duración: {ahorro.diasDelCiclo} días</p>}
+                                                        <p className="text-xs text-gray-500">✅ Completado: {formatearFecha(ahorro.fecha)}</p>
+                                                        {ahorro.diasDelCiclo && <p className="text-xs text-gray-500">⏱️ Duración: {ahorro.diasDelCiclo} días</p>}
                                                     </div>
                                                     <div className="text-right">
                                                         <p className="text-2xl font-bold text-green-800">
@@ -1374,8 +1388,8 @@
                                             </div>
                                         ))}
                                     </div>
-                                </div>
-                            )}
+                                )}
+                            </div>
                         </div>
                     </div>
                 );
