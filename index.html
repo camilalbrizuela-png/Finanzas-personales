@@ -723,18 +723,8 @@
                                                     <p className="text-xs text-gray-500 text-right">de {simbolo}{Math.round(gasto.monto).toLocaleString()}</p>
                                                 </div>
                                                 <div className="bg-blue-50 rounded-lg p-3">
-                                                    <div className="flex justify-between items-center mb-1">
-                                                        <p className="text-xs text-gray-600">💡 Para llegar a tiempo:</p>
-                                                        {ciclo.estadoAhorro === 'adelantado' && <span className="text-xs font-bold text-green-700">✅ Adelantado</span>}
-                                                        {ciclo.estadoAhorro === 'atrasado' && <span className="text-xs font-bold text-orange-700">⚠️ Atrasado</span>}
-                                                        {ciclo.estadoAhorro === 'al_dia' && <span className="text-xs font-bold text-blue-700">✓ Al día</span>}
-                                                    </div>
+                                                    <p className="text-xs text-gray-600 mb-1">💡 Para llegar a tiempo:</p>
                                                     <p className="text-sm font-bold text-gray-800">Ahorra {simbolo}{Math.round(ciclo.diarioRecomendado).toLocaleString()}/día</p>
-                                                    {ciclo.diferencia > 0 && ciclo.estadoAhorro !== 'al_dia' && (
-                                                        <p className="text-xs text-gray-600 mt-1">
-                                                            {ciclo.estadoAhorro === 'adelantado' ? '✅' : '⚠️'} {simbolo}{Math.round(ciclo.diferencia).toLocaleString()} {ciclo.estadoAhorro === 'adelantado' ? 'adelantado' : 'atrasado'}
-                                                        </p>
-                                                    )}
                                                 </div>
                                                 {!ciclo.cicloCompleto && superavit > 0 && (
                                                     <button onClick={(e) => {
@@ -1402,12 +1392,7 @@
                                                         <div className={`bg-gradient-to-r ${t.progressBar} h-2 rounded-full transition-all`}
                                                             style={{width: `${Math.min(100, ciclo.progreso)}%`}}></div>
                                                     </div>
-                                                    <div className="flex justify-between items-center text-xs">
-                                                        <span className="text-gray-600">💡 {simbolo}{Math.round(ciclo.diarioRecomendado).toLocaleString()}/día</span>
-                                                        {ciclo.estadoAhorro === 'adelantado' && <span className="font-bold text-green-700">✅ Adelantado {simbolo}{Math.round(ciclo.diferencia).toLocaleString()}</span>}
-                                                        {ciclo.estadoAhorro === 'atrasado' && <span className="font-bold text-orange-700">⚠️ Atrasado {simbolo}{Math.round(ciclo.diferencia).toLocaleString()}</span>}
-                                                        {ciclo.estadoAhorro === 'al_dia' && <span className="font-bold text-blue-700">✓ Al día</span>}
-                                                    </div>
+                                                    <p className="text-xs text-gray-600">💡 {simbolo}{Math.round(ciclo.diarioRecomendado).toLocaleString()}/día</p>
                                                     {ciclo.cicloCompleto && (
                                                         <div className="mt-2 bg-green-50 border-l-4 border-green-500 p-2 rounded">
                                                             <p className="text-green-800 font-bold text-sm">✅ Meta alcanzada</p>
