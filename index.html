@@ -616,6 +616,55 @@
                                 </div>
                             </div>
 
+                            {(() => {
+                                const metaAhorroDiarioMXN = estado.gastosFijos
+                                    .filter(g => g.categoria === 'Ahorro')
+                                    .reduce((sum, g) => {
+                                        const ciclo = calcularCiclo(g);
+                                        if (ciclo.diasRestantes > 0 && ciclo.diarioRecomendado > 0) {
+                                            const moneda = g.moneda || 'MXN';
+                                            const principal = estado.monedaPrincipal || 'MXN';
+                                            const recomendadoMXN = moneda !== principal
+                                                ? convertirMoneda(ciclo.diarioRecomendado, moneda, principal)
+                                                : ciclo.diarioRecomendado;
+                                            return sum + recomendadoMXN;
+                                        }
+                                        return sum;
+                                    }, 0);
+                                if (metaAhorroDiarioMXN <= 0) return null;
+                                const ingresoRecomendado = costoVidaDiario + metaAhorroDiarioMXN;
+                                return (
+                                    <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-3xl shadow-xl p-6 mb-6">
+                                        <div className="flex justify-between items-center mb-2">
+                                            <p className="text-sm text-blue-700">💡 Ingreso recomendado hoy</p>
+                                            {superavit >= metaAhorroDiarioMXN && (
+                                                <span className="bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-full">✓ Puedes ahorrar</span>
+                                            )}
+                                        </div>
+                                        <p className="text-4xl font-bold text-blue-800">${Math.round(ingresoRecomendado).toLocaleString()}</p>
+                                        <div className="mt-3 pt-3 border-t border-blue-200">
+                                            <div className="grid grid-cols-2 gap-3 text-sm">
+                                                <div>
+                                                    <p className="text-blue-600">📋 Gastos fijos</p>
+                                                    <p className="text-xl font-bold text-gray-800">${Math.round(costoVidaDiario).toLocaleString()}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-blue-600">🎯 Meta de ahorro</p>
+                                                    <p className="text-xl font-bold text-gray-800">${Math.round(metaAhorroDiarioMXN).toLocaleString()}</p>
+                                                </div>
+                                            </div>
+                                            {superavit < metaAhorroDiarioMXN && (
+                                                <div className="mt-3 bg-orange-50 border-l-4 border-orange-400 p-3 rounded">
+                                                    <p className="text-orange-800 text-sm font-semibold">
+                                                        ⚠️ Faltan ${Math.round(metaAhorroDiarioMXN - superavit).toLocaleString()} para cubrir gastos + ahorros
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })()}
+
                             <div className="bg-white rounded-3xl shadow-2xl p-6 mb-6">
                                 <h2 className="text-2xl font-bold text-gray-800 mb-6">📋 Gastos Fijos</h2>
                                 <div className="grid md:grid-cols-2 gap-4">
@@ -740,6 +789,21 @@
                                                         </p>
                                                     )}
                                                 </div>
+                                                {!ciclo.cicloCompleto && superavit > 0 && (
+                                                    <button onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setForm({
+                                                            ahorroId: gasto.id,
+                                                            ahorroNombre: gasto.nombre,
+                                                            ahorroMoneda: gasto.moneda || 'MXN',
+                                                            disponibleMXN: superavit,
+                                                            diarioRecomendado: ciclo.diarioRecomendado
+                                                        });
+                                                        setModal('aportarAhorro');
+                                                    }} className="w-full mt-3 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-xl font-bold text-sm flex items-center justify-center gap-2">
+                                                        💰 Aportar al ahorro
+                                                    </button>
+                                                )}
                                             </div>
                                         );
                                     })}
@@ -3458,6 +3522,77 @@
                                     setModal('config');
                                 }} className="flex-1 bg-gray-700 hover:bg-gray-800 text-white px-4 py-3 rounded-xl font-bold">Guardar</button>
                             </div>
+                        </Modal>
+                    )}
+
+                    {modal === 'aportarAhorro' && (
+                        <Modal onClose={() => setModal(null)}>
+                            <h2 className="text-2xl font-bold mb-2">💰 Aportar al ahorro</h2>
+                            <p className="text-gray-600 mb-4">🎯 {form.ahorroNombre}</p>
+                            <form onSubmit={(e) => {
+                                e.preventDefault();
+                                const montoAporte = parseFloat(e.target.monto.value);
+                                const ahorroMoneda = form.ahorroMoneda || 'MXN';
+                                const principal = estado.monedaPrincipal || 'MXN';
+                                if (montoAporte <= 0) { alert('El monto debe ser mayor a 0'); return; }
+                                if ((ahorroMoneda === 'MXN' || ahorroMoneda === principal) && montoAporte > superavit) {
+                                    alert(`No tenés suficiente disponible. Disponible: $${Math.round(superavit)}`);
+                                    return;
+                                }
+                                const maxId = estado.gastosExtras.length > 0 ? Math.max(...estado.gastosExtras.map(g => g.id)) : 0;
+                                const fechaActual = calcularFechaActual().toISOString().split('T')[0];
+                                const nuevoAporte = {
+                                    id: maxId + 1,
+                                    fecha: fechaActual,
+                                    concepto: `Aporte a ${form.ahorroNombre}`,
+                                    monto: montoAporte,
+                                    categoriaId: (estado.categoriasGasto || []).find(c => c.nombre === 'Otros')?.id,
+                                    fuente: ahorroMoneda === principal ? 'mxn' : ahorroMoneda.toLowerCase(),
+                                    esAporteAhorro: true
+                                };
+                                const nuevoIngreso = {
+                                    dia: estado.diasAcumulados,
+                                    fecha: fechaActual,
+                                    propinas: ahorroMoneda === principal ? montoAporte : 0,
+                                    usd: ahorroMoneda === 'USD' ? montoAporte : 0,
+                                    ars: ahorroMoneda === 'ARS' ? montoAporte : 0,
+                                    concepto: `Aporte a ${form.ahorroNombre}`
+                                };
+                                setEstado({
+                                    ...estado,
+                                    gastosExtras: [...estado.gastosExtras, nuevoAporte],
+                                    ingresosDiarios: [...estado.ingresosDiarios, nuevoIngreso]
+                                });
+                                setModal(null);
+                            }}>
+                                <div className="bg-blue-50 rounded-xl p-4 mb-4">
+                                    <div className="grid grid-cols-2 gap-3 text-sm">
+                                        <div>
+                                            <p className="text-gray-600">Disponible</p>
+                                            <p className="text-xl font-bold text-gray-800">${Math.round(form.disponibleMXN).toLocaleString()}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-gray-600">Recomendado</p>
+                                            <p className="text-xl font-bold text-blue-800">
+                                                {form.ahorroMoneda !== (estado.monedaPrincipal || 'MXN') ? `${form.ahorroMoneda} ` : '$'}{Math.round(form.diarioRecomendado).toLocaleString()}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="mb-4">
+                                    <label className="block text-gray-700 font-bold mb-2">Monto a aportar ({form.ahorroMoneda})</label>
+                                    <input type="number" name="monto" step="0.01" required
+                                        defaultValue={Math.round(form.ahorroMoneda === (estado.monedaPrincipal || 'MXN') ? Math.min(form.diarioRecomendado, form.disponibleMXN) : form.diarioRecomendado)}
+                                        className="w-full px-4 py-3 border-2 rounded-xl text-2xl" placeholder="0" />
+                                    <p className="text-xs text-gray-500 mt-1">Esto se restará de tu disponible y se sumará al ahorro</p>
+                                </div>
+                                <div className="flex gap-3">
+                                    <button type="button" onClick={() => setModal(null)}
+                                        className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">Cancelar</button>
+                                    <button type="submit"
+                                        className="flex-1 bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-bold">Aportar</button>
+                                </div>
+                            </form>
                         </Modal>
                     )}
 
