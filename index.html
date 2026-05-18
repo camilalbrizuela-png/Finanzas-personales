@@ -335,150 +335,291 @@
             };
 
             const calcularCiclo = (gasto) => {
-                const porcentajeLegacy = (gasto.porcentajeCostoDiario !== undefined && gasto.porcentajeCostoDiario !== null)
-    ? gasto.porcentajeCostoDiario
-    : 100;
 
-let montosDivididosActual = gasto.montosDivididos;
-if (!montosDivididosActual) {
-    const diariosLegacy = Math.round(gasto.monto * (porcentajeLegacy / 100));
-    const mensualLegacy = Math.round(gasto.monto * ((100 - porcentajeLegacy) / 100));
-    montosDivididosActual = { diarios: diariosLegacy, quincenal: 0, mensual: mensualLegacy };
-}
+                const porcentaje = (gasto.porcentajeCostoDiario !== undefined && gasto.porcentajeCostoDiario !== null)
+
+                    ? gasto.porcentajeCostoDiario
+
+                    : 100;
+
+
 
                 const esAhorro = gasto.categoria === 'Ahorro';
+
                 const monedaDelGasto = gasto.moneda || 'MXN';
 
+
+
                 if (!gasto.vencimiento || gasto.vencimiento === '-') {
+
                     let montoDiarioMXN = gasto.monto;
+
                     if (gasto.moneda === 'ARS') {
+
                         montoDiarioMXN = convertirMoneda(gasto.monto, gasto.moneda, estado.monedaPrincipal || 'MXN');
+
                     } else if (gasto.moneda === 'USD') {
+
                         montoDiarioMXN = convertirMoneda(gasto.monto, 'USD', estado.monedaPrincipal || 'MXN');
+
                     }
-                   const factorMoneda = gasto.monto > 0 ? montoDiarioMXN / gasto.monto : 1;
-const montoDiarioCostoDiario = (montosDivididosActual.diarios) * factorMoneda;
-const montoDiarioSueldo = ((montosDivididosActual.quincenal || 0) + (montosDivididosActual.mensual || 0)) * factorMoneda;
+
+                    const montoDiarioCostoDiario = montoDiarioMXN * (porcentaje / 100);
+
+                    const montoDiarioSueldo = montoDiarioMXN * ((100 - porcentaje) / 100);
+
                     return {
+
                         residuo: 0, progreso: 100,
+
                         montoAcumulado: gasto.monto, montoAcumuladoPropinas: gasto.monto,
+
                         montoSueldoAsignado: 0, montoDiario: gasto.monto,
+
                         montoDiarioMXN, montoDiarioCostoDiario, montoDiarioSueldo,
-                        porcentajeCostoDiario: porcentajeLegacy, diasDelCiclo: 1,
+
+                        porcentajeCostoDiario: porcentaje, diasDelCiclo: 1,
+
                         fechaInicioCiclo: estado.fechaInicio, fechaVencimiento: '-',
+
                         monedaOriginal: monedaDelGasto
+
                     };
+
                 }
+
+
 
                 const fechaInicio = new Date(estado.fechaInicio);
+
                 const fechaVenc = new Date(gasto.vencimiento);
+
                 const fechaInicioCiclo = new Date(fechaInicio);
+
                 fechaInicioCiclo.setDate(fechaInicio.getDate() + (gasto.diaInicioCiclo || 0));
 
+
+
                 const diasDelCiclo = Math.max(1, Math.floor((fechaVenc - fechaInicioCiclo) / (1000 * 60 * 60 * 24)));
+
                 let residuo = (estado.diasAcumulados - (gasto.diaInicioCiclo || 0)) % diasDelCiclo;
+
                 const cicloCompleto = residuo === 0 && estado.diasAcumulados > (gasto.diaInicioCiclo || 0);
+
                 if (cicloCompleto) residuo = diasDelCiclo;
 
+
+
                 const montoDiario = gasto.monto / diasDelCiclo;
+
                 const montoInicialRaw = gasto.montoInicial || 0;
 
+
+
                 // AHORROS: solo contar aportes manuales (no todos los ingresos)
+
                 if (esAhorro) {
+
                     const monedaAhorro = monedaDelGasto;
+
                     const principal = estado.monedaPrincipal || 'MXN';
+
                     const fuente = monedaAhorro === principal ? 'mxn' : monedaAhorro.toLowerCase();
+
                     const aportesAlAhorro = (estado.gastosExtras || [])
+
                         .filter(g => g.esAporteAhorro && g.ahorroId === gasto.id && g.fuente === fuente)
+
                         .reduce((sum, g) => sum + g.monto, 0);
+
                     const montoAcumuladoTotal = montoInicialRaw + aportesAlAhorro;
+
                     const fechaActual = calcularFechaActual();
+
                     const diasRestantes = Math.max(0, Math.ceil((fechaVenc - fechaActual) / (1000 * 60 * 60 * 24)));
+
                     const montoFaltante = Math.max(0, gasto.monto - montoAcumuladoTotal);
+
                     const diarioRecomendado = diasRestantes > 0 ? montoFaltante / diasRestantes : 0;
+
                     const diasTranscurridos = Math.max(0, Math.floor((fechaActual - fechaInicioCiclo) / (1000 * 60 * 60 * 24)));
+
                     const montoEsperado = diasTranscurridos > 0 ? (gasto.monto / diasDelCiclo) * diasTranscurridos : 0;
+
                     const diferencia = montoAcumuladoTotal - montoEsperado;
+
                     const estadoAhorro = diferencia > 0 ? 'adelantado' : diferencia < -0.01 ? 'atrasado' : 'al_dia';
+
                     return {
+
                         residuo, diasDelCiclo,
+
                         progreso: (montoAcumuladoTotal / gasto.monto) * 100,
+
                         montoAcumulado: montoAcumuladoTotal,
+
                         montoAcumuladoPropinas: aportesAlAhorro,
+
                         montoSueldoAsignado: 0,
+
                         montoDiario, montoDiarioMXN: montoDiario,
+
                         montoDiarioCostoDiario: 0, montoDiarioSueldo: 0,
+
                         porcentajeCostoDiario: 0,
+
                         cicloCompleto: montoAcumuladoTotal >= gasto.monto,
+
                         fechaInicioCiclo: fechaInicioCiclo.toISOString().split('T')[0],
+
                         fechaVencimiento: gasto.vencimiento,
+
                         montoInicial: montoInicialRaw, monedaOriginal: monedaDelGasto,
+
                         diasRestantes, diarioRecomendado,
+
                         diferencia: Math.abs(diferencia), estadoAhorro
+
                     };
+
                 }
+
+
 
                 // GASTOS FIJOS: convertir todo a MXN
+
                 let montoDiarioMXN = montoDiario;
+
                 if (gasto.moneda === 'ARS') {
+
                     montoDiarioMXN = convertirMoneda(montoDiario, gasto.moneda, estado.monedaPrincipal || 'MXN');
+
                 } else if (gasto.moneda === 'USD') {
+
                     montoDiarioMXN = convertirMoneda(montoDiario, 'USD', estado.monedaPrincipal || 'MXN');
+
                 }
-                
+
+                // SIEMPRE usar montosDivididos (auto-migrar si no existe)
+
+                let montosDivididosActual = gasto.montosDivididos;
+
+                if (!montosDivididosActual) {
+
+                    const montoDiariosLegacy = Math.round(montoDiarioMXN * diasDelCiclo * porcentaje / 100);
+
+                    const montoSueldoLegacy = Math.round(montoDiarioMXN * diasDelCiclo * (100 - porcentaje) / 100);
+
+                    montosDivididosActual = { diarios: montoDiariosLegacy, quincenal: 0, mensual: montoSueldoLegacy };
+
+                }
+
                 const totalDiarios = montosDivididosActual.diarios || 0;
+
                 const totalSueldo = (montosDivididosActual.quincenal || 0) + (montosDivididosActual.mensual || 0);
+
                 const montoDiarioCostoDiario = diasDelCiclo > 0 ? Math.ceil((totalDiarios / diasDelCiclo) / 10) * 10 : 0;
+
                 const montoDiarioSueldo = diasDelCiclo > 0 ? Math.ceil((totalSueldo / diasDelCiclo) / 10) * 10 : 0; 
+
                 const montoAcumuladoPropinas = residuo * montoDiarioCostoDiario;
+
                 const montoSueldoAsignado = gasto.montoSueldoAsignado || 0;
+
                 const montoAcumuladoTotal = montoAcumuladoPropinas + montoSueldoAsignado;
+
                 const progreso = (montoAcumuladoTotal / (gasto.monto * (montoDiarioMXN / montoDiario))) * 100;
+
                 return {
+
                     residuo, progreso,
+
                     montoAcumulado: montoAcumuladoTotal,
+
                     montoAcumuladoPropinas, montoSueldoAsignado,
+
                     montoDiario, montoDiarioMXN, montoDiarioCostoDiario, montoDiarioSueldo, 
-                    porcentajeCostoDiario: porcentajeLegacy, cicloCompleto, diasDelCiclo,  // ✅ Calcula monto diario real
+
+                    porcentajeCostoDiario: porcentaje ,cicloCompleto, diasDelCiclo,  // ✅ Calcula monto diario real
+
                     fechaInicioCiclo: fechaInicioCiclo.toISOString().split('T')[0],
+
                     fechaVencimiento: gasto.vencimiento
+
+                };
+
             };
 
+
+
             const costoVidaDiario = estado.gastosFijos.reduce((total, g) => {
+
                 const ciclo = calcularCiclo(g);
+
                 return total + (ciclo.montoDiarioCostoDiario || 0);
+
             }, 0);
+
+
 
             // Acumulado esperado del ciclo actual
-            const acumuladoEsperado = estado.gastosFijos.reduce((total, g) => {
-                const ciclo = calcularCiclo(g);
-                // Si el ciclo está completo pero NO confirmado, seguir contando el monto total
-    if (ciclo.cicloCompleto) {
-    let montosDivididos = g.montosDivididos;
-    let totalDiariosMXN = 0;
 
-    if (montosDivididos) {
-        // Si tiene montos exactos, usamos el costo diario ya convertido a MXN multiplicado por los días
-        totalDiariosMXN = ciclo.montoDiarioCostoDiario * ciclo.diasDelCiclo;
-    } else {
-        // Si es usuario viejo, usamos el cálculo legacy que ya hace tu función arriba
-        totalDiariosMXN = ciclo.montoDiarioCostoDiario * ciclo.diasDelCiclo;
-    }
-    return total + totalDiariosMXN;
-}
+            const acumuladoEsperado = estado.gastosFijos.reduce((total, g) => {
+
+                const ciclo = calcularCiclo(g);
+
+                // Si el ciclo está completo pero NO confirmado, seguir contando el monto total
+
+                if (ciclo.cicloCompleto) {
+
+                    // Convertir el monto a MXN si es necesario
+
+                    let montoTotalMXN = g.monto;
+
+                    if (g.moneda === 'ARS') {
+
+                        montoTotalMXN = convertirMoneda(g.monto, g.moneda, estado.monedaPrincipal || 'MXN');
+
+                    } else if (g.moneda === 'USD') {
+
+                        montoTotalMXN = convertirMoneda(g.monto, 'USD', estado.monedaPrincipal || 'MXN');
+
+                    }
+
+                    // Solo contar la parte de propinas del monto total
+
+                    const montoPropinas = montoTotalMXN * (ciclo.porcentajeCostoDiario / 100);
+
+                    return total + montoPropinas;
+
+                }
+
                 // Si el ciclo está en progreso, solo sumar el acumulado de propinas
+
                 return total + (ciclo.montoAcumuladoPropinas || 0);
+
             }, 0);
+
+
 
             // Total de ingresos en MXN (SOLO propinas, USD no cuenta para disponible)
+
             const totalIngresosMXN = estado.ingresosDiarios.reduce((total, ing) => {
+
                 return total + ing.propinas; // Solo propinas, SIN USD
+
             }, 0);
 
+
+
             // Total de gastos extras (solo los que descuentan de MXN)
+
             const totalGastosExtras = estado.gastosExtras.reduce((total, g) => (!g.fuente || g.fuente === 'mxn') ? total + g.monto : total, 0);
 
+
+
             //  = Ingresos MXN - Acumulado esperado - Gastos extras (USD NO cuenta)
+
             const superavit = totalIngresosMXN - acumuladoEsperado - totalGastosExtras;
 
             const getWalletBalance = (code) => {
