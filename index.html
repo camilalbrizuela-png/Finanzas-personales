@@ -1421,8 +1421,11 @@
                                     <div className="bg-green-50 border-l-4 border-green-500 p-6 mb-6 rounded-lg">
                                         <h3 className="text-xl font-bold text-green-800 mb-2">{esAhorro ? '✅ Meta Alcanzada' : '✅ Ciclo Completo'}</h3>
                                         <p className="text-sm text-green-800 mb-3">
-                                            Ingresos diarios: ${Math.round(ciclo.montoAcumuladoPropinas)} · Sueldo: ${Math.round(ciclo.montoSueldoAsignado)}
-                                            · <strong>Total: ${Math.round(ciclo.montoAcumulado)}</strong>
+                                            Acumulado: ${Math.round(ciclo.montoAcumulado).toLocaleString()}
+                                            · <strong>Se registra: ${Math.round(seleccionado.monto).toLocaleString()}</strong>
+                                            {!esAhorro && ciclo.montoAcumulado > seleccionado.monto && (
+                                                <span className="text-green-600"> · ✨ +${Math.round(ciclo.montoAcumulado - seleccionado.monto).toLocaleString()} disponibles</span>
+                                            )}
                                         </p>
                                         <button onClick={() => {
                                             setForm({
@@ -4083,11 +4086,28 @@
                                     : <span>El ciclo de <strong>{form.gastoNombre}</strong> está completo.</span>
                                 }
                             </p>
-                            <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-6 rounded">
-                                <p className="text-green-800 font-bold text-sm mb-1">💵 Ingresos diarios: ${Math.round(form.cicloCompleto?.montoAcumuladoPropinas || 0)}</p>
-                                <p className="text-green-800 font-bold text-sm mb-1">💰 Sueldo: ${Math.round(form.cicloCompleto?.montoSueldoAsignado || 0)}</p>
-                                <p className="text-green-800 font-bold text-lg">Total: ${Math.round(form.cicloCompleto?.montoAcumulado || 0)}</p>
-                            </div>
+                            {(() => {
+                                const gs = estado.gastosFijos.find(g => g.id === form.gastoId);
+                                let montoGastoMXN = gs?.monto || 0;
+                                if (gs?.moneda && gs.moneda !== (estado.monedaPrincipal || 'MXN')) {
+                                    montoGastoMXN = convertirMoneda(gs.monto, gs.moneda, estado.monedaPrincipal || 'MXN');
+                                }
+                                const acumuladoTotal = Math.round(form.cicloCompleto?.montoAcumulado || 0);
+                                const gastoRegistrado = Math.round(montoGastoMXN);
+                                const excedente = acumuladoTotal - gastoRegistrado;
+                                return (
+                                    <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-6 rounded">
+                                        <p className="text-green-800 text-sm mb-1">💵 Ingresos diarios acumulados: ${Math.round(form.cicloCompleto?.montoAcumuladoPropinas || 0).toLocaleString()}</p>
+                                        <p className="text-green-800 text-sm mb-2">💰 Sueldo asignado: ${Math.round(form.cicloCompleto?.montoSueldoAsignado || 0).toLocaleString()}</p>
+                                        <div className="border-t border-green-200 pt-2">
+                                            <p className="text-green-900 font-bold text-base">💸 Se registra como gasto: ${gastoRegistrado.toLocaleString()}</p>
+                                            {excedente > 0 && (
+                                                <p className="text-green-700 text-sm mt-1">✨ +${excedente.toLocaleString()} quedan disponibles (excedente por redondeo)</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })()}
                             <form onSubmit={(e) => {
                                 e.preventDefault();
                                 const nuevaFecha = e.target.nuevaFecha.value;
