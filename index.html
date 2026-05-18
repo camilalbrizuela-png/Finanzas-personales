@@ -426,7 +426,6 @@
                 }
                 const totalDiarios = montosDivididosActual.diarios || 0;
                 const totalSueldo = (montosDivididosActual.quincenal || 0) + (montosDivididosActual.mensual || 0);
-                const montoTotalMXN = totalDiarios + totalSueldo;
                 const montoDiarioCostoDiario = diasDelCiclo > 0 ? Math.ceil((totalDiarios / diasDelCiclo) / 10) * 10 : 0;
                 const montoDiarioSueldo = diasDelCiclo > 0 ? Math.ceil((totalSueldo / diasDelCiclo) / 10) * 10 : 0;
                 const montoAcumuladoPropinas = residuo * montoDiarioCostoDiario;
@@ -438,7 +437,7 @@
                     montoAcumulado: montoAcumuladoTotal,
                     montoAcumuladoPropinas, montoSueldoAsignado,
                     montoDiario, montoDiarioMXN, montoDiarioCostoDiario, montoDiarioSueldo,
-                    porcentajeCostoDiario: diasDelCiclo > 0 ? Math.round(montoTotalMXN / diasDelCiclo) : 0,  // ✅ Calcula monto diario real
+                    porcentajeCostoDiario: porcentaje, cicloCompleto, diasDelCiclo,  // ✅ Calcula monto diario real
     cicloCompleto, diasDelCiclo,
                     fechaInicioCiclo: fechaInicioCiclo.toISOString().split('T')[0],
                     fechaVencimiento: gasto.vencimiento
@@ -463,7 +462,7 @@
                         montoTotalMXN = convertirMoneda(g.monto, 'USD', estado.monedaPrincipal || 'MXN');
                     }
                     // Solo contar la parte de propinas del monto total
-                    const montoPropinas = gasto.montosDivididos?.diarios || 0;
+                    const montoPropinas = montoTotalMXN * (ciclo.porcentajeCostoDiario / 100);
                     return total + montoPropinas;
                 }
                 // Si el ciclo está en progreso, solo sumar el acumulado de propinas
