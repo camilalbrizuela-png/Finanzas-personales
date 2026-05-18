@@ -434,12 +434,13 @@ const montoDiarioSueldo = ((montosDivididosActual.quincenal || 0) + (montosDivid
                 const montoSueldoAsignado = gasto.montoSueldoAsignado || 0;
                 const montoAcumuladoTotal = montoAcumuladoPropinas + montoSueldoAsignado;
                 const progreso = (montoAcumuladoTotal / (gasto.monto * (montoDiarioMXN / montoDiario))) * 100;
+                const cicloCompleto = residuo === 0 && estado.diasAcumulados > (gasto.diaInicioCiclo || 0);
                 return {
                     residuo, progreso,
                     montoAcumulado: montoAcumuladoTotal,
                     montoAcumuladoPropinas, montoSueldoAsignado,
                     montoDiario, montoDiarioMXN, montoDiarioCostoDiario, montoDiarioSueldo, 
-                    porcentajeCostoDiario: porcentajeLegacy, ,cicloCompleto, diasDelCiclo,  // ✅ Calcula monto diario real
+                    porcentajeCostoDiario: porcentajeLegacy, cicloCompleto, diasDelCiclo,  // ✅ Calcula monto diario real
                     fechaInicioCiclo: fechaInicioCiclo.toISOString().split('T')[0],
                     fechaVencimiento: gasto.vencimiento
                 };
@@ -454,22 +455,16 @@ const montoDiarioSueldo = ((montosDivididosActual.quincenal || 0) + (montosDivid
             const acumuladoEsperado = estado.gastosFijos.reduce((total, g) => {
                 const ciclo = calcularCiclo(g);
                 // Si el ciclo está completo pero NO confirmado, seguir contando el monto total
-                if (ciclo.cicloCompleto) {
+    if (ciclo.cicloCompleto) {
     let montosDivididos = g.montosDivididos;
-    let totalDiarios = 0;
+    let totalDiariosMXN = 0;
 
     if (montosDivididos) {
-        totalDiarios = montosDivididos.diarios || 0;
+        // Si tiene montos exactos, usamos el costo diario ya convertido a MXN multiplicado por los días
+        totalDiariosMXN = ciclo.montoDiarioCostoDiario * ciclo.diasDelCiclo;
     } else {
-        const pctLegacy = (g.porcentajeCostoDiario !== undefined && g.porcentajeCostoDiario !== null) ? g.porcentajeCostoDiario : 100;
-        totalDiarios = g.monto * (pctLegacy / 100);
-    }
-
-    let totalDiariosMXN = totalDiarios;
-    if (g.moneda === 'ARS') {
-        totalDiariosMXN = convertirMoneda(totalDiarios, g.moneda, estado.monedaPrincipal || 'MXN');
-    } else if (g.moneda === 'USD') {
-        totalDiariosMXN = convertirMoneda(totalDiarios, 'USD', estado.monedaPrincipal || 'MXN');
+        // Si es usuario viejo, usamos el cálculo legacy que ya hace tu función arriba
+        totalDiariosMXN = ciclo.montoDiarioCostoDiario * ciclo.diasDelCiclo;
     }
     return total + totalDiariosMXN;
 }
