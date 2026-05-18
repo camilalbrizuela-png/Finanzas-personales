@@ -92,10 +92,10 @@
                     spotlightId: 'ingresos-tab',
                 },
                 {
-                    title: '💵 Ingreso de Salario',
-                    icon: '💵',
-                    desc: 'Si recibes salario, puedes registrarlo y aplicarlo directamente a tus gastos fijos pendientes.',
-                    spotlightId: null,
+                    title: '📥 Registrar Salario',
+                    icon: '📥',
+                    desc: 'Al registrar un salario, puedes asignarlo directamente a tus gastos fijos pendientes del ciclo actual.',
+                    spotlightId: 'boton-salario',
                     demoContent: (
                         <div className="bg-green-50 rounded-xl p-4 border border-green-200">
                             <div className="flex items-center gap-2 mb-3">
@@ -119,16 +119,16 @@
                     ),
                 },
                 {
-                    title: '🗂️ Gastos Fijos',
-                    icon: '🗂️',
-                    desc: 'Registra tus gastos recurrentes: renta, Netflix, suscripciones. La app calcula cuánto apartar cada día para cubrirlos.',
-                    spotlightId: null,
+                    title: '🛒 Gastos',
+                    icon: '🛒',
+                    desc: 'Hay dos tipos de gastos: Gastos Fijos (recurrentes como renta o Netflix) y Otros Gastos (ocasionales como comida o transporte).',
+                    spotlightId: 'panel-gastos',
                 },
                 {
-                    title: '🗂️ Ciclo de Gasto Fijo',
-                    icon: '🗂️',
-                    desc: 'Cada gasto fijo tiene un ciclo. La app acumula el dinero día a día y te avisa cuando está completo para que lo apliques.',
-                    spotlightId: null,
+                    title: '🛒 Crear Gasto Fijo',
+                    icon: '🛒',
+                    desc: 'Los gastos fijos son recurrentes. Define nombre, monto, vencimiento y cómo lo pagas: con ingresos diarios, salario o mixto. La app acumula día a día y te avisa cuando el ciclo se completa.',
+                    spotlightId: 'boton-nuevo-gasto-fijo',
                     demoContent: (
                         <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
                             <div className="flex items-center justify-between mb-3">
@@ -157,27 +157,32 @@
                 {
                     title: '🛒 Otros Gastos',
                     icon: '🛒',
-                    desc: 'Para gastos ocasionales fuera del presupuesto, usa "Otros Gastos". Elige de qué parte de tu billetera sale el dinero.',
-                    spotlightId: 'gastos-tab',
+                    desc: 'Para gastos ocasionales, elige de qué sección de tu billetera sale el dinero: MXN disponible, USD, ahorros, etc.',
+                    spotlightId: 'boton-otro-gasto',
                     demoContent: (
-                        <div className="bg-red-50 rounded-xl p-4 border border-red-200">
-                            <div className="flex items-center gap-2 mb-3">
-                                <span className="text-2xl">🛒</span>
-                                <span className="font-bold text-red-800">Registrar Gasto</span>
-                            </div>
-                            <div className="space-y-2">
-                                <div className="bg-white rounded-lg p-2 border border-red-100">
-                                    <span className="text-xs text-gray-500">Descripción</span>
-                                    <p className="font-semibold">Cena restaurante</p>
+                        <div className="bg-white rounded-xl p-4 border-2 border-indigo-200">
+                            <p className="font-bold mb-3 text-gray-800">Otro Gasto</p>
+                            <div className="space-y-3 text-sm">
+                                <div>
+                                    <label className="text-xs text-gray-600">Concepto</label>
+                                    <div className="border-2 rounded-lg px-3 py-2 mt-1 font-bold">Comida</div>
                                 </div>
-                                <div className="flex gap-2">
-                                    <div className="bg-white rounded-lg p-2 border border-red-100 flex-1">
-                                        <span className="text-xs text-gray-500">Monto</span>
-                                        <p className="font-bold text-red-800">$350</p>
-                                    </div>
-                                    <div className="bg-white rounded-lg p-2 border border-red-100 flex-1">
-                                        <span className="text-xs text-gray-500">Categoría</span>
-                                        <p className="text-sm">🍕 Comida</p>
+                                <div>
+                                    <label className="text-xs text-gray-600">Monto</label>
+                                    <div className="border-2 rounded-lg px-3 py-2 mt-1 font-bold">$150</div>
+                                </div>
+                                <div>
+                                    <label className="text-xs text-gray-600 mb-2 block">Pagar desde:</label>
+                                    <div className="space-y-2">
+                                        <div className="border-2 border-indigo-500 bg-indigo-50 rounded-lg px-3 py-2 font-bold">
+                                            💵 MXN Disponible
+                                        </div>
+                                        <div className="border-2 rounded-lg px-3 py-2 text-gray-400">
+                                            💵 USD
+                                        </div>
+                                        <div className="border-2 rounded-lg px-3 py-2 text-gray-400">
+                                            🎯 Ahorros
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -215,10 +220,10 @@
                     ),
                 },
                 {
-                    title: '💎 Aportar a tu Ahorro',
-                    icon: '💎',
-                    desc: 'Desde el dashboard puedes ir aportando a tus metas. La app registra cada aporte y muestra tu progreso en tiempo real.',
-                    spotlightId: null,
+                    title: '💰 Aportar a tu Ahorro',
+                    icon: '💰',
+                    desc: 'Desde el dashboard puedes ir aportando a tus metas. La app registra cada aporte y recalcula automáticamente tu recomendado diario según tu progreso.',
+                    spotlightId: 'boton-aportar-ahorro-demo',
                     demoContent: (
                         <div className="bg-cyan-50 rounded-xl p-4 border border-cyan-200">
                             <div className="flex items-center justify-between mb-3">
@@ -231,12 +236,27 @@
                             <div className="bg-gray-200 rounded-full h-3 mb-3">
                                 <div className="bg-gradient-to-r from-cyan-500 to-blue-500 h-3 rounded-full" style={{width: '45%'}} />
                             </div>
-                            <div className="flex justify-between text-sm">
+                            <div className="flex justify-between text-sm mb-3">
                                 <span className="text-gray-600">$6,750 ahorrados</span>
                                 <span className="text-gray-600">Meta: $15,000</span>
                             </div>
+                            <button id="boton-aportar-ahorro-demo" className="w-full bg-cyan-500 text-white rounded-xl py-2 font-bold text-sm">
+                                + Aportar
+                            </button>
                         </div>
                     ),
+                },
+                {
+                    title: '📊 Reportes',
+                    icon: '📊',
+                    desc: 'Visualiza estadísticas y gráficas de tus finanzas: ingresos, gastos, distribución por categoría y evolución en el tiempo.',
+                    spotlightId: null,
+                },
+                {
+                    title: '⚙️ Configuración',
+                    icon: '⚙️',
+                    desc: 'Personaliza la app: agrega monedas secundarias, actualiza tipos de cambio, gestiona categorías y ajusta preferencias. Puedes volver a ver este tutorial cuando quieras desde aquí.',
+                    spotlightId: null,
                 },
                 {
                     title: '📋 Términos y Condiciones',
@@ -1413,7 +1433,7 @@
                                             </button>
                                         );
                                     })}
-                                    <button onClick={() => setModal('ingresoSueldo')}
+                                    <button id="boton-salario" onClick={() => setModal('ingresoSueldo')}
                                         className={`flex flex-col items-center bg-gradient-to-br ${t.card1} text-white rounded-2xl p-5 shadow-md transition-all hover:scale-[1.02]`}>
                                         <span className="text-3xl mb-2">💰</span>
                                         <span className="font-bold text-lg">Salario</span>
@@ -1548,10 +1568,10 @@
                         <div className="max-w-4xl mx-auto">
 
                             {/* Botones de acción */}
-                            <div className="bg-white rounded-3xl shadow-2xl p-6 mb-6">
+                            <div id="panel-gastos" className="bg-white rounded-3xl shadow-2xl p-6 mb-6">
                                 <h1 className="text-2xl font-bold text-gray-800 mb-4">🛒 Registrar gasto</h1>
                                 <div className="grid grid-cols-2 gap-3">
-                                    <button onClick={() => {
+                                    <button id="boton-nuevo-gasto-fijo" onClick={() => {
                                         if (estado.gastosFijos.length >= LIMITES.gastosFijos) {
                                             setForm({ razon: 'gastos_fijos', actual: estado.gastosFijos.length, limite: LIMITES.gastosFijos });
                                             setModal('upgradePremium');
@@ -1565,7 +1585,7 @@
                                         <span className="font-bold text-lg">Gasto Fijo</span>
                                         <span className="text-xs opacity-80 mt-1">Obligaciones mensuales</span>
                                     </button>
-                                    <button onClick={() => { setForm({}); setModal('seleccionarFuenteGasto'); }}
+                                    <button id="boton-otro-gasto" onClick={() => { setForm({}); setModal('seleccionarFuenteGasto'); }}
                                         className="flex flex-col items-center bg-gradient-to-br from-blue-400 to-blue-300 hover:from-blue-500 hover:to-blue-400 text-white rounded-2xl p-5 shadow-md transition-all">
                                         <span className="text-3xl mb-2">🛍️</span>
                                         <span className="font-bold text-lg">Otros Gastos</span>
@@ -2807,7 +2827,7 @@
                 setDeferredPrompt(null);
             };
 
-            const TUTORIAL_VISTAS = ['dashboard','billetera','movimientos','movimientos','dashboard','dashboard','movimientos','dashboard','dashboard','dashboard'];
+            const TUTORIAL_VISTAS = ['dashboard','billetera','movimientos','movimientos','movimientos','movimientos','movimientos','movimientos','dashboard','reporte','config','dashboard'];
             const iniciarTutorial = () => { setVista('dashboard'); setEstado({...estado, tutorialActivo: true, tutorialPaso: 0}); };
             const avanzarTutorial = () => {
                 const next = estado.tutorialPaso + 1;
