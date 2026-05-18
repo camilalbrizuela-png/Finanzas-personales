@@ -426,6 +426,7 @@
                 }
                 const totalDiarios = montosDivididosActual.diarios || 0;
                 const totalSueldo = (montosDivididosActual.quincenal || 0) + (montosDivididosActual.mensual || 0);
+                const montoTotalMXN = totalDiarios + totalSueldo;
                 const montoDiarioCostoDiario = diasDelCiclo > 0 ? Math.ceil((totalDiarios / diasDelCiclo) / 10) * 10 : 0;
                 const montoDiarioSueldo = diasDelCiclo > 0 ? Math.ceil((totalSueldo / diasDelCiclo) / 10) * 10 : 0;
                 const montoAcumuladoPropinas = residuo * montoDiarioCostoDiario;
