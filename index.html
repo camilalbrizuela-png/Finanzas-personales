@@ -434,7 +434,6 @@ const montoDiarioSueldo = ((montosDivididosActual.quincenal || 0) + (montosDivid
                 const montoSueldoAsignado = gasto.montoSueldoAsignado || 0;
                 const montoAcumuladoTotal = montoAcumuladoPropinas + montoSueldoAsignado;
                 const progreso = (montoAcumuladoTotal / (gasto.monto * (montoDiarioMXN / montoDiario))) * 100;
-                const cicloCompleto = residuo === 0 && estado.diasAcumulados > (gasto.diaInicioCiclo || 0);
                 return {
                     residuo, progreso,
                     montoAcumulado: montoAcumuladoTotal,
