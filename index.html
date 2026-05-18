@@ -67,6 +67,57 @@
             </div>
         );
 
+        const TutorialOverlay = ({ paso, onNext, onBack, onSkip }) => {
+            const steps = [
+                { title: '🏠 Inicio', icon: '🏠', desc: 'Centro de control. Aquí ves tu costo de vida diario, el dinero disponible, tus gastos fijos y tus metas de ahorro.' },
+                { title: '💰 Billetera', icon: '💰', desc: 'Tu dinero organizado por monedas y secciones de ahorro. Puedes ver y gestionar cuánto tienes en cada una.' },
+                { title: '📥 Ingresos', icon: '📥', desc: '¿A dónde entra el dinero? Registra ingresos diarios, en otras monedas, o salario. Si es salario, puedes aplicarlo a tus gastos fijos desde aquí.' },
+                { title: '🗂️ Gastos Fijos', icon: '🗂️', desc: 'Gastos recurrentes: renta, Netflix, suscripciones, etc. La app calcula cuánto debes apartar cada día para cubrirlos.' },
+                { title: '🛒 Otros Gastos', icon: '🛒', desc: 'Gastos ocasionales fuera del presupuesto fijo. Elige de qué billetera sale el dinero: MXN, USD, ahorros, etc.' },
+                { title: '🎯 Crear Ahorro', icon: '🎯', desc: 'Crea metas de ahorro con nombre, monto, moneda y fecha objetivo. La app calcula cuánto necesitas aportar cada día para llegar a tiempo.' },
+                { title: '💎 Aportar Ahorro', icon: '💎', desc: 'Una vez creado tu ahorro, puedes ir aportando desde el dashboard. La app lleva el registro de tu progreso y aportes.' },
+                { title: '📊 Reportes', icon: '📊', desc: 'Visualiza estadísticas y gráficas de tus finanzas: ingresos, gastos, distribución por categoría y evolución en el tiempo.' },
+                { title: '⚙️ Configuración', icon: '⚙️', desc: 'Personaliza la app: agrega monedas secundarias, actualiza tipos de cambio, gestiona categorías y ajusta preferencias. Puedes volver a ver este tutorial cuando quieras desde aquí.' },
+            ];
+            const step = steps[Math.min(paso, steps.length - 1)];
+            return (
+                <div className="fixed inset-0 z-[60] flex flex-col justify-end p-4 pb-24">
+                    <div className="absolute inset-0 bg-black bg-opacity-70" onClick={onSkip} />
+                    <div className="relative bg-white rounded-2xl shadow-2xl p-6 max-w-lg w-full mx-auto" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex gap-1 mb-4">
+                            {steps.map((_, i) => (
+                                <div key={i} className={`h-1 flex-1 rounded-full transition-all ${
+                                    i === paso ? 'bg-indigo-500' : i < paso ? 'bg-green-500' : 'bg-gray-200'
+                                }`} />
+                            ))}
+                        </div>
+                        <div className="flex items-start gap-3 mb-3">
+                            <span className="text-3xl">{step.icon}</span>
+                            <div>
+                                <p className="text-xs text-gray-400 mb-0.5">Paso {paso + 1} de {steps.length}</p>
+                                <h3 className="text-xl font-bold text-gray-800">{step.title}</h3>
+                            </div>
+                        </div>
+                        <p className="text-gray-600 leading-relaxed mb-5">{step.desc}</p>
+                        <div className="flex items-center gap-3">
+                            <button onClick={onSkip} className="text-gray-400 hover:text-gray-600 text-sm underline">
+                                Saltar tutorial
+                            </button>
+                            <div className="flex-1" />
+                            {paso > 0 && (
+                                <button onClick={onBack} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl font-bold text-sm">
+                                    ← Atrás
+                                </button>
+                            )}
+                            <button onClick={onNext} className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl font-bold text-sm">
+                                {paso < steps.length - 1 ? 'Siguiente →' : '¡Entendido! ✓'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         function FinanzasApp() {
             // Estado inicial desde localStorage o valores por defecto
             const estadoInicial = () => {
@@ -164,7 +215,10 @@
                     premiumEmail: null,
                     tema: 'classic',
                     idiomaPreferido: 'es-MX',
-                    billetera: { mxnFisico: 0, mxnDigital: 0, usd: 0, ars: 0, tanda: 0, monedas: {}, secciones: [] }
+                    billetera: { mxnFisico: 0, mxnDigital: 0, usd: 0, ars: 0, tanda: 0, monedas: {}, secciones: [] },
+                    tutorialActivo: false,
+                    tutorialPaso: 0,
+                    tutorialCompletado: false,
                 };
             };
 
@@ -2290,6 +2344,9 @@
                         premiumEmail: null,
                         tema: 'classic',
                         idiomaPreferido: datos.idioma || 'es-MX',
+                        tutorialActivo: true,
+                        tutorialPaso: 0,
+                        tutorialCompletado: false,
                     });
                     localStorage.setItem('tutorialCompletado', 'true');
                 };
@@ -2509,6 +2566,24 @@
                 setDeferredPrompt(null);
             };
 
+            const TUTORIAL_VISTAS = ['dashboard','billetera','movimientos','dashboard','movimientos','dashboard','dashboard','reporte','config'];
+            const iniciarTutorial = () => { setVista('dashboard'); setEstado({...estado, tutorialActivo: true, tutorialPaso: 0}); };
+            const avanzarTutorial = () => {
+                const next = estado.tutorialPaso + 1;
+                if (next < TUTORIAL_VISTAS.length) {
+                    setVista(TUTORIAL_VISTAS[next]);
+                    setEstado({...estado, tutorialPaso: next});
+                } else {
+                    setEstado({...estado, tutorialActivo: false, tutorialCompletado: true});
+                }
+            };
+            const retrocederTutorial = () => {
+                const prev = Math.max(0, estado.tutorialPaso - 1);
+                setVista(TUTORIAL_VISTAS[prev]);
+                setEstado({...estado, tutorialPaso: prev});
+            };
+            const saltarTutorial = () => { setEstado({...estado, tutorialActivo: false, tutorialCompletado: true}); };
+
             return (
                 <div className={estado.tema === 'dark' ? 't-dark' : ''}>
                     {!estado.onboardingCompleto ? (
@@ -2520,6 +2595,14 @@
                     {(vista === 'movimientos' || vista === 'ingresos' || vista === 'gastos' || vista === 'ahorros') && <VistaMovimientos />}
                     {vista === 'reporte' && <VistaReporte />}
                     {vista === 'config' && <VistaConfiguracion />}
+                    {estado.tutorialActivo && (
+                        <TutorialOverlay
+                            paso={estado.tutorialPaso}
+                            onNext={avanzarTutorial}
+                            onBack={retrocederTutorial}
+                            onSkip={saltarTutorial}
+                        />
+                    )}
                     {vista === 'detalle' && seleccionado && <Detalle />}
 
                     {vista === 'dashboard' && (
@@ -3282,6 +3365,10 @@
                                     </div>
                                 </button>
 
+                                <button type="button" onClick={iniciarTutorial}
+                                    className="w-full bg-indigo-500 hover:bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold mb-3">
+                                    📖 Ver tutorial de la app
+                                </button>
                                 <button onClick={() => {
                                     if (confirm('⚠️ ¿Estás segura? Esto borrará TODOS los datos guardados y empezarás de cero.')) {
                                         localStorage.removeItem('finanzasAppData');
