@@ -570,29 +570,18 @@
 
                 // Si el ciclo está completo pero NO confirmado, seguir contando el monto total
 
-                if (ciclo.cicloCompleto) {
-
-                    // Convertir el monto a MXN si es necesario
-
-                    let montoTotalMXN = g.monto;
-
-                    if (g.moneda === 'ARS') {
-
-                        montoTotalMXN = convertirMoneda(g.monto, g.moneda, estado.monedaPrincipal || 'MXN');
-
-                    } else if (g.moneda === 'USD') {
-
-                        montoTotalMXN = convertirMoneda(g.monto, 'USD', estado.monedaPrincipal || 'MXN');
-
-                    }
-
-                    // Solo contar la parte de propinas del monto total
-
-                    const montoPropinas = montoTotalMXN * (ciclo.porcentajeCostoDiario / 100);
-
-                    return total + montoPropinas;
-
-                }
+              if (ciclo.cicloCompleto) {
+    // Usar montosDivididos para la parte de ingresos diarios
+    const montoDiarios = g.montosDivididos?.diarios || 0;
+    
+    // Convertir a MXN si es necesario
+    let montoDiariosMXN = montoDiarios;
+    if (g.moneda && g.moneda !== (estado.monedaPrincipal || 'MXN')) {
+        montoDiariosMXN = convertirMoneda(montoDiarios, g.moneda, estado.monedaPrincipal || 'MXN');
+    }
+    
+    return total + montoDiariosMXN;
+}
 
                 // Si el ciclo está en progreso, solo sumar el acumulado de propinas
 
