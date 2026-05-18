@@ -437,7 +437,7 @@
                     montoAcumulado: montoAcumuladoTotal,
                     montoAcumuladoPropinas, montoSueldoAsignado,
                     montoDiario, montoDiarioMXN, montoDiarioCostoDiario, montoDiarioSueldo, 
-                    porcentajeCostoDiario: montoDiarioCostoDiario ,cicloCompleto, diasDelCiclo,  // ✅ Calcula monto diario real
+                    porcentajeCostoDiario: montoAcumuladoPropinas ,cicloCompleto, diasDelCiclo,  // ✅ Calcula monto diario real
                     fechaInicioCiclo: fechaInicioCiclo.toISOString().split('T')[0],
                     fechaVencimiento: gasto.vencimiento
                 };
