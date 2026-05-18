@@ -335,9 +335,16 @@
             };
 
             const calcularCiclo = (gasto) => {
-                const porcentaje = (gasto.porcentajeCostoDiario !== undefined && gasto.porcentajeCostoDiario !== null)
-                    ? gasto.porcentajeCostoDiario
-                    : 100;
+                const porcentajeLegacy = (gasto.porcentajeCostoDiario !== undefined && gasto.porcentajeCostoDiario !== null)
+    ? gasto.porcentajeCostoDiario
+    : 100;
+
+let montosDivididosActual = gasto.montosDivididos;
+if (!montosDivididosActual) {
+    const diariosLegacy = Math.round(gasto.monto * (porcentajeLegacy / 100));
+    const mensualLegacy = Math.round(gasto.monto * ((100 - porcentajeLegacy) / 100));
+    montosDivididosActual = { diarios: diariosLegacy, quincenal: 0, mensual: mensualLegacy };
+}
 
                 const esAhorro = gasto.categoria === 'Ahorro';
                 const monedaDelGasto = gasto.moneda || 'MXN';
@@ -349,14 +356,15 @@
                     } else if (gasto.moneda === 'USD') {
                         montoDiarioMXN = convertirMoneda(gasto.monto, 'USD', estado.monedaPrincipal || 'MXN');
                     }
-                    const montoDiarioCostoDiario = montoDiarioMXN * (porcentaje / 100);
-                    const montoDiarioSueldo = montoDiarioMXN * ((100 - porcentaje) / 100);
+                   const factorMoneda = gasto.monto > 0 ? montoDiarioMXN / gasto.monto : 1;
+const montoDiarioCostoDiario = (montosDivididosActual.diarios) * factorMoneda;
+const montoDiarioSueldo = ((montosDivididosActual.quincenal || 0) + (montosDivididosActual.mensual || 0)) * factorMoneda;
                     return {
                         residuo: 0, progreso: 100,
                         montoAcumulado: gasto.monto, montoAcumuladoPropinas: gasto.monto,
                         montoSueldoAsignado: 0, montoDiario: gasto.monto,
                         montoDiarioMXN, montoDiarioCostoDiario, montoDiarioSueldo,
-                        porcentajeCostoDiario: porcentaje, diasDelCiclo: 1,
+                        porcentajeCostoDiario: porcentajeLegacy, diasDelCiclo: 1,
                         fechaInicioCiclo: estado.fechaInicio, fechaVencimiento: '-',
                         monedaOriginal: monedaDelGasto
                     };
@@ -417,13 +425,7 @@
                 } else if (gasto.moneda === 'USD') {
                     montoDiarioMXN = convertirMoneda(montoDiario, 'USD', estado.monedaPrincipal || 'MXN');
                 }
-                // SIEMPRE usar montosDivididos (auto-migrar si no existe)
-                let montosDivididosActual = gasto.montosDivididos;
-                if (!montosDivididosActual) {
-                    const montoDiariosLegacy = Math.round(montoDiarioMXN * diasDelCiclo * porcentaje / 100);
-                    const montoSueldoLegacy = Math.round(montoDiarioMXN * diasDelCiclo * (100 - porcentaje) / 100);
-                    montosDivididosActual = { diarios: montoDiariosLegacy, quincenal: 0, mensual: montoSueldoLegacy };
-                }
+                
                 const totalDiarios = montosDivididosActual.diarios || 0;
                 const totalSueldo = (montosDivididosActual.quincenal || 0) + (montosDivididosActual.mensual || 0);
                 const montoDiarioCostoDiario = diasDelCiclo > 0 ? Math.ceil((totalDiarios / diasDelCiclo) / 10) * 10 : 0;
@@ -437,7 +439,7 @@
                     montoAcumulado: montoAcumuladoTotal,
                     montoAcumuladoPropinas, montoSueldoAsignado,
                     montoDiario, montoDiarioMXN, montoDiarioCostoDiario, montoDiarioSueldo, 
-                    porcentajeCostoDiario: porcentaje ,cicloCompleto, diasDelCiclo,  // ✅ Calcula monto diario real
+                    porcentajeCostoDiario: porcentajeLegacy, ,cicloCompleto, diasDelCiclo,  // ✅ Calcula monto diario real
                     fechaInicioCiclo: fechaInicioCiclo.toISOString().split('T')[0],
                     fechaVencimiento: gasto.vencimiento
                 };
@@ -453,17 +455,24 @@
                 const ciclo = calcularCiclo(g);
                 // Si el ciclo está completo pero NO confirmado, seguir contando el monto total
                 if (ciclo.cicloCompleto) {
-                    // Convertir el monto a MXN si es necesario
-                    let montoTotalMXN = g.monto;
-                    if (g.moneda === 'ARS') {
-                        montoTotalMXN = convertirMoneda(g.monto, g.moneda, estado.monedaPrincipal || 'MXN');
-                    } else if (g.moneda === 'USD') {
-                        montoTotalMXN = convertirMoneda(g.monto, 'USD', estado.monedaPrincipal || 'MXN');
-                    }
-                    // Solo contar la parte de propinas del monto total
-                    const montoPropinas = montoTotalMXN * (ciclo.porcentajeCostoDiario / 100);
-                    return total + montoPropinas;
-                }
+    let montosDivididos = g.montosDivididos;
+    let totalDiarios = 0;
+
+    if (montosDivididos) {
+        totalDiarios = montosDivididos.diarios || 0;
+    } else {
+        const pctLegacy = (g.porcentajeCostoDiario !== undefined && g.porcentajeCostoDiario !== null) ? g.porcentajeCostoDiario : 100;
+        totalDiarios = g.monto * (pctLegacy / 100);
+    }
+
+    let totalDiariosMXN = totalDiarios;
+    if (g.moneda === 'ARS') {
+        totalDiariosMXN = convertirMoneda(totalDiarios, g.moneda, estado.monedaPrincipal || 'MXN');
+    } else if (g.moneda === 'USD') {
+        totalDiariosMXN = convertirMoneda(totalDiarios, 'USD', estado.monedaPrincipal || 'MXN');
+    }
+    return total + totalDiariosMXN;
+}
                 // Si el ciclo está en progreso, solo sumar el acumulado de propinas
                 return total + (ciclo.montoAcumuladoPropinas || 0);
             }, 0);
@@ -476,7 +485,7 @@
             // Total de gastos extras (solo los que descuentan de MXN)
             const totalGastosExtras = estado.gastosExtras.reduce((total, g) => (!g.fuente || g.fuente === 'mxn') ? total + g.monto : total, 0);
 
-            // DISPONIBLE = Ingresos MXN - Acumulado esperado - Gastos extras (USD NO cuenta)
+            //  = Ingresos MXN - Acumulado esperado - Gastos extras (USD NO cuenta)
             const superavit = totalIngresosMXN - acumuladoEsperado - totalGastosExtras;
 
             const getWalletBalance = (code) => {
