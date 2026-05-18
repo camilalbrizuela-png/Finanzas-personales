@@ -67,6 +67,333 @@
             </div>
         );
 
+        const TutorialOverlay = ({ paso, onNext, onBack, onSkip, onComplete }) => {
+            const [aceptoTerminos, setAceptoTerminos] = React.useState(false);
+            const [scrolledToBottom, setScrolledToBottom] = React.useState(false);
+            const [spotlightRect, setSpotlightRect] = React.useState(null);
+
+            const steps = [
+                {
+                    title: '🏠 Bienvenido a Finanzas App',
+                    icon: '🏠',
+                    desc: 'Este es tu centro de control financiero. Aquí verás tu costo de vida diario, el dinero disponible, tus gastos fijos y tus metas de ahorro.',
+                    spotlightId: 'dashboard-main',
+                },
+                {
+                    title: '💰 Tu Billetera',
+                    icon: '💰',
+                    desc: 'Organiza tu dinero por monedas y secciones de ahorro. Puedes ver y gestionar cuánto tienes en efectivo, digital, dólares y más.',
+                    spotlightId: 'billetera-tab',
+                },
+                {
+                    title: '📥 Registra tus Ingresos',
+                    icon: '📥',
+                    desc: 'Registra tus ingresos: propinas diarias, salario, ingresos en otras monedas. Cada registro actualiza tu disponible automáticamente.',
+                    spotlightId: 'ingresos-tab',
+                },
+                {
+                    title: '📥 Registrar Salario',
+                    icon: '📥',
+                    desc: 'Al registrar un salario, puedes asignarlo directamente a tus gastos fijos pendientes del ciclo actual.',
+                    spotlightId: 'boton-salario',
+                    demoContent: (
+                        <div className="bg-green-50 rounded-xl p-4 border border-green-200">
+                            <div className="flex items-center gap-2 mb-3">
+                                <span className="text-2xl">💰</span>
+                                <span className="font-bold text-green-800">Registrar Ingreso de Salario</span>
+                            </div>
+                            <div className="space-y-2">
+                                <div className="bg-white rounded-lg p-3 border border-green-100">
+                                    <span className="text-xs text-gray-500">Tipo</span>
+                                    <div className="flex gap-2 mt-1">
+                                        <span className="bg-green-500 text-white rounded-lg px-3 py-1 text-sm font-bold">💰 Salario</span>
+                                        <span className="bg-gray-100 text-gray-400 rounded-lg px-3 py-1 text-sm">💵 Diarios</span>
+                                    </div>
+                                </div>
+                                <div className="bg-white rounded-lg p-3 border border-green-100">
+                                    <span className="text-xs text-gray-500">Monto</span>
+                                    <p className="text-xl font-bold text-green-800">$8,500</p>
+                                </div>
+                            </div>
+                        </div>
+                    ),
+                },
+                {
+                    title: '🛒 Gastos',
+                    icon: '🛒',
+                    desc: 'Hay dos tipos de gastos: Gastos Fijos (recurrentes como renta o Netflix) y Otros Gastos (ocasionales como comida o transporte).',
+                    spotlightId: 'gastos-tab',
+                },
+                {
+                    title: '🛒 Crear Gasto Fijo',
+                    icon: '🛒',
+                    desc: 'Los gastos fijos son recurrentes. Define nombre, monto, vencimiento y cómo lo pagas: con ingresos diarios, salario o mixto. La app acumula día a día y te avisa cuando el ciclo se completa.',
+                    spotlightId: 'boton-nuevo-gasto-fijo',
+                    demoContent: (
+                        <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-2xl">🏠</span>
+                                    <span className="font-bold text-purple-800">Renta Mensual</span>
+                                </div>
+                                <span className="bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded-full">✅ Completado</span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                <div className="bg-white rounded-lg p-2 text-center">
+                                    <p className="text-xs text-gray-500">Acumulado</p>
+                                    <p className="font-bold text-purple-800">$5,000</p>
+                                </div>
+                                <div className="bg-white rounded-lg p-2 text-center">
+                                    <p className="text-xs text-gray-500">Gasto</p>
+                                    <p className="font-bold text-gray-800">$4,800</p>
+                                </div>
+                            </div>
+                            <div className="mt-2 bg-green-50 rounded-lg p-2 text-center">
+                                <p className="text-xs text-green-700">✨ +$200 excedente disponible</p>
+                            </div>
+                        </div>
+                    ),
+                },
+                {
+                    title: '🛒 Otros Gastos',
+                    icon: '🛒',
+                    desc: 'Para gastos ocasionales, elige de qué sección de tu billetera sale el dinero: MXN disponible, USD, ahorros, etc.',
+                    spotlightId: 'boton-otro-gasto',
+                    demoContent: (
+                        <div className="bg-white rounded-xl p-4 border-2 border-indigo-200">
+                            <p className="font-bold mb-3 text-gray-800">Otro Gasto</p>
+                            <div className="space-y-3 text-sm">
+                                <div>
+                                    <label className="text-xs text-gray-600">Concepto</label>
+                                    <div className="border-2 rounded-lg px-3 py-2 mt-1 font-bold">Comida</div>
+                                </div>
+                                <div>
+                                    <label className="text-xs text-gray-600">Monto</label>
+                                    <div className="border-2 rounded-lg px-3 py-2 mt-1 font-bold">$150</div>
+                                </div>
+                                <div>
+                                    <label className="text-xs text-gray-600 mb-2 block">Pagar desde:</label>
+                                    <div className="space-y-2">
+                                        <div className="border-2 border-indigo-500 bg-indigo-50 rounded-lg px-3 py-2 font-bold">
+                                            💵 MXN Disponible
+                                        </div>
+                                        <div className="border-2 rounded-lg px-3 py-2 text-gray-400">
+                                            💵 USD
+                                        </div>
+                                        <div className="border-2 rounded-lg px-3 py-2 text-gray-400">
+                                            🎯 Ahorros
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ),
+                },
+                {
+                    title: '🎯 Crear Meta de Ahorro',
+                    icon: '🎯',
+                    desc: 'Define metas de ahorro con nombre, monto objetivo, moneda y fecha límite. La app calcula cuánto necesitas aportar cada día.',
+                    spotlightId: 'ahorros-tab',
+                    demoContent: (
+                        <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                            <div className="flex items-center gap-2 mb-3">
+                                <span className="text-2xl">🎯</span>
+                                <span className="font-bold text-blue-800">Nueva Meta de Ahorro</span>
+                            </div>
+                            <div className="space-y-2">
+                                <div className="bg-white rounded-lg p-2 border border-blue-100">
+                                    <span className="text-xs text-gray-500">Nombre</span>
+                                    <p className="font-semibold">Vacaciones en Cancún ✈️</p>
+                                </div>
+                                <div className="flex gap-2">
+                                    <div className="bg-white rounded-lg p-2 border border-blue-100 flex-1">
+                                        <span className="text-xs text-gray-500">Meta</span>
+                                        <p className="font-bold text-blue-800">$15,000</p>
+                                    </div>
+                                    <div className="bg-white rounded-lg p-2 border border-blue-100 flex-1">
+                                        <span className="text-xs text-gray-500">Aporte diario</span>
+                                        <p className="font-bold text-green-700">$166/día</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ),
+                },
+                {
+                    title: '💰 Aportar a tu Ahorro',
+                    icon: '💰',
+                    desc: 'Desde el dashboard puedes ir aportando a tus metas. La app registra cada aporte y recalcula automáticamente tu recomendado diario según tu progreso.',
+                    spotlightId: 'boton-aportar-ahorro-demo',
+                    demoContent: (
+                        <div className="bg-cyan-50 rounded-xl p-4 border border-cyan-200">
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-2xl">✈️</span>
+                                    <span className="font-bold text-cyan-800">Vacaciones Cancún</span>
+                                </div>
+                                <span className="text-sm font-bold text-cyan-700">45%</span>
+                            </div>
+                            <div className="bg-gray-200 rounded-full h-3 mb-3">
+                                <div className="bg-gradient-to-r from-cyan-500 to-blue-500 h-3 rounded-full" style={{width: '45%'}} />
+                            </div>
+                            <div className="flex justify-between text-sm mb-3">
+                                <span className="text-gray-600">$6,750 ahorrados</span>
+                                <span className="text-gray-600">Meta: $15,000</span>
+                            </div>
+                            <button id="boton-aportar-ahorro-demo" className="w-full bg-cyan-500 text-white rounded-xl py-2 font-bold text-sm">
+                                + Aportar
+                            </button>
+                        </div>
+                    ),
+                },
+                {
+                    title: '📊 Reportes',
+                    icon: '📊',
+                    desc: 'Visualiza estadísticas y gráficas de tus finanzas: ingresos, gastos, distribución por categoría y evolución en el tiempo.',
+                    spotlightId: null,
+                },
+                {
+                    title: '⚙️ Configuración',
+                    icon: '⚙️',
+                    desc: 'Personaliza la app: agrega monedas secundarias, actualiza tipos de cambio, gestiona categorías y ajusta preferencias. Puedes volver a ver este tutorial cuando quieras desde aquí.',
+                    spotlightId: null,
+                },
+                {
+                    title: '📋 Términos y Condiciones',
+                    icon: '📋',
+                    desc: 'Por favor lee y acepta nuestros términos y condiciones para comenzar a usar la app.',
+                    spotlightId: null,
+                    isTerms: true,
+                },
+            ];
+
+            React.useEffect(() => {
+                const currentStep = steps[Math.min(paso, steps.length - 1)];
+                if (currentStep.spotlightId) {
+                    const el = document.getElementById(currentStep.spotlightId);
+                    if (el) {
+                        setSpotlightRect(el.getBoundingClientRect());
+                    } else {
+                        setSpotlightRect(null);
+                    }
+                } else {
+                    setSpotlightRect(null);
+                }
+            }, [paso]);
+
+            const handleScroll = (e) => {
+                const el = e.target;
+                if (el.scrollTop + el.clientHeight >= el.scrollHeight - 10) {
+                    setScrolledToBottom(true);
+                }
+            };
+
+            const currentStep = steps[Math.min(paso, steps.length - 1)];
+            const isLastStep = paso === steps.length - 1;
+
+            return (
+                <div className="fixed inset-0 z-[60]" style={{pointerEvents: 'none'}}>
+                    {spotlightRect ? (
+                        <div style={{
+                            position: 'absolute',
+                            top: spotlightRect.top - 4,
+                            left: spotlightRect.left - 4,
+                            width: spotlightRect.width + 8,
+                            height: spotlightRect.height + 8,
+                            boxShadow: '0 0 0 9999px rgba(0,0,0,0.75)',
+                            borderRadius: '16px',
+                            zIndex: 60,
+                            pointerEvents: 'none',
+                        }} />
+                    ) : (
+                        <div className="absolute inset-0 bg-black bg-opacity-75" />
+                    )}
+                    <div className="fixed inset-0 z-[61] flex flex-col justify-end p-4 pb-24" style={{pointerEvents: 'auto'}}>
+                        <div className="relative bg-white rounded-2xl shadow-2xl p-6 max-w-lg w-full mx-auto" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex gap-1 mb-4">
+                                {steps.map((_, i) => (
+                                    <div key={i} className={`h-1 flex-1 rounded-full transition-all ${
+                                        i === paso ? 'bg-indigo-500' : i < paso ? 'bg-green-500' : 'bg-gray-200'
+                                    }`} />
+                                ))}
+                            </div>
+                            <div className="flex items-start gap-3 mb-3">
+                                <span className="text-3xl">{currentStep.icon}</span>
+                                <div>
+                                    <p className="text-xs text-gray-400 mb-0.5">Paso {paso + 1} de {steps.length}</p>
+                                    <h3 className="text-xl font-bold text-gray-800">{currentStep.title}</h3>
+                                </div>
+                            </div>
+                            <p className="text-gray-600 leading-relaxed mb-4">{currentStep.desc}</p>
+                            {currentStep.demoContent && (
+                                <div className="mb-4">{currentStep.demoContent}</div>
+                            )}
+                            {isLastStep && (
+                                <div>
+                                    <div
+                                        onScroll={handleScroll}
+                                        className="bg-gray-50 rounded-xl p-4 h-40 overflow-y-auto text-sm text-gray-600 leading-relaxed mb-3 border border-gray-200"
+                                    >
+                                        <h4 className="font-bold text-gray-800 mb-2">Términos y Condiciones de Uso</h4>
+                                        <p className="mb-2">Al usar Finanzas App, aceptas que:</p>
+                                        <p className="mb-2"><strong>1. Datos personales:</strong> La información que ingresas se almacena únicamente en tu dispositivo mediante localStorage. No enviamos tus datos a ningún servidor.</p>
+                                        <p className="mb-2"><strong>2. Uso responsable:</strong> Esta aplicación es una herramienta de apoyo financiero personal. No constituye asesoramiento financiero profesional.</p>
+                                        <p className="mb-2"><strong>3. Respaldo de datos:</strong> Eres responsable de hacer respaldos de tu información. No nos hacemos responsables por pérdida de datos por limpieza de caché o cambio de dispositivo.</p>
+                                        <p className="mb-2"><strong>4. Actualizaciones:</strong> Podemos actualizar la app y estos términos en cualquier momento. El uso continuado implica aceptación de los cambios.</p>
+                                        <p className="mb-2"><strong>5. Limitación de responsabilidad:</strong> La app se ofrece "tal cual". No garantizamos exactitud absoluta en cálculos ni disponibilidad continua del servicio.</p>
+                                        <p className="mb-2"><strong>6. Propiedad intelectual:</strong> Todos los derechos de la aplicación pertenecen a sus creadores.</p>
+                                        <p className="text-gray-400 text-xs mt-4">Versión 1.0 — Mayo 2026</p>
+                                        <p className="text-sm text-gray-600 mt-6 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                                            💡 <strong>Nota:</strong> Puedes consultar estos términos cuando quieras en la parte inferior de la app.
+                                        </p>
+                                    </div>
+                                    {!scrolledToBottom && (
+                                        <p className="text-xs text-gray-400 text-center mb-2">↕ Desplázate para leer todo</p>
+                                    )}
+                                    <label className="flex items-start gap-3 cursor-pointer mb-4">
+                                        <input
+                                            type="checkbox"
+                                            checked={aceptoTerminos}
+                                            onChange={(e) => setAceptoTerminos(e.target.checked)}
+                                            disabled={!scrolledToBottom}
+                                            className="mt-0.5 w-4 h-4 rounded"
+                                        />
+                                        <span className={`text-sm ${scrolledToBottom ? 'text-gray-700' : 'text-gray-400'}`}>
+                                            He leído y acepto los Términos y Condiciones
+                                        </span>
+                                    </label>
+                                </div>
+                            )}
+                            <div className="flex items-center gap-3">
+                                <button onClick={onSkip} className="text-gray-400 hover:text-gray-600 text-sm underline">
+                                    Saltar
+                                </button>
+                                <div className="flex-1" />
+                                {paso > 0 && (
+                                    <button onClick={onBack} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl font-bold text-sm">
+                                        ← Atrás
+                                    </button>
+                                )}
+                                {isLastStep ? (
+                                    <button
+                                        onClick={onComplete}
+                                        disabled={!aceptoTerminos}
+                                        className={`px-6 py-2 rounded-xl font-bold text-sm ${aceptoTerminos ? 'bg-green-500 hover:bg-green-600 text-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+                                    >
+                                        ✅ Comenzar a usar la app
+                                    </button>
+                                ) : (
+                                    <button onClick={onNext} className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl font-bold text-sm">
+                                        Siguiente →
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         function FinanzasApp() {
             // Estado inicial desde localStorage o valores por defecto
             const estadoInicial = () => {
@@ -164,7 +491,10 @@
                     premiumEmail: null,
                     tema: 'classic',
                     idiomaPreferido: 'es-MX',
-                    billetera: { mxnFisico: 0, mxnDigital: 0, usd: 0, ars: 0, tanda: 0, monedas: {}, secciones: [] }
+                    billetera: { mxnFisico: 0, mxnDigital: 0, usd: 0, ars: 0, tanda: 0, monedas: {}, secciones: [] },
+                    tutorialActivo: false,
+                    tutorialPaso: 0,
+                    tutorialCompletado: false,
                 };
             };
 
@@ -323,8 +653,14 @@
 
             const formatearFecha = (fecha) => {
                 if (!fecha || fecha === '-') return '-';
-                const f = new Date(fecha);
+                // Append T12:00:00 so date-only strings are parsed as local noon, not UTC midnight
+                const f = new Date(fecha.length === 10 ? fecha + 'T12:00:00' : fecha);
                 return f.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
+            };
+
+            const fechaLocalHoy = () => {
+                const d = new Date();
+                return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
             };
 
             const calcularFechaActual = () => {
@@ -335,139 +671,266 @@
             };
 
             const calcularCiclo = (gasto) => {
+
                 const porcentaje = (gasto.porcentajeCostoDiario !== undefined && gasto.porcentajeCostoDiario !== null)
+
                     ? gasto.porcentajeCostoDiario
+
                     : 100;
 
+
+
                 const esAhorro = gasto.categoria === 'Ahorro';
+
                 const monedaDelGasto = gasto.moneda || 'MXN';
 
+
+
                 if (!gasto.vencimiento || gasto.vencimiento === '-') {
+
                     let montoDiarioMXN = gasto.monto;
+
                     if (gasto.moneda === 'ARS') {
+
                         montoDiarioMXN = convertirMoneda(gasto.monto, gasto.moneda, estado.monedaPrincipal || 'MXN');
+
                     } else if (gasto.moneda === 'USD') {
+
                         montoDiarioMXN = convertirMoneda(gasto.monto, 'USD', estado.monedaPrincipal || 'MXN');
+
                     }
+
                     const montoDiarioCostoDiario = montoDiarioMXN * (porcentaje / 100);
+
                     const montoDiarioSueldo = montoDiarioMXN * ((100 - porcentaje) / 100);
+
                     return {
+
                         residuo: 0, progreso: 100,
+
                         montoAcumulado: gasto.monto, montoAcumuladoPropinas: gasto.monto,
+
                         montoSueldoAsignado: 0, montoDiario: gasto.monto,
+
                         montoDiarioMXN, montoDiarioCostoDiario, montoDiarioSueldo,
+
                         porcentajeCostoDiario: porcentaje, diasDelCiclo: 1,
+
                         fechaInicioCiclo: estado.fechaInicio, fechaVencimiento: '-',
+
                         monedaOriginal: monedaDelGasto
+
                     };
+
                 }
+
+
 
                 const fechaInicio = new Date(estado.fechaInicio);
+
                 const fechaVenc = new Date(gasto.vencimiento);
+
                 const fechaInicioCiclo = new Date(fechaInicio);
+
                 fechaInicioCiclo.setDate(fechaInicio.getDate() + (gasto.diaInicioCiclo || 0));
 
+
+
                 const diasDelCiclo = Math.max(1, Math.floor((fechaVenc - fechaInicioCiclo) / (1000 * 60 * 60 * 24)));
+
                 let residuo = (estado.diasAcumulados - (gasto.diaInicioCiclo || 0)) % diasDelCiclo;
+
                 const cicloCompleto = residuo === 0 && estado.diasAcumulados > (gasto.diaInicioCiclo || 0);
+
                 if (cicloCompleto) residuo = diasDelCiclo;
 
+
+
                 const montoDiario = gasto.monto / diasDelCiclo;
+
                 const montoInicialRaw = gasto.montoInicial || 0;
 
+
+
                 // AHORROS: solo contar aportes manuales (no todos los ingresos)
+
                 if (esAhorro) {
+
                     const monedaAhorro = monedaDelGasto;
+
                     const principal = estado.monedaPrincipal || 'MXN';
+
                     const fuente = monedaAhorro === principal ? 'mxn' : monedaAhorro.toLowerCase();
+
                     const aportesAlAhorro = (estado.gastosExtras || [])
+
                         .filter(g => g.esAporteAhorro && g.ahorroId === gasto.id && g.fuente === fuente)
+
                         .reduce((sum, g) => sum + g.monto, 0);
+
                     const montoAcumuladoTotal = montoInicialRaw + aportesAlAhorro;
+
                     const fechaActual = calcularFechaActual();
+
                     const diasRestantes = Math.max(0, Math.ceil((fechaVenc - fechaActual) / (1000 * 60 * 60 * 24)));
+
                     const montoFaltante = Math.max(0, gasto.monto - montoAcumuladoTotal);
+
                     const diarioRecomendado = diasRestantes > 0 ? montoFaltante / diasRestantes : 0;
+
                     const diasTranscurridos = Math.max(0, Math.floor((fechaActual - fechaInicioCiclo) / (1000 * 60 * 60 * 24)));
+
                     const montoEsperado = diasTranscurridos > 0 ? (gasto.monto / diasDelCiclo) * diasTranscurridos : 0;
+
                     const diferencia = montoAcumuladoTotal - montoEsperado;
+
                     const estadoAhorro = diferencia > 0 ? 'adelantado' : diferencia < -0.01 ? 'atrasado' : 'al_dia';
+
                     return {
+
                         residuo, diasDelCiclo,
+
                         progreso: (montoAcumuladoTotal / gasto.monto) * 100,
+
                         montoAcumulado: montoAcumuladoTotal,
+
                         montoAcumuladoPropinas: aportesAlAhorro,
+
                         montoSueldoAsignado: 0,
+
                         montoDiario, montoDiarioMXN: montoDiario,
+
                         montoDiarioCostoDiario: 0, montoDiarioSueldo: 0,
+
                         porcentajeCostoDiario: 0,
+
                         cicloCompleto: montoAcumuladoTotal >= gasto.monto,
+
                         fechaInicioCiclo: fechaInicioCiclo.toISOString().split('T')[0],
+
                         fechaVencimiento: gasto.vencimiento,
+
                         montoInicial: montoInicialRaw, monedaOriginal: monedaDelGasto,
+
                         diasRestantes, diarioRecomendado,
+
                         diferencia: Math.abs(diferencia), estadoAhorro
+
                     };
+
                 }
+
+
 
                 // GASTOS FIJOS: convertir todo a MXN
+
                 let montoDiarioMXN = montoDiario;
+
                 if (gasto.moneda === 'ARS') {
+
                     montoDiarioMXN = convertirMoneda(montoDiario, gasto.moneda, estado.monedaPrincipal || 'MXN');
+
                 } else if (gasto.moneda === 'USD') {
+
                     montoDiarioMXN = convertirMoneda(montoDiario, 'USD', estado.monedaPrincipal || 'MXN');
+
                 }
-                const montoDiarioCostoDiario = montoDiarioMXN * (porcentaje / 100);
-                const montoDiarioSueldo = montoDiarioMXN * ((100 - porcentaje) / 100);
+
+                // SIEMPRE usar montosDivididos (auto-migrar si no existe)
+
+                let montosDivididosActual = gasto.montosDivididos;
+
+                if (!montosDivididosActual) {
+
+                    const montoDiariosLegacy = Math.round(montoDiarioMXN * diasDelCiclo * porcentaje / 100);
+
+                    const montoSueldoLegacy = Math.round(montoDiarioMXN * diasDelCiclo * (100 - porcentaje) / 100);
+
+                    montosDivididosActual = { diarios: montoDiariosLegacy, quincenal: 0, mensual: montoSueldoLegacy };
+
+                }
+
+                const totalDiarios = montosDivididosActual.diarios || 0;
+
+                const totalSueldo = (montosDivididosActual.quincenal || 0) + (montosDivididosActual.mensual || 0);
+
+                const montoDiarioCostoDiario = diasDelCiclo > 0 ? Math.ceil((totalDiarios / diasDelCiclo) / 10) * 10 : 0;
+
+                const montoDiarioSueldo = diasDelCiclo > 0 ? Math.ceil((totalSueldo / diasDelCiclo) / 10) * 10 : 0; 
+
                 const montoAcumuladoPropinas = residuo * montoDiarioCostoDiario;
+
                 const montoSueldoAsignado = gasto.montoSueldoAsignado || 0;
+
                 const montoAcumuladoTotal = montoAcumuladoPropinas + montoSueldoAsignado;
+
                 const progreso = (montoAcumuladoTotal / (gasto.monto * (montoDiarioMXN / montoDiario))) * 100;
+
                 return {
+
                     residuo, progreso,
+
                     montoAcumulado: montoAcumuladoTotal,
+
                     montoAcumuladoPropinas, montoSueldoAsignado,
-                    montoDiario, montoDiarioMXN, montoDiarioCostoDiario, montoDiarioSueldo,
-                    porcentajeCostoDiario: porcentaje, cicloCompleto, diasDelCiclo,
+
+                    montoDiario, montoDiarioMXN, montoDiarioCostoDiario, montoDiarioSueldo, 
+
+                    porcentajeCostoDiario: porcentaje ,cicloCompleto, diasDelCiclo,  // ✅ Calcula monto diario real
+
                     fechaInicioCiclo: fechaInicioCiclo.toISOString().split('T')[0],
+
                     fechaVencimiento: gasto.vencimiento
+
                 };
+
             };
 
+
+
             const costoVidaDiario = estado.gastosFijos.reduce((total, g) => {
+
                 const ciclo = calcularCiclo(g);
+
                 return total + (ciclo.montoDiarioCostoDiario || 0);
+
             }, 0);
+
+
 
             // Acumulado esperado del ciclo actual
+
             const acumuladoEsperado = estado.gastosFijos.reduce((total, g) => {
+
                 const ciclo = calcularCiclo(g);
+
                 // Si el ciclo está completo pero NO confirmado, seguir contando el monto total
-                if (ciclo.cicloCompleto) {
-                    // Convertir el monto a MXN si es necesario
-                    let montoTotalMXN = g.monto;
-                    if (g.moneda === 'ARS') {
-                        montoTotalMXN = convertirMoneda(g.monto, g.moneda, estado.monedaPrincipal || 'MXN');
-                    } else if (g.moneda === 'USD') {
-                        montoTotalMXN = convertirMoneda(g.monto, 'USD', estado.monedaPrincipal || 'MXN');
-                    }
-                    // Solo contar la parte de propinas del monto total
-                    const montoPropinas = montoTotalMXN * (ciclo.porcentajeCostoDiario / 100);
-                    return total + montoPropinas;
-                }
-                // Si el ciclo está en progreso, solo sumar el acumulado de propinas
+
+                // Ciclo completo o en progreso: siempre usar el acumulado redondeado
                 return total + (ciclo.montoAcumuladoPropinas || 0);
+
             }, 0);
+
+
 
             // Total de ingresos en MXN (SOLO propinas, USD no cuenta para disponible)
+
             const totalIngresosMXN = estado.ingresosDiarios.reduce((total, ing) => {
+
                 return total + ing.propinas; // Solo propinas, SIN USD
+
             }, 0);
 
+
+
             // Total de gastos extras (solo los que descuentan de MXN)
+
             const totalGastosExtras = estado.gastosExtras.reduce((total, g) => (!g.fuente || g.fuente === 'mxn') ? total + g.monto : total, 0);
 
-            // DISPONIBLE = Ingresos MXN - Acumulado esperado - Gastos extras (USD NO cuenta)
+
+
+            //  = Ingresos MXN - Acumulado esperado - Gastos extras (USD NO cuenta)
+
             const superavit = totalIngresosMXN - acumuladoEsperado - totalGastosExtras;
 
             const getWalletBalance = (code) => {
@@ -508,7 +971,7 @@
                             <span className="text-lg">🏠</span>
                             <span className="text-xs font-semibold">Inicio</span>
                         </button>
-                        <button onClick={() => setVista('billetera')} className={`flex flex-col items-center py-2 rounded-xl ${vista === 'billetera' ? t.navActive : 'text-gray-600'}`}>
+                        <button id="billetera-tab" onClick={() => setVista('billetera')} className={`flex flex-col items-center py-2 rounded-xl ${vista === 'billetera' ? t.navActive : 'text-gray-600'}`}>
                             <span className="text-lg">💰</span>
                             <span className="text-xs font-semibold">Billetera</span>
                         </button>
@@ -533,13 +996,13 @@
                 const fechaActual = calcularFechaActual();
                 
                 return (
-                    <div className={`min-h-screen bg-gradient-to-br ${t.bg} p-4 pb-24`}>
+                    <div id="dashboard-main" className={`min-h-screen bg-gradient-to-br ${t.bg} p-4 pb-24`}>
                         <div className="max-w-6xl mx-auto">
                             <div className="bg-white rounded-3xl shadow-2xl p-6 mb-6">
                                 <div className="flex justify-between items-center mb-4">
                                     <div>
                                         <h1 className="text-3xl font-bold text-gray-800">💰 Finanzas App {estado.isPremium && <span className="text-yellow-500 text-2xl">⭐</span>}</h1>
-                                        <p className="text-gray-600">Día {estado.diasAcumulados} • {formatearFecha(fechaActual.toISOString().split('T')[0])}</p>
+                                        <p className="text-gray-600">{formatearFecha(fechaActual.toISOString().split('T')[0])}</p>
                                         <p className="text-xs text-gray-500">Inicio: {formatearFecha(estado.fechaInicio)}</p>
                                     </div>
                                     <button onClick={() => setEstado({...estado, diasAcumulados: estado.diasAcumulados + 1})}
@@ -621,11 +1084,6 @@
                                                         <span className={`px-3 py-1 rounded-full text-xs font-bold ${t.badge}`}>
                                                             {gasto.categoria}
                                                         </span>
-                                                        {ciclo.porcentajeCostoDiario < 100 && (
-                                                            <span className="px-2 py-1 rounded-full text-xs font-bold bg-orange-100 text-orange-700">
-                                                                {ciclo.porcentajeCostoDiario}% 💵 / {100-ciclo.porcentajeCostoDiario}% 💰
-                                                            </span>
-                                                        )}
                                                     </div>
                                                 </div>
                                                 {ciclo.cicloCompleto && (
@@ -644,32 +1102,73 @@
                                                         <div className={`bg-gradient-to-r ${t.progressBar} h-3 rounded-full`}
                                                             style={{width: `${Math.min(100, ciclo.progreso)}%`}}></div>
                                                     </div>
-                                                    <div className="flex justify-between text-xs text-gray-600">
-                                                        <span>💵 Ingresos diarios: ${Math.round(ciclo.montoAcumuladoPropinas)}</span>
-                                                        {ciclo.porcentajeCostoDiario < 100 && (
-                                                            <span>💰 Sueldo: ${Math.round(ciclo.montoSueldoAsignado)}</span>
-                                                        )}
+                                                </div>
+                                                <div className="mt-2 space-y-1">
+                                                    {gasto.categoria !== 'Ahorro' && (() => {
+                                                        const montoDiarios = gasto.montosDivididos ? (gasto.montosDivididos.diarios || 0) : 0;
+                                                        if (montoDiarios > 0 && ciclo.diasDelCiclo > 0) {
+                                                            const ingresoDiario = Math.ceil((montoDiarios / ciclo.diasDelCiclo) / 10) * 10;
+                                                            return (
+                                                                <div className="flex justify-between items-center text-xs">
+                                                                    <span className="text-gray-600">Ingreso diario:</span>
+                                                                    <span className="font-bold text-gray-800">${ingresoDiario}/día</span>
+                                                                </div>
+                                                            );
+                                                        }
+                                                        return null;
+                                                    })()}
+                                                    <div className="flex justify-between items-center text-xs">
+                                                        <span className="text-gray-600">Acumulado:</span>
+                                                        <span className="font-bold text-gray-800">${Math.round(ciclo.montoAcumulado).toLocaleString()}</span>
                                                     </div>
                                                 </div>
-                                                <div className="text-sm">
-                                                    {ciclo.porcentajeCostoDiario === 100 ? (
-                                                        <div className="flex justify-between">
-                                                            <span className="text-gray-500">💵 Diario:</span>
-                                                            <span className="font-bold text-green-800">${Math.round(ciclo.montoDiarioCostoDiario)}</span>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="space-y-1">
-                                                            <div className="flex justify-between">
-                                                                <span className="text-gray-500">💵 Ingresos diarios:</span>
-                                                                <span className="font-bold text-green-800">${Math.round(ciclo.montoDiarioCostoDiario)}/día</span>
+                                                {(() => {
+                                                    const porcentaje = gasto.porcentajeCostoDiario !== undefined ? gasto.porcentajeCostoDiario : 100;
+                                                    let montoDiarios, montoQuincenal, montoMensual;
+                                                    if (gasto.montosDivididos) {
+                                                        montoDiarios = gasto.montosDivididos.diarios || 0;
+                                                        montoQuincenal = gasto.montosDivididos.quincenal || 0;
+                                                        montoMensual = gasto.montosDivididos.mensual || 0;
+                                                    } else {
+                                                        let montoTotalMXN = gasto.monto;
+                                                        if (gasto.moneda && gasto.moneda !== 'MXN') {
+                                                            montoTotalMXN = convertirMoneda(gasto.monto, gasto.moneda, estado.monedaPrincipal || 'MXN');
+                                                        }
+                                                        montoDiarios = Math.round(montoTotalMXN * porcentaje / 100);
+                                                        montoQuincenal = 0;
+                                                        montoMensual = Math.round(montoTotalMXN - montoDiarios);
+                                                    }
+                                                    const montoSueldoTotal = montoQuincenal + montoMensual;
+                                                    const acumuladoDiarios = Math.round(ciclo.montoAcumuladoPropinas || 0);
+                                                    const acumuladoSueldo = Math.round(ciclo.montoSueldoAsignado || 0);
+                                                    if (porcentaje > 0 && porcentaje < 100) {
+                                                        return (
+                                                            <div className="mt-2 bg-blue-50 rounded-lg p-3 space-y-1 text-xs">
+                                                                <p className="font-bold text-gray-700 mb-1">Fuente de pago:</p>
+                                                                {montoDiarios > 0 && (
+                                                                    <div className="flex justify-between items-center">
+                                                                        <span className="text-gray-600">💵 Ingresos diarios</span>
+                                                                        <span className="font-bold text-blue-800">${acumuladoDiarios.toLocaleString()} / ${montoDiarios.toLocaleString()}</span>
+                                                                    </div>
+                                                                )}
+                                                                {montoSueldoTotal > 0 && (
+                                                                    <div className="flex justify-between items-center">
+                                                                        <span className="text-gray-600">💰 Salario</span>
+                                                                        <span className="font-bold text-blue-800">${acumuladoSueldo.toLocaleString()} / ${montoSueldoTotal.toLocaleString()}</span>
+                                                                    </div>
+                                                                )}
                                                             </div>
-                                                            <div className="flex justify-between">
-                                                                <span className="text-gray-500">💰 Sueldo:</span>
-                                                                <span className="font-bold text-blue-800">${Math.round((ciclo.montoDiarioMXN * ciclo.diasDelCiclo) * ((100 - ciclo.porcentajeCostoDiario) / 100))}</span>
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </div>
+                                                        );
+                                                    } else if (porcentaje === 0) {
+                                                        return (
+                                                            <p className="text-xs text-gray-500 mt-2">💰 Se paga con sueldo</p>
+                                                        );
+                                                    } else {
+                                                        return (
+                                                            <p className="text-xs text-gray-500 mt-2">💵 Diario: <span className="font-bold text-green-800">${Math.round(ciclo.montoDiarioCostoDiario)}/día</span></p>
+                                                        );
+                                                    }
+                                                })()}
                                             </div>
                                         );
                                     })}
@@ -937,7 +1436,7 @@
                                             </button>
                                         );
                                     })}
-                                    <button onClick={() => setModal('ingresoSueldo')}
+                                    <button id="boton-salario" onClick={() => setModal('ingresoSueldo')}
                                         className={`flex flex-col items-center bg-gradient-to-br ${t.card1} text-white rounded-2xl p-5 shadow-md transition-all hover:scale-[1.02]`}>
                                         <span className="text-3xl mb-2">💰</span>
                                         <span className="font-bold text-lg">Salario</span>
@@ -1072,10 +1571,10 @@
                         <div className="max-w-4xl mx-auto">
 
                             {/* Botones de acción */}
-                            <div className="bg-white rounded-3xl shadow-2xl p-6 mb-6">
+                            <div id="panel-gastos" className="bg-white rounded-3xl shadow-2xl p-6 mb-6">
                                 <h1 className="text-2xl font-bold text-gray-800 mb-4">🛒 Registrar gasto</h1>
                                 <div className="grid grid-cols-2 gap-3">
-                                    <button onClick={() => {
+                                    <button id="boton-nuevo-gasto-fijo" onClick={() => {
                                         if (estado.gastosFijos.length >= LIMITES.gastosFijos) {
                                             setForm({ razon: 'gastos_fijos', actual: estado.gastosFijos.length, limite: LIMITES.gastosFijos });
                                             setModal('upgradePremium');
@@ -1089,7 +1588,7 @@
                                         <span className="font-bold text-lg">Gasto Fijo</span>
                                         <span className="text-xs opacity-80 mt-1">Obligaciones mensuales</span>
                                     </button>
-                                    <button onClick={() => { setForm({}); setModal('seleccionarFuenteGasto'); }}
+                                    <button id="boton-otro-gasto" onClick={() => { setForm({}); setModal('seleccionarFuenteGasto'); }}
                                         className="flex flex-col items-center bg-gradient-to-br from-blue-400 to-blue-300 hover:from-blue-500 hover:to-blue-400 text-white rounded-2xl p-5 shadow-md transition-all">
                                         <span className="text-3xl mb-2">🛍️</span>
                                         <span className="font-bold text-lg">Otros Gastos</span>
@@ -1214,7 +1713,7 @@
                                         <p className="text-gray-600">📅 Duración: {ciclo.diasDelCiclo} días</p>
                                     </div>
                                     <div className="flex gap-2">
-                                        <button onClick={() => { setForm(seleccionado); setModal('editar'); }} className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-bold">✏️</button>
+                                        <button onClick={() => { setForm({...seleccionado, montosDivididos: seleccionado.montosDivididos || { diarios: seleccionado.monto, quincenal: 0, mensual: 0 }}); setModal('editar'); }} className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-bold">✏️</button>
                                         <button onClick={() => { if(confirm(esAhorro ? `¿Eliminar el ahorro "${seleccionado.nombre}"?` : `¿Eliminar "${seleccionado.nombre}"?`)) { setEstado({...estado, gastosFijos: estado.gastosFijos.filter(g => g.id !== seleccionado.id)}); setVista('dashboard'); }}}
                                             className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-bold">🗑️</button>
                                     </div>
@@ -1232,8 +1731,11 @@
                                     <div className="bg-green-50 border-l-4 border-green-500 p-6 mb-6 rounded-lg">
                                         <h3 className="text-xl font-bold text-green-800 mb-2">{esAhorro ? '✅ Meta Alcanzada' : '✅ Ciclo Completo'}</h3>
                                         <p className="text-sm text-green-800 mb-3">
-                                            Ingresos diarios: ${Math.round(ciclo.montoAcumuladoPropinas)} · Sueldo: ${Math.round(ciclo.montoSueldoAsignado)}
-                                            · <strong>Total: ${Math.round(ciclo.montoAcumulado)}</strong>
+                                            Acumulado: ${Math.round(ciclo.montoAcumulado).toLocaleString()}
+                                            · <strong>Se registra: ${Math.round(seleccionado.monto).toLocaleString()}</strong>
+                                            {!esAhorro && ciclo.montoAcumulado > seleccionado.monto && (
+                                                <span className="text-green-600"> · ✨ +${Math.round(ciclo.montoAcumulado - seleccionado.monto).toLocaleString()} disponibles</span>
+                                            )}
                                         </p>
                                         <button onClick={() => {
                                             setForm({
@@ -1250,8 +1752,8 @@
 
                                 <div className="bg-gradient-to-br from-gray-100 to-gray-200 rounded-2xl p-8 mb-6">
                                     <p className="text-gray-600 text-sm mb-2">Acumulado total</p>
-                                    <p className={`text-5xl font-bold ${t.accentTextDark}`}>${Math.round(ciclo.montoAcumulado)}</p>
-                                    <p className="text-gray-600 mb-3">de ${Math.round(seleccionado.monto)}</p>
+                                    <p className={`text-5xl font-bold ${t.accentTextDark}`}>${Math.round(ciclo.montoAcumulado).toLocaleString()}</p>
+                                    <p className="text-gray-600 mb-3">de ${Math.round(seleccionado.monto).toLocaleString()}</p>
                                     
                                     <div className="grid grid-cols-2 gap-3 text-sm">
                                         <div className="bg-white bg-opacity-60 rounded-lg p-3">
@@ -1284,28 +1786,24 @@
                                     </div>
                                 </div>
 
-                                <div className="bg-gradient-to-br from-orange-50 to-yellow-50 rounded-2xl p-6">
-                                    <h3 className="text-lg font-bold text-gray-800 mb-4">💳 Cómo se cubre este gasto</h3>
-                                    <div className="grid grid-cols-2 gap-4 mb-4">
-                                        <div>
-                                            <p className="text-sm text-gray-600 mb-1">💵 Con ingresos diarios</p>
-                                            <p className="text-3xl font-bold text-green-800">{ciclo.porcentajeCostoDiario}%</p>
-                                            <p className="text-sm text-gray-600">${Math.round(ciclo.montoDiarioCostoDiario)} MXN/día</p>
-                                            <p className="text-xs text-gray-500 mt-1">Total: ${Math.round(ciclo.montoDiarioCostoDiario * ciclo.diasDelCiclo)} MXN</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-sm text-gray-600 mb-1">💰 Con sueldo quincenal</p>
-                                            <p className="text-3xl font-bold text-blue-800">{100 - ciclo.porcentajeCostoDiario}%</p>
-                                            <p className="text-sm font-bold text-gray-700">${Math.round((ciclo.montoDiarioMXN * ciclo.diasDelCiclo) * ((100 - ciclo.porcentajeCostoDiario) / 100))} MXN</p>
-                                            <p className="text-xs text-gray-500 mt-1">Del sueldo de la quincena</p>
-                                        </div>
-                                    </div>
-                                    {ciclo.porcentajeCostoDiario < 100 && (
-                                        <div className="bg-blue-50 rounded-lg p-3 text-sm text-blue-800">
-                                            💡 <strong>Recordá:</strong> Cuando cobres el sueldo, asigná ${Math.round((ciclo.montoDiarioMXN * ciclo.diasDelCiclo) * ((100 - ciclo.porcentajeCostoDiario) / 100))} MXN usando "💰 Asignar Sueldo"
-                                        </div>
-                                    )}
-                                </div>
+
+                                {seleccionado.categoria !== 'Ahorro' && (() => {
+                                    const montoDiarios = seleccionado.montosDivididos ? (seleccionado.montosDivididos.diarios || 0) : 0;
+                                    if (montoDiarios > 0 && ciclo.diasDelCiclo > 0) {
+                                        const ingresoDiario = Math.ceil((montoDiarios / ciclo.diasDelCiclo) / 10) * 10;
+                                        return (
+                                            <div className="bg-gray-50 rounded-xl p-4 mb-6">
+                                                <p className="text-gray-500 text-sm mb-1">💵 Ingresos diarios necesarios</p>
+                                                <p className="text-2xl font-bold text-gray-800">${ingresoDiario.toLocaleString()}/día</p>
+                                                <p className="text-xs text-gray-500 mt-1">
+                                                    Para cubrir ${montoDiarios.toLocaleString()} en {ciclo.diasDelCiclo} días
+                                                </p>
+                                            </div>
+                                        );
+                                    }
+                                    return null;
+                                })()}
+
                             </div>
                         </div>
                     </div>
@@ -1486,9 +1984,9 @@
                             <p className="text-indigo-100">Ingresos, gastos y ahorros</p>
                         </div>
                         <div className="bg-white rounded-3xl shadow-xl mx-4 mb-6 p-2 grid grid-cols-3 gap-2">
-                            <button onClick={() => setTabActivo('ingresos')} className={`py-3 px-4 rounded-xl font-bold transition-all ${tabActivo === 'ingresos' ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>📥 Ingresos</button>
-                            <button onClick={() => setTabActivo('gastos')} className={`py-3 px-4 rounded-xl font-bold transition-all ${tabActivo === 'gastos' ? 'bg-gradient-to-r from-red-500 to-pink-600 text-white shadow-lg' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>🛒 Gastos</button>
-                            <button onClick={() => setTabActivo('ahorros')} className={`py-3 px-4 rounded-xl font-bold transition-all ${tabActivo === 'ahorros' ? 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white shadow-lg' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>🎯 Ahorros</button>
+                            <button id="ingresos-tab" onClick={() => setTabActivo('ingresos')} className={`py-3 px-4 rounded-xl font-bold transition-all ${tabActivo === 'ingresos' ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>📥 Ingresos</button>
+                            <button id="gastos-tab" onClick={() => setTabActivo('gastos')} className={`py-3 px-4 rounded-xl font-bold transition-all ${tabActivo === 'gastos' ? 'bg-gradient-to-r from-red-500 to-pink-600 text-white shadow-lg' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>🛒 Gastos</button>
+                            <button id="ahorros-tab" onClick={() => setTabActivo('ahorros')} className={`py-3 px-4 rounded-xl font-bold transition-all ${tabActivo === 'ahorros' ? 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white shadow-lg' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>🎯 Ahorros</button>
                         </div>
                         <div className="px-4">
                             {tabActivo === 'ingresos' && <VistaIngresos />}
@@ -2024,7 +2522,7 @@
                             <input type="text" name="concepto" className="w-full px-4 py-3 border-2 rounded-xl mb-3" placeholder="Concepto (opcional)" />
                             <div className="mb-3">
                                 <label className="block text-gray-600 text-sm font-medium mb-1">Fecha del ingreso</label>
-                                <input type="date" name="fechaIngreso" defaultValue={new Date().toISOString().split('T')[0]} max={new Date().toISOString().split('T')[0]} className="w-full px-4 py-3 border-2 rounded-xl" />
+                                <input type="date" name="fechaIngreso" defaultValue={fechaLocalHoy()} max={fechaLocalHoy()} className="w-full px-4 py-3 border-2 rounded-xl" />
                             </div>
                             {tcInfo && <p className="text-sm text-gray-600 mb-4">{tcInfo}</p>}
                             {secCode === principal && <p className="text-sm text-gray-600 mb-4">Costo de vida hoy: ${Math.round(costoVidaDiario)}</p>}
@@ -2059,7 +2557,7 @@
                     gastoMoneda: 'MXN',
                     gastoVencimiento: '',
                 });
-                const totalPasos = 10;
+                const totalPasos = 3;
 
                 const finalizarTutorial = () => {
                     const gastoInicial = datos.agregarGasto && datos.gastoNombre ? [{
@@ -2110,6 +2608,9 @@
                         premiumEmail: null,
                         tema: 'classic',
                         idiomaPreferido: datos.idioma || 'es-MX',
+                        tutorialActivo: true,
+                        tutorialPaso: 0,
+                        tutorialCompletado: false,
                     });
                     localStorage.setItem('tutorialCompletado', 'true');
                 };
@@ -2245,7 +2746,9 @@
                                     </div>
                                     <div className="flex gap-3">
                                         <button onClick={() => setPaso(1)} className={btnP}>← Atrás</button>
-                                        <button onClick={() => setPaso(3)} className={btnN}>Siguiente →</button>
+                                        <button onClick={() => datos.monedasSecundarias.length > 0 ? setPaso(3) : finalizarTutorial()} className={btnN}>
+                                            {datos.monedasSecundarias.length > 0 ? 'Siguiente →' : 'Comenzar →'}
+                                        </button>
                                     </div>
                                 </div>
                             );
@@ -2306,244 +2809,12 @@
                                     )}
                                     <div className="flex gap-3">
                                         <button onClick={() => setPaso(2)} className={btnP}>← Atrás</button>
-                                        <button onClick={() => setPaso(4)} className={btnN}>Siguiente →</button>
+                                        <button onClick={finalizarTutorial} className={btnN}>Comenzar →</button>
                                     </div>
                                 </div>
                             );
                         })()}
 
-                        {/* PASO 4: Información Básica */}
-                        {paso === 4 && (
-                            <div className={card}>
-                                <Progreso />
-                                <h2 className="text-2xl font-bold text-gray-800 mb-2">📅 Información Básica</h2>
-                                <p className="text-gray-600 mb-5">¿Desde cuándo querés empezar a contar?</p>
-                                <div className="mb-6">
-                                    <label className="block text-gray-700 font-bold mb-2">📅 Fecha de inicio</label>
-                                    <input type="date" value={datos.fechaInicio}
-                                        onChange={(e) => setDatos({...datos, fechaInicio: e.target.value})}
-                                        className={inp} required />
-                                    <p className="text-xs text-gray-500 mt-1">A partir de esta fecha se calcula el ciclo de tus gastos fijos.</p>
-                                </div>
-                                <div className="flex gap-3">
-                                    <button onClick={() => setPaso(3)} className={btnP}>← Atrás</button>
-                                    <button onClick={() => {
-                                        if (!datos.fechaInicio) { alert('Por favor ingresa una fecha de inicio'); return; }
-                                        setPaso(5);
-                                    }} className={btnN}>Siguiente →</button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* PASO 5: Tu Billetera (OBLIGATORIO) */}
-                        {paso === 5 && (() => {
-                            const currencyEmojis = { MXN: '🇲🇽', USD: '💵', ARS: '🇦🇷', EUR: '🇪🇺', GBP: '🇬🇧', CAD: '🍁', COP: '🇨🇴', BRL: '🇧🇷', CLP: '🇨🇱' };
-                            const currencyKeys = { MXN: 'mxnFisico', USD: 'usd', ARS: 'ars' };
-                            const principal = datos.monedaPrincipal || 'MXN';
-                            const secundarias = datos.monedasSecundarias || [];
-                            const todasMonedas = [principal, ...secundarias];
-                            const getKey = (code) => currencyKeys[code] || code.toLowerCase();
-                            return (
-                                <div className={card}>
-                                    <Progreso />
-                                    <h2 className="text-2xl font-bold text-gray-800 mb-2">💰 Tu Billetera</h2>
-                                    <p className="text-gray-600 mb-5">¿Cuánto dinero tienes ahora en cada moneda?</p>
-                                    <div className="space-y-4 mb-6">
-                                        {todasMonedas.map(code => (
-                                            <div key={code}>
-                                                <label className="block text-gray-700 font-semibold mb-1">
-                                                    {currencyEmojis[code] || '💱'} {code}
-                                                </label>
-                                                <input type="number" step="0.01"
-                                                    value={datos[getKey(code)] || '0'}
-                                                    onChange={(e) => setDatos({...datos, [getKey(code)]: e.target.value})}
-                                                    placeholder="0" className={inp} />
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div className="flex gap-3">
-                                        <button onClick={() => setPaso(4)} className={btnP}>← Atrás</button>
-                                        <button onClick={() => setPaso(6)} className={btnN}>Siguiente →</button>
-                                    </div>
-                                </div>
-                            );
-                        })()}
-
-                        {/* PASO 6: Gastos Fijos (opcional) */}
-                        {paso === 6 && (
-                            <div className={card}>
-                                <Progreso />
-                                <h2 className="text-2xl font-bold text-gray-800 mb-2">📋 Gastos Fijos</h2>
-                                <p className="text-gray-600 mb-3">Los gastos fijos son pagos recurrentes (renta, universidad, servicios, etc.)</p>
-                                <div className="bg-gray-50 rounded-xl p-3 mb-5 text-sm text-gray-800">
-                                    💡 Puedes agregar todos tus gastos después, o empezar con uno ahora
-                                </div>
-                                {!datos.agregarGasto ? (
-                                    <div className="flex flex-col gap-3 mb-4">
-                                        <button onClick={() => setDatos({...datos, agregarGasto: true})}
-                                            className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 px-6 py-4 rounded-xl font-bold text-left">
-                                            ➕ Agregar mi primer gasto ahora
-                                        </button>
-                                        <button onClick={() => setPaso(7)}
-                                            className="w-full bg-gray-100 hover:bg-gray-200 text-gray-600 px-6 py-3 rounded-xl font-bold">
-                                            Hacerlo después →
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-3 mb-4">
-                                        <input type="text" value={datos.gastoNombre}
-                                            onChange={(e) => setDatos({...datos, gastoNombre: e.target.value})}
-                                            placeholder="Nombre del gasto (ej: Renta)" className={inp} />
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <input type="number" value={datos.gastoMonto}
-                                                onChange={(e) => setDatos({...datos, gastoMonto: e.target.value})}
-                                                placeholder="Monto" className={inp} />
-                                            <select value={datos.gastoMoneda}
-                                                onChange={(e) => setDatos({...datos, gastoMoneda: e.target.value})}
-                                                className={inp}>
-                                                <option value={datos.monedaPrincipal}>{datos.monedaPrincipal}</option>
-                                                {(datos.monedasSecundarias || []).map(m => (
-                                                    <option key={m} value={m}>{m}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                        <input type="date" value={datos.gastoVencimiento}
-                                            onChange={(e) => setDatos({...datos, gastoVencimiento: e.target.value})}
-                                            className={inp} />
-                                        <button onClick={() => setPaso(7)} className={`w-full ${btnN}`}>Siguiente →</button>
-                                        <button onClick={() => setDatos({...datos, agregarGasto: false})} className="w-full text-sm text-gray-500 underline">Cancelar</button>
-                                    </div>
-                                )}
-                                {!datos.agregarGasto && (
-                                    <button onClick={() => setPaso(5)} className="text-sm text-gray-500 underline">← Atrás</button>
-                                )}
-                            </div>
-                        )}
-
-                        {/* PASO 7: Cómo Funciona */}
-                        {paso === 7 && (
-                            <div className={card}>
-                                <Progreso />
-                                <h2 className="text-2xl font-bold text-gray-800 mb-5">📱 Cómo Funciona la App</h2>
-                                <div className="space-y-3 mb-6">
-                                    {[
-                                        { icono: '🏠', titulo: 'Dashboard', desc: 'Ve tus gastos fijos, costo de vida diario y progreso' },
-                                        { icono: '💰', titulo: 'Billetera', desc: 'Tu dinero disponible en todas las monedas' },
-                                        { icono: '📥', titulo: 'Ingresos', desc: 'Registra tus ingresos diarios' },
-                                        { icono: '🛒', titulo: 'Gastos Extra', desc: 'Gastos fuera de tu presupuesto fijo' },
-                                        { icono: '📊', titulo: 'Reporte', desc: 'Análisis gráfico de tus finanzas' },
-                                        { icono: '⚙️', titulo: 'Config', desc: 'Ajusta tipos de cambio y preferencias' },
-                                    ].map(item => (
-                                        <div key={item.titulo} className="flex items-center gap-3 bg-gray-50 rounded-xl p-3">
-                                            <span className="text-2xl">{item.icono}</span>
-                                            <div>
-                                                <p className="font-bold text-gray-800 text-sm">{item.titulo}</p>
-                                                <p className="text-xs text-gray-600">{item.desc}</p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                                <div className="flex gap-3">
-                                    <button onClick={() => setPaso(6)} className={btnP}>← Atrás</button>
-                                    <button onClick={() => setPaso(8)} className={btnN}>Siguiente →</button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* PASO 8: Registrar Ingresos */}
-                        {paso === 8 && (
-                            <div className={card}>
-                                <Progreso />
-                                <div className="text-5xl mb-4 text-center">💵</div>
-                                <h2 className="text-2xl font-bold text-gray-800 mb-3">Registrar Ingresos</h2>
-                                <p className="text-gray-600 mb-5">Cada día que trabajes, registra tus ingresos diarios en la sección de Ingresos.</p>
-                                <div className="bg-green-50 rounded-xl p-4 mb-5">
-                                    <p className="font-semibold text-green-800 mb-2">✓ El sistema calcula automáticamente:</p>
-                                    <ul className="text-sm text-green-800 space-y-1">
-                                        <li>• Cuánto te queda después de tus gastos fijos</li>
-                                        <li>• Tu progreso mensual</li>
-                                        <li>• Comparativa entre monedas</li>
-                                    </ul>
-                                </div>
-                                <div className="flex gap-3">
-                                    <button onClick={() => setPaso(7)} className={btnP}>← Atrás</button>
-                                    <button onClick={() => setPaso(9)} className={btnN}>Siguiente →</button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* PASO 9: Avanzar Días */}
-                        {paso === 9 && (
-                            <div className={card}>
-                                <Progreso />
-                                <div className="text-5xl mb-4 text-center">⏭️</div>
-                                <h2 className="text-2xl font-bold text-gray-800 mb-3">Avanzar Días</h2>
-                                <p className="text-gray-600 mb-4">Usa el botón "⏭️ Avanzar" en el Dashboard para pasar al siguiente día.</p>
-                                <div className="bg-blue-50 rounded-xl p-4 mb-4">
-                                    <p className="font-semibold text-blue-800 mb-1">💡 Úsalo cuando:</p>
-                                    <p className="text-sm text-blue-800">Llegues a casa del trabajo o al final de cada día laborado.</p>
-                                </div>
-                                <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-5">
-                                    <p className="font-semibold text-red-800">⚠️ Importante:</p>
-                                    <p className="text-sm text-red-800">No puedes retroceder días. ¡Registra tus ingresos antes de avanzar!</p>
-                                </div>
-                                <div className="flex gap-3">
-                                    <button onClick={() => setPaso(8)} className={btnP}>← Atrás</button>
-                                    <button onClick={() => setPaso(10)} className={btnN}>Siguiente →</button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* PASO 10: ¡Listo! */}
-                        {paso === 10 && (
-                            <div className={`${card} text-center`}>
-                                <Progreso />
-                                <div className="text-6xl mb-4">🎉</div>
-                                <h2 className="text-3xl font-bold text-gray-800 mb-3">¡Todo listo para comenzar!</h2>
-                                <p className="text-gray-600 mb-5">Ya puedes empezar a usar Finanzas App</p>
-                                <div className="bg-yellow-50 rounded-xl p-4 mb-6 text-left">
-                                    <p className="font-semibold mb-2">💡 Tips para empezar:</p>
-                                    <div className="space-y-1 text-sm text-gray-700">
-                                        <p>💡 Registra tus ingresos cada día que trabajes</p>
-                                        <p>💡 Revisa tu progreso en el Reporte cada semana</p>
-                                        <p>💡 Ajusta los tipos de cambio en Config cuando cambien</p>
-                                    </div>
-                                </div>
-                                <div className="mb-6 text-left">
-                                    <label className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl border-2 border-gray-200 cursor-pointer hover:border-gray-400 transition-colors">
-                                        <input type="checkbox" id="aceptarTerminos" className="mt-1 w-5 h-5 text-gray-700 cursor-pointer" />
-                                        <span className="text-sm text-gray-700 leading-relaxed">
-                                            Acepto los{' '}
-                                            <a href="/terminos" target="_blank" rel="noopener noreferrer" className="text-gray-700 font-bold underline hover:text-gray-800">
-                                                Términos y Condiciones
-                                            </a>
-                                            {' '}de uso de Finanzas App
-                                        </span>
-                                    </label>
-                                </div>
-                                <button onClick={() => {
-                                        if (!document.getElementById('aceptarTerminos')?.checked) {
-                                            alert('Debés aceptar los Términos y Condiciones para continuar');
-                                            return;
-                                        }
-                                        finalizarTutorial();
-                                        setTimeout(() => setModal('activarPremium'), 300);
-                                    }}
-                                    className="w-full bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-500 hover:to-orange-500 text-white px-6 py-3 rounded-xl font-bold text-base mb-3">
-                                    🌟 Activar Premium
-                                </button>
-                                <button onClick={() => {
-                                        if (!document.getElementById('aceptarTerminos')?.checked) {
-                                            alert('Debés aceptar los Términos y Condiciones para continuar');
-                                            return;
-                                        }
-                                        finalizarTutorial();
-                                    }}
-                                    className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-6 py-4 rounded-xl font-bold text-lg">
-                                    🚀 Comenzar a usar la app
-                                </button>
-                            </div>
-                        )}
                     </div>
                 );
             };
@@ -2559,6 +2830,24 @@
                 setDeferredPrompt(null);
             };
 
+            const TUTORIAL_VISTAS = ['dashboard','billetera','movimientos','movimientos','movimientos','movimientos','movimientos','movimientos','dashboard','reporte','config','dashboard'];
+            const iniciarTutorial = () => { setVista('dashboard'); setEstado({...estado, tutorialActivo: true, tutorialPaso: 0}); };
+            const avanzarTutorial = () => {
+                const next = estado.tutorialPaso + 1;
+                if (next < TUTORIAL_VISTAS.length) {
+                    setVista(TUTORIAL_VISTAS[next]);
+                    setEstado({...estado, tutorialPaso: next});
+                } else {
+                    setEstado({...estado, tutorialActivo: false, tutorialCompletado: true});
+                }
+            };
+            const retrocederTutorial = () => {
+                const prev = Math.max(0, estado.tutorialPaso - 1);
+                setVista(TUTORIAL_VISTAS[prev]);
+                setEstado({...estado, tutorialPaso: prev});
+            };
+            const saltarTutorial = () => { setEstado({...estado, tutorialActivo: false, tutorialCompletado: true}); };
+
             return (
                 <div className={estado.tema === 'dark' ? 't-dark' : ''}>
                     {!estado.onboardingCompleto ? (
@@ -2570,6 +2859,15 @@
                     {(vista === 'movimientos' || vista === 'ingresos' || vista === 'gastos' || vista === 'ahorros') && <VistaMovimientos />}
                     {vista === 'reporte' && <VistaReporte />}
                     {vista === 'config' && <VistaConfiguracion />}
+                    {estado.tutorialActivo && (
+                        <TutorialOverlay
+                            paso={estado.tutorialPaso}
+                            onNext={avanzarTutorial}
+                            onBack={retrocederTutorial}
+                            onSkip={saltarTutorial}
+                            onComplete={saltarTutorial}
+                        />
+                    )}
                     {vista === 'detalle' && seleccionado && <Detalle />}
 
                     {vista === 'dashboard' && (
@@ -2646,7 +2944,7 @@
                             }}>
                                 <div className="mb-3">
                                     <label className="block text-gray-700 font-bold mb-2">Fecha</label>
-                                    <input type="date" name="fecha" defaultValue={form.fecha || new Date().toISOString().split('T')[0]} max={new Date().toISOString().split('T')[0]} required className="w-full px-4 py-3 border-2 rounded-xl" />
+                                    <input type="date" name="fecha" defaultValue={form.fecha || fechaLocalHoy()} max={fechaLocalHoy()} required className="w-full px-4 py-3 border-2 rounded-xl" />
                                 </div>
                                 <div className="mb-3">
                                     <label className="block text-gray-700 font-bold mb-2">💵 MXN</label>
@@ -2930,7 +3228,7 @@
                                     <input type="number" step="0.01" name="monto" required placeholder="Monto" className="w-full px-4 py-3 border-2 rounded-xl text-2xl" />
                                     <div>
                                         <label className="block text-gray-600 text-sm font-medium mb-1">Fecha del gasto</label>
-                                        <input type="date" name="fechaGasto" defaultValue={new Date().toISOString().split('T')[0]} max={new Date().toISOString().split('T')[0]} className="w-full px-4 py-3 border-2 rounded-xl" />
+                                        <input type="date" name="fechaGasto" defaultValue={fechaLocalHoy()} max={fechaLocalHoy()} className="w-full px-4 py-3 border-2 rounded-xl" />
                                     </div>
                                 </div>
                                 <div className="flex gap-3">
@@ -2976,7 +3274,7 @@
                                 <div className="space-y-3 mb-4">
                                     <div>
                                         <label className="block text-gray-700 font-bold mb-2">Fecha</label>
-                                        <input type="date" name="fecha" defaultValue={form.fecha || new Date().toISOString().split('T')[0]} max={new Date().toISOString().split('T')[0]} required className="w-full px-4 py-3 border-2 rounded-xl" />
+                                        <input type="date" name="fecha" defaultValue={form.fecha || fechaLocalHoy()} max={fechaLocalHoy()} required className="w-full px-4 py-3 border-2 rounded-xl" />
                                     </div>
                                     <div>
                                         <label className="block text-gray-700 font-bold mb-2">Categoría</label>
@@ -3332,6 +3630,11 @@
                                     </div>
                                 </button>
 
+                                <button type="button" onClick={() => setEstado({...estado, tutorialActivo: true, tutorialPaso: 0})}
+                                    className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white p-4 rounded-xl font-bold shadow-lg transition-all flex items-center justify-center gap-2 mt-4 mb-3">
+                                    <span className="text-2xl">📚</span>
+                                    <span>Ver tutorial nuevamente</span>
+                                </button>
                                 <button onClick={() => {
                                     if (confirm('⚠️ ¿Estás segura? Esto borrará TODOS los datos guardados y empezarás de cero.')) {
                                         localStorage.removeItem('finanzasAppData');
@@ -3391,16 +3694,16 @@
                                 </div>
 
                                 <div className="space-y-3 mb-4 max-h-64 overflow-y-auto">
-                                    {estado.gastosFijos.filter(g => calcularCiclo(g).porcentajeCostoDiario < 100).map(gasto => {
+                                    {estado.gastosFijos.filter(g => g.categoria !== 'Ahorro' && ((g.montosDivididos?.quincenal || 0) + (g.montosDivididos?.mensual || 0)) > 0).map(gasto => {
                                         const ciclo = calcularCiclo(gasto);
-                                        const montoNecesario = Math.round((ciclo.montoDiarioMXN * ciclo.diasDelCiclo) * ((100 - ciclo.porcentajeCostoDiario) / 100));
+                                        const montoNecesario = (gasto.montosDivididos?.quincenal || 0) + (gasto.montosDivididos?.mensual || 0);
                                         const yaAsignado = gasto.montoSueldoAsignado || 0;
                                         const falta = Math.max(0, montoNecesario - yaAsignado);
                                         return (
                                             <div key={gasto.id} className="bg-blue-50 rounded-xl p-3 border border-blue-200">
                                                 <div className="flex justify-between items-center mb-2">
                                                     <span className="font-bold text-gray-800 text-sm">{gasto.nombre}</span>
-                                                    <span className="text-xs text-blue-800">{100 - ciclo.porcentajeCostoDiario}% sueldo · necesita ${montoNecesario}</span>
+                                                    <span className="text-xs text-blue-800">💰 Sueldo · necesita ${montoNecesario.toLocaleString()}</span>
                                                 </div>
                                                 {yaAsignado > 0 && <p className="text-xs text-green-600 mb-1">✓ Ya asignado: ${Math.round(yaAsignado)}</p>}
                                                 <input type="number" name={`gasto_${gasto.id}`} step="0.01" defaultValue={falta} placeholder="0" className="w-full px-3 py-2 border-2 rounded-lg text-base font-bold" />
@@ -3559,10 +3862,29 @@
                                     moneda: f.moneda.value,
                                     vencimiento: f.vencimiento.value || '-',
                                     categoria: f.categoria.value,
-                                    porcentajeCostoDiario: parseInt(f.porcentaje.value),
                                     color: form.color || null,
                                     montoInicial: f.montoInicial ? (parseFloat(f.montoInicial.value) || 0) : (form.montoInicial || 0),
                                 };
+                                const tipoPago = document.querySelector('input[name="tipoPago"]:checked')?.value || 'diarios';
+
+                                if (tipoPago === 'mixto') {
+                                    const montoDiarios = parseFloat(f.montoDiarios.value) || 0;
+                                    const montoSalario = parseFloat(f.montoSalario.value) || 0;
+                                    const total = montoDiarios + montoSalario;
+                                    if (Math.abs(total - datos.monto) > 1) {
+                                        alert('La suma debe ser igual al monto total: $' + Math.round(datos.monto));
+                                        return;
+                                    }
+                                    datos.montosDivididos = { diarios: montoDiarios, quincenal: 0, mensual: montoSalario };
+                                } else if (tipoPago === 'diarios') {
+                                    datos.montosDivididos = { diarios: datos.monto, quincenal: 0, mensual: 0 };
+                                } else {
+                                    // salario
+                                    datos.montosDivididos = { diarios: 0, quincenal: 0, mensual: datos.monto };
+                                }
+                                datos.porcentajeCostoDiario = datos.monto > 0 && datos.montosDivididos
+                                    ? Math.round((datos.montosDivididos.diarios / datos.monto) * 100)
+                                    : 100;
                                 if (modal === 'nuevo') {
                                     const maxId = estado.gastosFijos.length > 0 ? Math.max(...estado.gastosFijos.map(g => g.id)) : 0;
                                     setEstado({...estado, gastosFijos: [...estado.gastosFijos, {...datos, id: maxId + 1, diaInicioCiclo: estado.diasAcumulados, montoSueldoAsignado: 0}]});
@@ -3597,17 +3919,95 @@
                                         </label>
                                         <input type="date" name="vencimiento" defaultValue={form.vencimiento !== '-' ? form.vencimiento : ''} required className="w-full px-4 py-3 border-2 rounded-xl" />
                                     </div>
-                                    <div>
-                                        <label className="block text-gray-700 font-bold mb-2">% Cubierto con ingresos diarios</label>
-                                        <div className="flex items-center gap-3">
-                                            <input type="range" name="porcentaje" min="0" max="100" step="10" defaultValue={form.porcentajeCostoDiario || 100} className="flex-1" onChange={(e) => document.getElementById('porcentajeLabel').textContent = e.target.value + '%'} />
-                                            <span id="porcentajeLabel" className={`text-2xl font-bold ${t.accentText} w-16`}>{form.porcentajeCostoDiario || 100}%</span>
+                                    {form.categoria !== 'Ahorro' ? (
+                                    <div className="mb-4">
+                                        <label className="block text-gray-700 font-bold mb-3">¿Cómo lo vas a pagar?</label>
+                                        <div className="space-y-2 mb-4">
+                                            <label className="flex items-center gap-3 p-3 border-2 rounded-xl cursor-pointer hover:bg-gray-50 transition-all">
+                                                <input type="radio" name="tipoPago" value="diarios"
+                                                    defaultChecked={(form.porcentajeCostoDiario ?? 100) === 100}
+                                                    onChange={(e) => { if (e.target.checked) document.getElementById('mixtoControls').style.display = 'none'; }}
+                                                    className="w-5 h-5" />
+                                                <div>
+                                                    <p className="font-bold text-gray-800">💵 Ingresos diarios</p>
+                                                    <p className="text-xs text-gray-600">Propinas, freelance, etc</p>
+                                                </div>
+                                            </label>
+                                            <label className="flex items-center gap-3 p-3 border-2 rounded-xl cursor-pointer hover:bg-gray-50 transition-all">
+                                                <input type="radio" name="tipoPago" value="salario"
+                                                    defaultChecked={(form.porcentajeCostoDiario ?? 100) === 0}
+                                                    onChange={(e) => { if (e.target.checked) document.getElementById('mixtoControls').style.display = 'none'; }}
+                                                    className="w-5 h-5" />
+                                                <div>
+                                                    <p className="font-bold text-gray-800">💰 Salario</p>
+                                                    <p className="text-xs text-gray-600">Se paga con tu salario</p>
+                                                </div>
+                                            </label>
+                                            <label className="flex items-center gap-3 p-3 border-2 rounded-xl cursor-pointer hover:bg-gray-50 transition-all">
+                                                <input type="radio" name="tipoPago" value="mixto"
+                                                    defaultChecked={(form.porcentajeCostoDiario ?? 100) > 0 && (form.porcentajeCostoDiario ?? 100) < 100}
+                                                    onChange={(e) => {
+                                                        if (e.target.checked) {
+                                                            document.getElementById('mixtoControls').style.display = 'block';
+                                                        }
+                                                    }}
+                                                    className="w-5 h-5" />
+                                                <div>
+                                                    <p className="font-bold text-gray-800">🔀 Mixto</p>
+                                                    <p className="text-xs text-gray-600">Combinar ingresos diarios y sueldo</p>
+                                                </div>
+                                            </label>
                                         </div>
-                                        <div className="flex justify-between text-xs text-gray-600 mt-1">
-                                            <span>0% = Todo sueldo</span>
-                                            <span>100% = Todo ingresos diarios</span>
+                                        <div id="mixtoControls"
+                                            style={{display: ((form.porcentajeCostoDiario ?? 100) > 0 && (form.porcentajeCostoDiario ?? 100) < 100) ? 'block' : 'none'}}
+                                            className="bg-blue-50 rounded-xl p-4 space-y-3">
+                                            <p className="text-sm text-gray-700 font-bold">Distribuye el monto:</p>
+                                            <div>
+                                                <label className="text-sm text-gray-700 mb-1 block">💵 Ingresos diarios</label>
+                                                <input type="number" step="0.01" name="montoDiarios"
+                                                    defaultValue={form.montosDivididos ? (form.montosDivididos.diarios || 0) : 0}
+                                                    className="w-full px-3 py-2 border-2 rounded-lg text-lg font-bold"
+                                                    onInput={(e) => {
+                                                        const d = parseFloat(e.target.value) || 0;
+                                                        const s = parseFloat(document.querySelector('[name="montoSalario"]').value) || 0;
+                                                        const total = d + s;
+                                                        const orig = parseFloat(document.querySelector('[name="monto"]').value) || 0;
+                                                        const el = document.getElementById('totalMixto');
+                                                        el.textContent = '$' + Math.round(total).toLocaleString();
+                                                        el.className = Math.abs(total - orig) < 0.01 ? 'text-lg font-bold text-green-600' : 'text-lg font-bold text-red-600';
+                                                        document.getElementById('warningMixto').style.display = Math.abs(total - orig) < 0.01 ? 'none' : 'block';
+                                                    }} />
+                                            </div>
+                                            <div>
+                                                <label className="text-sm text-gray-700 mb-1 block">💰 Salario</label>
+                                                <input type="number" step="0.01" name="montoSalario"
+                                                    defaultValue={form.montosDivididos ? ((form.montosDivididos.quincenal || 0) + (form.montosDivididos.mensual || 0)) : 0}
+                                                    className="w-full px-3 py-2 border-2 rounded-lg text-lg font-bold"
+                                                    onInput={(e) => {
+                                                        const d = parseFloat(document.querySelector('[name="montoDiarios"]').value) || 0;
+                                                        const s = parseFloat(e.target.value) || 0;
+                                                        const total = d + s;
+                                                        const orig = parseFloat(document.querySelector('[name="monto"]').value) || 0;
+                                                        const el = document.getElementById('totalMixto');
+                                                        el.textContent = '$' + Math.round(total).toLocaleString();
+                                                        el.className = Math.abs(total - orig) < 0.01 ? 'text-lg font-bold text-green-600' : 'text-lg font-bold text-red-600';
+                                                        document.getElementById('warningMixto').style.display = Math.abs(total - orig) < 0.01 ? 'none' : 'block';
+                                                    }} />
+                                            </div>
+                                            <div className="pt-3 border-t-2 border-blue-200 flex justify-between items-center">
+                                                <span className="text-sm text-gray-700 font-bold">Total:</span>
+                                                <span id="totalMixto" className="text-lg font-bold text-green-600">
+                                                    ${Math.round(form.monto || 0).toLocaleString()}
+                                                </span>
+                                            </div>
+                                            <div id="warningMixto" style={{display:'none'}} className="bg-orange-100 border-l-4 border-orange-500 p-3 rounded">
+                                                <p className="text-orange-800 text-xs">⚠️ La suma debe ser igual al monto total del gasto</p>
+                                            </div>
                                         </div>
                                     </div>
+                                    ) : (
+                                        <input type="range" name="porcentaje" style={{display:'none'}} defaultValue="100" min="0" max="100" step="10" readOnly />
+                                    )}
                                     <input type="hidden" name="categoria" value={form.categoria || 'Fijo'} />
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">Color</label>
@@ -3770,11 +4170,28 @@
                                     : <span>El ciclo de <strong>{form.gastoNombre}</strong> está completo.</span>
                                 }
                             </p>
-                            <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-6 rounded">
-                                <p className="text-green-800 font-bold text-sm mb-1">💵 Ingresos diarios: ${Math.round(form.cicloCompleto?.montoAcumuladoPropinas || 0)}</p>
-                                <p className="text-green-800 font-bold text-sm mb-1">💰 Sueldo: ${Math.round(form.cicloCompleto?.montoSueldoAsignado || 0)}</p>
-                                <p className="text-green-800 font-bold text-lg">Total: ${Math.round(form.cicloCompleto?.montoAcumulado || 0)}</p>
-                            </div>
+                            {(() => {
+                                const gs = estado.gastosFijos.find(g => g.id === form.gastoId);
+                                let montoGastoMXN = gs?.monto || 0;
+                                if (gs?.moneda && gs.moneda !== (estado.monedaPrincipal || 'MXN')) {
+                                    montoGastoMXN = convertirMoneda(gs.monto, gs.moneda, estado.monedaPrincipal || 'MXN');
+                                }
+                                const acumuladoTotal = Math.round(form.cicloCompleto?.montoAcumulado || 0);
+                                const gastoRegistrado = Math.round(montoGastoMXN);
+                                const excedente = acumuladoTotal - gastoRegistrado;
+                                return (
+                                    <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-6 rounded">
+                                        <p className="text-green-800 text-sm mb-1">💵 Ingresos diarios acumulados: ${Math.round(form.cicloCompleto?.montoAcumuladoPropinas || 0).toLocaleString()}</p>
+                                        <p className="text-green-800 text-sm mb-2">💰 Sueldo asignado: ${Math.round(form.cicloCompleto?.montoSueldoAsignado || 0).toLocaleString()}</p>
+                                        <div className="border-t border-green-200 pt-2">
+                                            <p className="text-green-900 font-bold text-base">💸 Se registra como gasto: ${gastoRegistrado.toLocaleString()}</p>
+                                            {excedente > 0 && (
+                                                <p className="text-green-700 text-sm mt-1">✨ +${excedente.toLocaleString()} quedan disponibles (excedente por redondeo)</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })()}
                             <form onSubmit={(e) => {
                                 e.preventDefault();
                                 const nuevaFecha = e.target.nuevaFecha.value;
