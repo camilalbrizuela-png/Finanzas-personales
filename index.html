@@ -576,21 +576,7 @@
 
                 // Si el ciclo está completo pero NO confirmado, seguir contando el monto total
 
-              if (ciclo.cicloCompleto) {
-    // Usar montosDivididos para la parte de ingresos diarios
-    const montoDiarios = g.montosDivididos?.diarios || 0;
-    
-    // Convertir a MXN si es necesario
-    let montoDiariosMXN = montoDiarios;
-    if (g.moneda && g.moneda !== (estado.monedaPrincipal || 'MXN')) {
-        montoDiariosMXN = convertirMoneda(montoDiarios, g.moneda, estado.monedaPrincipal || 'MXN');
-    }
-    
-    return total + montoDiariosMXN;
-}
-
-                // Si el ciclo está en progreso, solo sumar el acumulado de propinas
-
+                // Ciclo completo o en progreso: siempre usar el acumulado redondeado
                 return total + (ciclo.montoAcumuladoPropinas || 0);
 
             }, 0);
