@@ -323,8 +323,14 @@
 
             const formatearFecha = (fecha) => {
                 if (!fecha || fecha === '-') return '-';
-                const f = new Date(fecha);
+                // Append T12:00:00 so date-only strings are parsed as local noon, not UTC midnight
+                const f = new Date(fecha.length === 10 ? fecha + 'T12:00:00' : fecha);
                 return f.toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
+            };
+
+            const fechaLocalHoy = () => {
+                const d = new Date();
+                return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
             };
 
             const calcularFechaActual = () => {
@@ -2212,7 +2218,7 @@
                             <input type="text" name="concepto" className="w-full px-4 py-3 border-2 rounded-xl mb-3" placeholder="Concepto (opcional)" />
                             <div className="mb-3">
                                 <label className="block text-gray-600 text-sm font-medium mb-1">Fecha del ingreso</label>
-                                <input type="date" name="fechaIngreso" defaultValue={new Date().toISOString().split('T')[0]} max={new Date().toISOString().split('T')[0]} className="w-full px-4 py-3 border-2 rounded-xl" />
+                                <input type="date" name="fechaIngreso" defaultValue={fechaLocalHoy()} max={fechaLocalHoy()} className="w-full px-4 py-3 border-2 rounded-xl" />
                             </div>
                             {tcInfo && <p className="text-sm text-gray-600 mb-4">{tcInfo}</p>}
                             {secCode === principal && <p className="text-sm text-gray-600 mb-4">Costo de vida hoy: ${Math.round(costoVidaDiario)}</p>}
@@ -2834,7 +2840,7 @@
                             }}>
                                 <div className="mb-3">
                                     <label className="block text-gray-700 font-bold mb-2">Fecha</label>
-                                    <input type="date" name="fecha" defaultValue={form.fecha || new Date().toISOString().split('T')[0]} max={new Date().toISOString().split('T')[0]} required className="w-full px-4 py-3 border-2 rounded-xl" />
+                                    <input type="date" name="fecha" defaultValue={form.fecha || fechaLocalHoy()} max={fechaLocalHoy()} required className="w-full px-4 py-3 border-2 rounded-xl" />
                                 </div>
                                 <div className="mb-3">
                                     <label className="block text-gray-700 font-bold mb-2">💵 MXN</label>
@@ -3118,7 +3124,7 @@
                                     <input type="number" step="0.01" name="monto" required placeholder="Monto" className="w-full px-4 py-3 border-2 rounded-xl text-2xl" />
                                     <div>
                                         <label className="block text-gray-600 text-sm font-medium mb-1">Fecha del gasto</label>
-                                        <input type="date" name="fechaGasto" defaultValue={new Date().toISOString().split('T')[0]} max={new Date().toISOString().split('T')[0]} className="w-full px-4 py-3 border-2 rounded-xl" />
+                                        <input type="date" name="fechaGasto" defaultValue={fechaLocalHoy()} max={fechaLocalHoy()} className="w-full px-4 py-3 border-2 rounded-xl" />
                                     </div>
                                 </div>
                                 <div className="flex gap-3">
@@ -3164,7 +3170,7 @@
                                 <div className="space-y-3 mb-4">
                                     <div>
                                         <label className="block text-gray-700 font-bold mb-2">Fecha</label>
-                                        <input type="date" name="fecha" defaultValue={form.fecha || new Date().toISOString().split('T')[0]} max={new Date().toISOString().split('T')[0]} required className="w-full px-4 py-3 border-2 rounded-xl" />
+                                        <input type="date" name="fecha" defaultValue={form.fecha || fechaLocalHoy()} max={fechaLocalHoy()} required className="w-full px-4 py-3 border-2 rounded-xl" />
                                     </div>
                                     <div>
                                         <label className="block text-gray-700 font-bold mb-2">Categoría</label>
