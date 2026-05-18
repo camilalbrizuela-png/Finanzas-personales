@@ -443,7 +443,6 @@ const montoDiarioSueldo = ((montosDivididosActual.quincenal || 0) + (montosDivid
                     porcentajeCostoDiario: porcentajeLegacy, cicloCompleto, diasDelCiclo,  // ✅ Calcula monto diario real
                     fechaInicioCiclo: fechaInicioCiclo.toISOString().split('T')[0],
                     fechaVencimiento: gasto.vencimiento
-                };
             };
 
             const costoVidaDiario = estado.gastosFijos.reduce((total, g) => {
