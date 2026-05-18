@@ -122,7 +122,7 @@
                     title: '🛒 Gastos',
                     icon: '🛒',
                     desc: 'Hay dos tipos de gastos: Gastos Fijos (recurrentes como renta o Netflix) y Otros Gastos (ocasionales como comida o transporte).',
-                    spotlightId: 'panel-gastos',
+                    spotlightId: 'gastos-tab',
                 },
                 {
                     title: '🛒 Crear Gasto Fijo',
@@ -193,7 +193,7 @@
                     title: '🎯 Crear Meta de Ahorro',
                     icon: '🎯',
                     desc: 'Define metas de ahorro con nombre, monto objetivo, moneda y fecha límite. La app calcula cuánto necesitas aportar cada día.',
-                    spotlightId: null,
+                    spotlightId: 'ahorros-tab',
                     demoContent: (
                         <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
                             <div className="flex items-center gap-2 mb-3">
@@ -343,6 +343,9 @@
                                         <p className="mb-2"><strong>5. Limitación de responsabilidad:</strong> La app se ofrece "tal cual". No garantizamos exactitud absoluta en cálculos ni disponibilidad continua del servicio.</p>
                                         <p className="mb-2"><strong>6. Propiedad intelectual:</strong> Todos los derechos de la aplicación pertenecen a sus creadores.</p>
                                         <p className="text-gray-400 text-xs mt-4">Versión 1.0 — Mayo 2026</p>
+                                        <p className="text-sm text-gray-600 mt-6 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                                            💡 <strong>Nota:</strong> Puedes consultar estos términos cuando quieras en la parte inferior de la app.
+                                        </p>
                                     </div>
                                     {!scrolledToBottom && (
                                         <p className="text-xs text-gray-400 text-center mb-2">↕ Desplázate para leer todo</p>
@@ -1983,7 +1986,7 @@
                         <div className="bg-white rounded-3xl shadow-xl mx-4 mb-6 p-2 grid grid-cols-3 gap-2">
                             <button id="ingresos-tab" onClick={() => setTabActivo('ingresos')} className={`py-3 px-4 rounded-xl font-bold transition-all ${tabActivo === 'ingresos' ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>📥 Ingresos</button>
                             <button id="gastos-tab" onClick={() => setTabActivo('gastos')} className={`py-3 px-4 rounded-xl font-bold transition-all ${tabActivo === 'gastos' ? 'bg-gradient-to-r from-red-500 to-pink-600 text-white shadow-lg' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>🛒 Gastos</button>
-                            <button onClick={() => setTabActivo('ahorros')} className={`py-3 px-4 rounded-xl font-bold transition-all ${tabActivo === 'ahorros' ? 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white shadow-lg' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>🎯 Ahorros</button>
+                            <button id="ahorros-tab" onClick={() => setTabActivo('ahorros')} className={`py-3 px-4 rounded-xl font-bold transition-all ${tabActivo === 'ahorros' ? 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white shadow-lg' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>🎯 Ahorros</button>
                         </div>
                         <div className="px-4">
                             {tabActivo === 'ingresos' && <VistaIngresos />}
@@ -3627,9 +3630,10 @@
                                     </div>
                                 </button>
 
-                                <button type="button" onClick={iniciarTutorial}
-                                    className="w-full bg-indigo-500 hover:bg-indigo-600 text-white px-6 py-3 rounded-xl font-bold mb-3">
-                                    📖 Ver tutorial de la app
+                                <button type="button" onClick={() => setEstado({...estado, tutorialActivo: true, tutorialPaso: 0})}
+                                    className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white p-4 rounded-xl font-bold shadow-lg transition-all flex items-center justify-center gap-2 mt-4 mb-3">
+                                    <span className="text-2xl">📚</span>
+                                    <span>Ver tutorial nuevamente</span>
                                 </button>
                                 <button onClick={() => {
                                     if (confirm('⚠️ ¿Estás segura? Esto borrará TODOS los datos guardados y empezarás de cero.')) {
