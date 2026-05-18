@@ -67,51 +67,304 @@
             </div>
         );
 
-        const TutorialOverlay = ({ paso, onNext, onBack, onSkip }) => {
+        const TutorialOverlay = ({ paso, onNext, onBack, onSkip, onComplete }) => {
+            const [aceptoTerminos, setAceptoTerminos] = React.useState(false);
+            const [scrolledToBottom, setScrolledToBottom] = React.useState(false);
+            const [spotlightRect, setSpotlightRect] = React.useState(null);
+
             const steps = [
-                { title: '🏠 Inicio', icon: '🏠', desc: 'Centro de control. Aquí ves tu costo de vida diario, el dinero disponible, tus gastos fijos y tus metas de ahorro.' },
-                { title: '💰 Billetera', icon: '💰', desc: 'Tu dinero organizado por monedas y secciones de ahorro. Puedes ver y gestionar cuánto tienes en cada una.' },
-                { title: '📥 Ingresos', icon: '📥', desc: '¿A dónde entra el dinero? Registra ingresos diarios, en otras monedas, o salario. Si es salario, puedes aplicarlo a tus gastos fijos desde aquí.' },
-                { title: '🗂️ Gastos Fijos', icon: '🗂️', desc: 'Gastos recurrentes: renta, Netflix, suscripciones, etc. La app calcula cuánto debes apartar cada día para cubrirlos.' },
-                { title: '🛒 Otros Gastos', icon: '🛒', desc: 'Gastos ocasionales fuera del presupuesto fijo. Elige de qué billetera sale el dinero: MXN, USD, ahorros, etc.' },
-                { title: '🎯 Crear Ahorro', icon: '🎯', desc: 'Crea metas de ahorro con nombre, monto, moneda y fecha objetivo. La app calcula cuánto necesitas aportar cada día para llegar a tiempo.' },
-                { title: '💎 Aportar Ahorro', icon: '💎', desc: 'Una vez creado tu ahorro, puedes ir aportando desde el dashboard. La app lleva el registro de tu progreso y aportes.' },
-                { title: '📊 Reportes', icon: '📊', desc: 'Visualiza estadísticas y gráficas de tus finanzas: ingresos, gastos, distribución por categoría y evolución en el tiempo.' },
-                { title: '⚙️ Configuración', icon: '⚙️', desc: 'Personaliza la app: agrega monedas secundarias, actualiza tipos de cambio, gestiona categorías y ajusta preferencias. Puedes volver a ver este tutorial cuando quieras desde aquí.' },
-            ];
-            const step = steps[Math.min(paso, steps.length - 1)];
-            return (
-                <div className="fixed inset-0 z-[60] flex flex-col justify-end p-4 pb-24">
-                    <div className="absolute inset-0 bg-black bg-opacity-70" onClick={onSkip} />
-                    <div className="relative bg-white rounded-2xl shadow-2xl p-6 max-w-lg w-full mx-auto" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex gap-1 mb-4">
-                            {steps.map((_, i) => (
-                                <div key={i} className={`h-1 flex-1 rounded-full transition-all ${
-                                    i === paso ? 'bg-indigo-500' : i < paso ? 'bg-green-500' : 'bg-gray-200'
-                                }`} />
-                            ))}
-                        </div>
-                        <div className="flex items-start gap-3 mb-3">
-                            <span className="text-3xl">{step.icon}</span>
-                            <div>
-                                <p className="text-xs text-gray-400 mb-0.5">Paso {paso + 1} de {steps.length}</p>
-                                <h3 className="text-xl font-bold text-gray-800">{step.title}</h3>
+                {
+                    title: '🏠 Bienvenido a Finanzas App',
+                    icon: '🏠',
+                    desc: 'Este es tu centro de control financiero. Aquí verás tu costo de vida diario, el dinero disponible, tus gastos fijos y tus metas de ahorro.',
+                    spotlightId: 'dashboard-main',
+                },
+                {
+                    title: '💰 Tu Billetera',
+                    icon: '💰',
+                    desc: 'Organiza tu dinero por monedas y secciones de ahorro. Puedes ver y gestionar cuánto tienes en efectivo, digital, dólares y más.',
+                    spotlightId: 'billetera-tab',
+                },
+                {
+                    title: '📥 Registra tus Ingresos',
+                    icon: '📥',
+                    desc: 'Registra tus ingresos: propinas diarias, salario, ingresos en otras monedas. Cada registro actualiza tu disponible automáticamente.',
+                    spotlightId: 'ingresos-tab',
+                },
+                {
+                    title: '💵 Ingreso de Salario',
+                    icon: '💵',
+                    desc: 'Si recibes salario, puedes registrarlo y aplicarlo directamente a tus gastos fijos pendientes.',
+                    spotlightId: null,
+                    demoContent: (
+                        <div className="bg-green-50 rounded-xl p-4 border border-green-200">
+                            <div className="flex items-center gap-2 mb-3">
+                                <span className="text-2xl">💰</span>
+                                <span className="font-bold text-green-800">Registrar Ingreso de Salario</span>
+                            </div>
+                            <div className="space-y-2">
+                                <div className="bg-white rounded-lg p-3 border border-green-100">
+                                    <span className="text-xs text-gray-500">Tipo</span>
+                                    <div className="flex gap-2 mt-1">
+                                        <span className="bg-green-500 text-white rounded-lg px-3 py-1 text-sm font-bold">💰 Salario</span>
+                                        <span className="bg-gray-100 text-gray-400 rounded-lg px-3 py-1 text-sm">💵 Diarios</span>
+                                    </div>
+                                </div>
+                                <div className="bg-white rounded-lg p-3 border border-green-100">
+                                    <span className="text-xs text-gray-500">Monto</span>
+                                    <p className="text-xl font-bold text-green-800">$8,500</p>
+                                </div>
                             </div>
                         </div>
-                        <p className="text-gray-600 leading-relaxed mb-5">{step.desc}</p>
-                        <div className="flex items-center gap-3">
-                            <button onClick={onSkip} className="text-gray-400 hover:text-gray-600 text-sm underline">
-                                Saltar tutorial
-                            </button>
-                            <div className="flex-1" />
-                            {paso > 0 && (
-                                <button onClick={onBack} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl font-bold text-sm">
-                                    ← Atrás
-                                </button>
+                    ),
+                },
+                {
+                    title: '🗂️ Gastos Fijos',
+                    icon: '🗂️',
+                    desc: 'Registra tus gastos recurrentes: renta, Netflix, suscripciones. La app calcula cuánto apartar cada día para cubrirlos.',
+                    spotlightId: null,
+                },
+                {
+                    title: '🗂️ Ciclo de Gasto Fijo',
+                    icon: '🗂️',
+                    desc: 'Cada gasto fijo tiene un ciclo. La app acumula el dinero día a día y te avisa cuando está completo para que lo apliques.',
+                    spotlightId: null,
+                    demoContent: (
+                        <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-2xl">🏠</span>
+                                    <span className="font-bold text-purple-800">Renta Mensual</span>
+                                </div>
+                                <span className="bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded-full">✅ Completado</span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                <div className="bg-white rounded-lg p-2 text-center">
+                                    <p className="text-xs text-gray-500">Acumulado</p>
+                                    <p className="font-bold text-purple-800">$5,000</p>
+                                </div>
+                                <div className="bg-white rounded-lg p-2 text-center">
+                                    <p className="text-xs text-gray-500">Gasto</p>
+                                    <p className="font-bold text-gray-800">$4,800</p>
+                                </div>
+                            </div>
+                            <div className="mt-2 bg-green-50 rounded-lg p-2 text-center">
+                                <p className="text-xs text-green-700">✨ +$200 excedente disponible</p>
+                            </div>
+                        </div>
+                    ),
+                },
+                {
+                    title: '🛒 Otros Gastos',
+                    icon: '🛒',
+                    desc: 'Para gastos ocasionales fuera del presupuesto, usa "Otros Gastos". Elige de qué parte de tu billetera sale el dinero.',
+                    spotlightId: 'gastos-tab',
+                    demoContent: (
+                        <div className="bg-red-50 rounded-xl p-4 border border-red-200">
+                            <div className="flex items-center gap-2 mb-3">
+                                <span className="text-2xl">🛒</span>
+                                <span className="font-bold text-red-800">Registrar Gasto</span>
+                            </div>
+                            <div className="space-y-2">
+                                <div className="bg-white rounded-lg p-2 border border-red-100">
+                                    <span className="text-xs text-gray-500">Descripción</span>
+                                    <p className="font-semibold">Cena restaurante</p>
+                                </div>
+                                <div className="flex gap-2">
+                                    <div className="bg-white rounded-lg p-2 border border-red-100 flex-1">
+                                        <span className="text-xs text-gray-500">Monto</span>
+                                        <p className="font-bold text-red-800">$350</p>
+                                    </div>
+                                    <div className="bg-white rounded-lg p-2 border border-red-100 flex-1">
+                                        <span className="text-xs text-gray-500">Categoría</span>
+                                        <p className="text-sm">🍕 Comida</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ),
+                },
+                {
+                    title: '🎯 Crear Meta de Ahorro',
+                    icon: '🎯',
+                    desc: 'Define metas de ahorro con nombre, monto objetivo, moneda y fecha límite. La app calcula cuánto necesitas aportar cada día.',
+                    spotlightId: null,
+                    demoContent: (
+                        <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                            <div className="flex items-center gap-2 mb-3">
+                                <span className="text-2xl">🎯</span>
+                                <span className="font-bold text-blue-800">Nueva Meta de Ahorro</span>
+                            </div>
+                            <div className="space-y-2">
+                                <div className="bg-white rounded-lg p-2 border border-blue-100">
+                                    <span className="text-xs text-gray-500">Nombre</span>
+                                    <p className="font-semibold">Vacaciones en Cancún ✈️</p>
+                                </div>
+                                <div className="flex gap-2">
+                                    <div className="bg-white rounded-lg p-2 border border-blue-100 flex-1">
+                                        <span className="text-xs text-gray-500">Meta</span>
+                                        <p className="font-bold text-blue-800">$15,000</p>
+                                    </div>
+                                    <div className="bg-white rounded-lg p-2 border border-blue-100 flex-1">
+                                        <span className="text-xs text-gray-500">Aporte diario</span>
+                                        <p className="font-bold text-green-700">$166/día</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ),
+                },
+                {
+                    title: '💎 Aportar a tu Ahorro',
+                    icon: '💎',
+                    desc: 'Desde el dashboard puedes ir aportando a tus metas. La app registra cada aporte y muestra tu progreso en tiempo real.',
+                    spotlightId: null,
+                    demoContent: (
+                        <div className="bg-cyan-50 rounded-xl p-4 border border-cyan-200">
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-2xl">✈️</span>
+                                    <span className="font-bold text-cyan-800">Vacaciones Cancún</span>
+                                </div>
+                                <span className="text-sm font-bold text-cyan-700">45%</span>
+                            </div>
+                            <div className="bg-gray-200 rounded-full h-3 mb-3">
+                                <div className="bg-gradient-to-r from-cyan-500 to-blue-500 h-3 rounded-full" style={{width: '45%'}} />
+                            </div>
+                            <div className="flex justify-between text-sm">
+                                <span className="text-gray-600">$6,750 ahorrados</span>
+                                <span className="text-gray-600">Meta: $15,000</span>
+                            </div>
+                        </div>
+                    ),
+                },
+                {
+                    title: '📋 Términos y Condiciones',
+                    icon: '📋',
+                    desc: 'Por favor lee y acepta nuestros términos y condiciones para comenzar a usar la app.',
+                    spotlightId: null,
+                    isTerms: true,
+                },
+            ];
+
+            React.useEffect(() => {
+                const currentStep = steps[Math.min(paso, steps.length - 1)];
+                if (currentStep.spotlightId) {
+                    const el = document.getElementById(currentStep.spotlightId);
+                    if (el) {
+                        setSpotlightRect(el.getBoundingClientRect());
+                    } else {
+                        setSpotlightRect(null);
+                    }
+                } else {
+                    setSpotlightRect(null);
+                }
+            }, [paso]);
+
+            const handleScroll = (e) => {
+                const el = e.target;
+                if (el.scrollTop + el.clientHeight >= el.scrollHeight - 10) {
+                    setScrolledToBottom(true);
+                }
+            };
+
+            const currentStep = steps[Math.min(paso, steps.length - 1)];
+            const isLastStep = paso === steps.length - 1;
+
+            return (
+                <div className="fixed inset-0 z-[60]" style={{pointerEvents: 'none'}}>
+                    {spotlightRect ? (
+                        <div style={{
+                            position: 'absolute',
+                            top: spotlightRect.top - 4,
+                            left: spotlightRect.left - 4,
+                            width: spotlightRect.width + 8,
+                            height: spotlightRect.height + 8,
+                            boxShadow: '0 0 0 9999px rgba(0,0,0,0.75)',
+                            borderRadius: '16px',
+                            zIndex: 60,
+                            pointerEvents: 'none',
+                        }} />
+                    ) : (
+                        <div className="absolute inset-0 bg-black bg-opacity-75" />
+                    )}
+                    <div className="fixed inset-0 z-[61] flex flex-col justify-end p-4 pb-24" style={{pointerEvents: 'auto'}}>
+                        <div className="relative bg-white rounded-2xl shadow-2xl p-6 max-w-lg w-full mx-auto" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex gap-1 mb-4">
+                                {steps.map((_, i) => (
+                                    <div key={i} className={`h-1 flex-1 rounded-full transition-all ${
+                                        i === paso ? 'bg-indigo-500' : i < paso ? 'bg-green-500' : 'bg-gray-200'
+                                    }`} />
+                                ))}
+                            </div>
+                            <div className="flex items-start gap-3 mb-3">
+                                <span className="text-3xl">{currentStep.icon}</span>
+                                <div>
+                                    <p className="text-xs text-gray-400 mb-0.5">Paso {paso + 1} de {steps.length}</p>
+                                    <h3 className="text-xl font-bold text-gray-800">{currentStep.title}</h3>
+                                </div>
+                            </div>
+                            <p className="text-gray-600 leading-relaxed mb-4">{currentStep.desc}</p>
+                            {currentStep.demoContent && (
+                                <div className="mb-4">{currentStep.demoContent}</div>
                             )}
-                            <button onClick={onNext} className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl font-bold text-sm">
-                                {paso < steps.length - 1 ? 'Siguiente →' : '¡Entendido! ✓'}
-                            </button>
+                            {isLastStep && (
+                                <div>
+                                    <div
+                                        onScroll={handleScroll}
+                                        className="bg-gray-50 rounded-xl p-4 h-40 overflow-y-auto text-sm text-gray-600 leading-relaxed mb-3 border border-gray-200"
+                                    >
+                                        <h4 className="font-bold text-gray-800 mb-2">Términos y Condiciones de Uso</h4>
+                                        <p className="mb-2">Al usar Finanzas App, aceptas que:</p>
+                                        <p className="mb-2"><strong>1. Datos personales:</strong> La información que ingresas se almacena únicamente en tu dispositivo mediante localStorage. No enviamos tus datos a ningún servidor.</p>
+                                        <p className="mb-2"><strong>2. Uso responsable:</strong> Esta aplicación es una herramienta de apoyo financiero personal. No constituye asesoramiento financiero profesional.</p>
+                                        <p className="mb-2"><strong>3. Respaldo de datos:</strong> Eres responsable de hacer respaldos de tu información. No nos hacemos responsables por pérdida de datos por limpieza de caché o cambio de dispositivo.</p>
+                                        <p className="mb-2"><strong>4. Actualizaciones:</strong> Podemos actualizar la app y estos términos en cualquier momento. El uso continuado implica aceptación de los cambios.</p>
+                                        <p className="mb-2"><strong>5. Limitación de responsabilidad:</strong> La app se ofrece "tal cual". No garantizamos exactitud absoluta en cálculos ni disponibilidad continua del servicio.</p>
+                                        <p className="mb-2"><strong>6. Propiedad intelectual:</strong> Todos los derechos de la aplicación pertenecen a sus creadores.</p>
+                                        <p className="text-gray-400 text-xs mt-4">Versión 1.0 — Mayo 2026</p>
+                                    </div>
+                                    {!scrolledToBottom && (
+                                        <p className="text-xs text-gray-400 text-center mb-2">↕ Desplázate para leer todo</p>
+                                    )}
+                                    <label className="flex items-start gap-3 cursor-pointer mb-4">
+                                        <input
+                                            type="checkbox"
+                                            checked={aceptoTerminos}
+                                            onChange={(e) => setAceptoTerminos(e.target.checked)}
+                                            disabled={!scrolledToBottom}
+                                            className="mt-0.5 w-4 h-4 rounded"
+                                        />
+                                        <span className={`text-sm ${scrolledToBottom ? 'text-gray-700' : 'text-gray-400'}`}>
+                                            He leído y acepto los Términos y Condiciones
+                                        </span>
+                                    </label>
+                                </div>
+                            )}
+                            <div className="flex items-center gap-3">
+                                <button onClick={onSkip} className="text-gray-400 hover:text-gray-600 text-sm underline">
+                                    Saltar
+                                </button>
+                                <div className="flex-1" />
+                                {paso > 0 && (
+                                    <button onClick={onBack} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl font-bold text-sm">
+                                        ← Atrás
+                                    </button>
+                                )}
+                                {isLastStep ? (
+                                    <button
+                                        onClick={onComplete}
+                                        disabled={!aceptoTerminos}
+                                        className={`px-6 py-2 rounded-xl font-bold text-sm ${aceptoTerminos ? 'bg-green-500 hover:bg-green-600 text-white' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+                                    >
+                                        ✅ Comenzar a usar la app
+                                    </button>
+                                ) : (
+                                    <button onClick={onNext} className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl font-bold text-sm">
+                                        Siguiente →
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -695,7 +948,7 @@
                             <span className="text-lg">🏠</span>
                             <span className="text-xs font-semibold">Inicio</span>
                         </button>
-                        <button onClick={() => setVista('billetera')} className={`flex flex-col items-center py-2 rounded-xl ${vista === 'billetera' ? t.navActive : 'text-gray-600'}`}>
+                        <button id="billetera-tab" onClick={() => setVista('billetera')} className={`flex flex-col items-center py-2 rounded-xl ${vista === 'billetera' ? t.navActive : 'text-gray-600'}`}>
                             <span className="text-lg">💰</span>
                             <span className="text-xs font-semibold">Billetera</span>
                         </button>
@@ -720,7 +973,7 @@
                 const fechaActual = calcularFechaActual();
                 
                 return (
-                    <div className={`min-h-screen bg-gradient-to-br ${t.bg} p-4 pb-24`}>
+                    <div id="dashboard-main" className={`min-h-screen bg-gradient-to-br ${t.bg} p-4 pb-24`}>
                         <div className="max-w-6xl mx-auto">
                             <div className="bg-white rounded-3xl shadow-2xl p-6 mb-6">
                                 <div className="flex justify-between items-center mb-4">
@@ -1708,8 +1961,8 @@
                             <p className="text-indigo-100">Ingresos, gastos y ahorros</p>
                         </div>
                         <div className="bg-white rounded-3xl shadow-xl mx-4 mb-6 p-2 grid grid-cols-3 gap-2">
-                            <button onClick={() => setTabActivo('ingresos')} className={`py-3 px-4 rounded-xl font-bold transition-all ${tabActivo === 'ingresos' ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>📥 Ingresos</button>
-                            <button onClick={() => setTabActivo('gastos')} className={`py-3 px-4 rounded-xl font-bold transition-all ${tabActivo === 'gastos' ? 'bg-gradient-to-r from-red-500 to-pink-600 text-white shadow-lg' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>🛒 Gastos</button>
+                            <button id="ingresos-tab" onClick={() => setTabActivo('ingresos')} className={`py-3 px-4 rounded-xl font-bold transition-all ${tabActivo === 'ingresos' ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>📥 Ingresos</button>
+                            <button id="gastos-tab" onClick={() => setTabActivo('gastos')} className={`py-3 px-4 rounded-xl font-bold transition-all ${tabActivo === 'gastos' ? 'bg-gradient-to-r from-red-500 to-pink-600 text-white shadow-lg' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>🛒 Gastos</button>
                             <button onClick={() => setTabActivo('ahorros')} className={`py-3 px-4 rounded-xl font-bold transition-all ${tabActivo === 'ahorros' ? 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white shadow-lg' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>🎯 Ahorros</button>
                         </div>
                         <div className="px-4">
@@ -2554,7 +2807,7 @@
                 setDeferredPrompt(null);
             };
 
-            const TUTORIAL_VISTAS = ['dashboard','billetera','movimientos','dashboard','movimientos','dashboard','dashboard','reporte','config'];
+            const TUTORIAL_VISTAS = ['dashboard','billetera','movimientos','movimientos','dashboard','dashboard','movimientos','dashboard','dashboard','dashboard'];
             const iniciarTutorial = () => { setVista('dashboard'); setEstado({...estado, tutorialActivo: true, tutorialPaso: 0}); };
             const avanzarTutorial = () => {
                 const next = estado.tutorialPaso + 1;
@@ -2589,6 +2842,7 @@
                             onNext={avanzarTutorial}
                             onBack={retrocederTutorial}
                             onSkip={saltarTutorial}
+                            onComplete={saltarTutorial}
                         />
                     )}
                     {vista === 'detalle' && seleccionado && <Detalle />}
