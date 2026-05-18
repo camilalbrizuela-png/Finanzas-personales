@@ -2239,7 +2239,7 @@
                     gastoMoneda: 'MXN',
                     gastoVencimiento: '',
                 });
-                const totalPasos = 10;
+                const totalPasos = 3;
 
                 const finalizarTutorial = () => {
                     const gastoInicial = datos.agregarGasto && datos.gastoNombre ? [{
@@ -2425,7 +2425,9 @@
                                     </div>
                                     <div className="flex gap-3">
                                         <button onClick={() => setPaso(1)} className={btnP}>← Atrás</button>
-                                        <button onClick={() => setPaso(3)} className={btnN}>Siguiente →</button>
+                                        <button onClick={() => datos.monedasSecundarias.length > 0 ? setPaso(3) : finalizarTutorial()} className={btnN}>
+                                            {datos.monedasSecundarias.length > 0 ? 'Siguiente →' : 'Comenzar →'}
+                                        </button>
                                     </div>
                                 </div>
                             );
@@ -2486,244 +2488,12 @@
                                     )}
                                     <div className="flex gap-3">
                                         <button onClick={() => setPaso(2)} className={btnP}>← Atrás</button>
-                                        <button onClick={() => setPaso(4)} className={btnN}>Siguiente →</button>
+                                        <button onClick={finalizarTutorial} className={btnN}>Comenzar →</button>
                                     </div>
                                 </div>
                             );
                         })()}
 
-                        {/* PASO 4: Información Básica */}
-                        {paso === 4 && (
-                            <div className={card}>
-                                <Progreso />
-                                <h2 className="text-2xl font-bold text-gray-800 mb-2">📅 Información Básica</h2>
-                                <p className="text-gray-600 mb-5">¿Desde cuándo querés empezar a contar?</p>
-                                <div className="mb-6">
-                                    <label className="block text-gray-700 font-bold mb-2">📅 Fecha de inicio</label>
-                                    <input type="date" value={datos.fechaInicio}
-                                        onChange={(e) => setDatos({...datos, fechaInicio: e.target.value})}
-                                        className={inp} required />
-                                    <p className="text-xs text-gray-500 mt-1">A partir de esta fecha se calcula el ciclo de tus gastos fijos.</p>
-                                </div>
-                                <div className="flex gap-3">
-                                    <button onClick={() => setPaso(3)} className={btnP}>← Atrás</button>
-                                    <button onClick={() => {
-                                        if (!datos.fechaInicio) { alert('Por favor ingresa una fecha de inicio'); return; }
-                                        setPaso(5);
-                                    }} className={btnN}>Siguiente →</button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* PASO 5: Tu Billetera (OBLIGATORIO) */}
-                        {paso === 5 && (() => {
-                            const currencyEmojis = { MXN: '🇲🇽', USD: '💵', ARS: '🇦🇷', EUR: '🇪🇺', GBP: '🇬🇧', CAD: '🍁', COP: '🇨🇴', BRL: '🇧🇷', CLP: '🇨🇱' };
-                            const currencyKeys = { MXN: 'mxnFisico', USD: 'usd', ARS: 'ars' };
-                            const principal = datos.monedaPrincipal || 'MXN';
-                            const secundarias = datos.monedasSecundarias || [];
-                            const todasMonedas = [principal, ...secundarias];
-                            const getKey = (code) => currencyKeys[code] || code.toLowerCase();
-                            return (
-                                <div className={card}>
-                                    <Progreso />
-                                    <h2 className="text-2xl font-bold text-gray-800 mb-2">💰 Tu Billetera</h2>
-                                    <p className="text-gray-600 mb-5">¿Cuánto dinero tienes ahora en cada moneda?</p>
-                                    <div className="space-y-4 mb-6">
-                                        {todasMonedas.map(code => (
-                                            <div key={code}>
-                                                <label className="block text-gray-700 font-semibold mb-1">
-                                                    {currencyEmojis[code] || '💱'} {code}
-                                                </label>
-                                                <input type="number" step="0.01"
-                                                    value={datos[getKey(code)] || '0'}
-                                                    onChange={(e) => setDatos({...datos, [getKey(code)]: e.target.value})}
-                                                    placeholder="0" className={inp} />
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div className="flex gap-3">
-                                        <button onClick={() => setPaso(4)} className={btnP}>← Atrás</button>
-                                        <button onClick={() => setPaso(6)} className={btnN}>Siguiente →</button>
-                                    </div>
-                                </div>
-                            );
-                        })()}
-
-                        {/* PASO 6: Gastos Fijos (opcional) */}
-                        {paso === 6 && (
-                            <div className={card}>
-                                <Progreso />
-                                <h2 className="text-2xl font-bold text-gray-800 mb-2">📋 Gastos Fijos</h2>
-                                <p className="text-gray-600 mb-3">Los gastos fijos son pagos recurrentes (renta, universidad, servicios, etc.)</p>
-                                <div className="bg-gray-50 rounded-xl p-3 mb-5 text-sm text-gray-800">
-                                    💡 Puedes agregar todos tus gastos después, o empezar con uno ahora
-                                </div>
-                                {!datos.agregarGasto ? (
-                                    <div className="flex flex-col gap-3 mb-4">
-                                        <button onClick={() => setDatos({...datos, agregarGasto: true})}
-                                            className="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 px-6 py-4 rounded-xl font-bold text-left">
-                                            ➕ Agregar mi primer gasto ahora
-                                        </button>
-                                        <button onClick={() => setPaso(7)}
-                                            className="w-full bg-gray-100 hover:bg-gray-200 text-gray-600 px-6 py-3 rounded-xl font-bold">
-                                            Hacerlo después →
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-3 mb-4">
-                                        <input type="text" value={datos.gastoNombre}
-                                            onChange={(e) => setDatos({...datos, gastoNombre: e.target.value})}
-                                            placeholder="Nombre del gasto (ej: Renta)" className={inp} />
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <input type="number" value={datos.gastoMonto}
-                                                onChange={(e) => setDatos({...datos, gastoMonto: e.target.value})}
-                                                placeholder="Monto" className={inp} />
-                                            <select value={datos.gastoMoneda}
-                                                onChange={(e) => setDatos({...datos, gastoMoneda: e.target.value})}
-                                                className={inp}>
-                                                <option value={datos.monedaPrincipal}>{datos.monedaPrincipal}</option>
-                                                {(datos.monedasSecundarias || []).map(m => (
-                                                    <option key={m} value={m}>{m}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                        <input type="date" value={datos.gastoVencimiento}
-                                            onChange={(e) => setDatos({...datos, gastoVencimiento: e.target.value})}
-                                            className={inp} />
-                                        <button onClick={() => setPaso(7)} className={`w-full ${btnN}`}>Siguiente →</button>
-                                        <button onClick={() => setDatos({...datos, agregarGasto: false})} className="w-full text-sm text-gray-500 underline">Cancelar</button>
-                                    </div>
-                                )}
-                                {!datos.agregarGasto && (
-                                    <button onClick={() => setPaso(5)} className="text-sm text-gray-500 underline">← Atrás</button>
-                                )}
-                            </div>
-                        )}
-
-                        {/* PASO 7: Cómo Funciona */}
-                        {paso === 7 && (
-                            <div className={card}>
-                                <Progreso />
-                                <h2 className="text-2xl font-bold text-gray-800 mb-5">📱 Cómo Funciona la App</h2>
-                                <div className="space-y-3 mb-6">
-                                    {[
-                                        { icono: '🏠', titulo: 'Dashboard', desc: 'Ve tus gastos fijos, costo de vida diario y progreso' },
-                                        { icono: '💰', titulo: 'Billetera', desc: 'Tu dinero disponible en todas las monedas' },
-                                        { icono: '📥', titulo: 'Ingresos', desc: 'Registra tus ingresos diarios' },
-                                        { icono: '🛒', titulo: 'Gastos Extra', desc: 'Gastos fuera de tu presupuesto fijo' },
-                                        { icono: '📊', titulo: 'Reporte', desc: 'Análisis gráfico de tus finanzas' },
-                                        { icono: '⚙️', titulo: 'Config', desc: 'Ajusta tipos de cambio y preferencias' },
-                                    ].map(item => (
-                                        <div key={item.titulo} className="flex items-center gap-3 bg-gray-50 rounded-xl p-3">
-                                            <span className="text-2xl">{item.icono}</span>
-                                            <div>
-                                                <p className="font-bold text-gray-800 text-sm">{item.titulo}</p>
-                                                <p className="text-xs text-gray-600">{item.desc}</p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                                <div className="flex gap-3">
-                                    <button onClick={() => setPaso(6)} className={btnP}>← Atrás</button>
-                                    <button onClick={() => setPaso(8)} className={btnN}>Siguiente →</button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* PASO 8: Registrar Ingresos */}
-                        {paso === 8 && (
-                            <div className={card}>
-                                <Progreso />
-                                <div className="text-5xl mb-4 text-center">💵</div>
-                                <h2 className="text-2xl font-bold text-gray-800 mb-3">Registrar Ingresos</h2>
-                                <p className="text-gray-600 mb-5">Cada día que trabajes, registra tus ingresos diarios en la sección de Ingresos.</p>
-                                <div className="bg-green-50 rounded-xl p-4 mb-5">
-                                    <p className="font-semibold text-green-800 mb-2">✓ El sistema calcula automáticamente:</p>
-                                    <ul className="text-sm text-green-800 space-y-1">
-                                        <li>• Cuánto te queda después de tus gastos fijos</li>
-                                        <li>• Tu progreso mensual</li>
-                                        <li>• Comparativa entre monedas</li>
-                                    </ul>
-                                </div>
-                                <div className="flex gap-3">
-                                    <button onClick={() => setPaso(7)} className={btnP}>← Atrás</button>
-                                    <button onClick={() => setPaso(9)} className={btnN}>Siguiente →</button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* PASO 9: Avanzar Días */}
-                        {paso === 9 && (
-                            <div className={card}>
-                                <Progreso />
-                                <div className="text-5xl mb-4 text-center">⏭️</div>
-                                <h2 className="text-2xl font-bold text-gray-800 mb-3">Avanzar Días</h2>
-                                <p className="text-gray-600 mb-4">Usa el botón "⏭️ Avanzar" en el Dashboard para pasar al siguiente día.</p>
-                                <div className="bg-blue-50 rounded-xl p-4 mb-4">
-                                    <p className="font-semibold text-blue-800 mb-1">💡 Úsalo cuando:</p>
-                                    <p className="text-sm text-blue-800">Llegues a casa del trabajo o al final de cada día laborado.</p>
-                                </div>
-                                <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-5">
-                                    <p className="font-semibold text-red-800">⚠️ Importante:</p>
-                                    <p className="text-sm text-red-800">No puedes retroceder días. ¡Registra tus ingresos antes de avanzar!</p>
-                                </div>
-                                <div className="flex gap-3">
-                                    <button onClick={() => setPaso(8)} className={btnP}>← Atrás</button>
-                                    <button onClick={() => setPaso(10)} className={btnN}>Siguiente →</button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* PASO 10: ¡Listo! */}
-                        {paso === 10 && (
-                            <div className={`${card} text-center`}>
-                                <Progreso />
-                                <div className="text-6xl mb-4">🎉</div>
-                                <h2 className="text-3xl font-bold text-gray-800 mb-3">¡Todo listo para comenzar!</h2>
-                                <p className="text-gray-600 mb-5">Ya puedes empezar a usar Finanzas App</p>
-                                <div className="bg-yellow-50 rounded-xl p-4 mb-6 text-left">
-                                    <p className="font-semibold mb-2">💡 Tips para empezar:</p>
-                                    <div className="space-y-1 text-sm text-gray-700">
-                                        <p>💡 Registra tus ingresos cada día que trabajes</p>
-                                        <p>💡 Revisa tu progreso en el Reporte cada semana</p>
-                                        <p>💡 Ajusta los tipos de cambio en Config cuando cambien</p>
-                                    </div>
-                                </div>
-                                <div className="mb-6 text-left">
-                                    <label className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl border-2 border-gray-200 cursor-pointer hover:border-gray-400 transition-colors">
-                                        <input type="checkbox" id="aceptarTerminos" className="mt-1 w-5 h-5 text-gray-700 cursor-pointer" />
-                                        <span className="text-sm text-gray-700 leading-relaxed">
-                                            Acepto los{' '}
-                                            <a href="/terminos" target="_blank" rel="noopener noreferrer" className="text-gray-700 font-bold underline hover:text-gray-800">
-                                                Términos y Condiciones
-                                            </a>
-                                            {' '}de uso de Finanzas App
-                                        </span>
-                                    </label>
-                                </div>
-                                <button onClick={() => {
-                                        if (!document.getElementById('aceptarTerminos')?.checked) {
-                                            alert('Debés aceptar los Términos y Condiciones para continuar');
-                                            return;
-                                        }
-                                        finalizarTutorial();
-                                        setTimeout(() => setModal('activarPremium'), 300);
-                                    }}
-                                    className="w-full bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-500 hover:to-orange-500 text-white px-6 py-3 rounded-xl font-bold text-base mb-3">
-                                    🌟 Activar Premium
-                                </button>
-                                <button onClick={() => {
-                                        if (!document.getElementById('aceptarTerminos')?.checked) {
-                                            alert('Debés aceptar los Términos y Condiciones para continuar');
-                                            return;
-                                        }
-                                        finalizarTutorial();
-                                    }}
-                                    className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white px-6 py-4 rounded-xl font-bold text-lg">
-                                    🚀 Comenzar a usar la app
-                                </button>
-                            </div>
-                        )}
                     </div>
                 );
             };
