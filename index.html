@@ -1737,8 +1737,32 @@
                                     </div>
                                     <div className="flex gap-2">
                                         <button onClick={() => { setForm({...seleccionado, montosDivididos: seleccionado.montosDivididos || { diarios: seleccionado.monto, quincenal: 0, mensual: 0 }}); setModal('editar'); }} className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-bold">✏️</button>
-                                        <button onClick={() => { if(confirm(esAhorro ? `¿Eliminar el ahorro "${seleccionado.nombre}"?` : `¿Eliminar "${seleccionado.nombre}"?`)) { setEstado({...estado, gastosFijos: estado.gastosFijos.filter(g => g.id !== seleccionado.id)}); setVista('dashboard'); }}}
-                                            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-bold">🗑️</button>
+                                        <button onClick={() => {
+                                            if (confirm(esAhorro ? `¿Eliminar el ahorro "${seleccionado.nombre}"?` : `¿Eliminar "${seleccionado.nombre}"?`)) {
+                                                if (esAhorro) {
+                                                    const aportesDelAhorro = estado.gastosExtras.filter(g => g.esAporteAhorro && g.ahorroId === seleccionado.id);
+                                                    const totalPorFuente = aportesDelAhorro.reduce((acc, aporte) => {
+                                                        const fuente = aporte.fuente || 'mxn';
+                                                        acc[fuente] = (acc[fuente] || 0) + aporte.monto;
+                                                        return acc;
+                                                    }, {});
+                                                    const nuevoEstado = {...estado};
+                                                    nuevoEstado.gastosFijos = estado.gastosFijos.filter(g => g.id !== seleccionado.id);
+                                                    nuevoEstado.gastosExtras = estado.gastosExtras.filter(g => !(g.esAporteAhorro && g.ahorroId === seleccionado.id));
+                                                    const nuevaBilletera = {...(estado.billetera || {})};
+                                                    if (totalPorFuente.usd) nuevaBilletera.usd = (nuevaBilletera.usd || 0) + totalPorFuente.usd;
+                                                    if (totalPorFuente.ars) nuevaBilletera.ars = (nuevaBilletera.ars || 0) + totalPorFuente.ars;
+                                                    nuevoEstado.billetera = nuevaBilletera;
+                                                    setEstado(nuevoEstado);
+                                                    if (Object.keys(totalPorFuente).length > 0) {
+                                                        alert(`Ahorro eliminado. Se devolvieron:\n${Object.entries(totalPorFuente).map(([fuente, monto]) => `${fuente.toUpperCase()}: $${Math.round(monto).toLocaleString()}`).join('\n')}`);
+                                                    }
+                                                } else {
+                                                    setEstado({...estado, gastosFijos: estado.gastosFijos.filter(g => g.id !== seleccionado.id)});
+                                                }
+                                                setVista('dashboard');
+                                            }
+                                        }} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-bold">🗑️</button>
                                     </div>
                                 </div>
 
@@ -4478,6 +4502,7 @@
                                             setEstado({
                                                 ...estado,
                                                 gastosFijos: nuevosGastosFijos,
+                                                gastosExtras: estado.gastosExtras.filter(g => !(g.esAporteAhorro && g.ahorroId === form.gastoId)),
                                                 ahorrosCompletados: [...(estado.ahorrosCompletados || []), nuevoAhorroCompletado],
                                                 ingresosDiarios: nuevosIngresos
                                             });
