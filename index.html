@@ -2,7 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>Finanzas App</title>
     <!-- PWA Meta Tags -->
     <link rel="manifest" href="/manifest.json">
@@ -13,6 +14,28 @@
     <link rel="apple-touch-icon" href="/icon-192.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body { width: 100%; max-width: 100vw; overflow-x: hidden; margin: 0; padding: 0; }
+        #root, #app { width: 100%; max-width: 100vw; overflow-x: hidden; }
+        img, svg, video, canvas, iframe { max-width: 100%; height: auto; }
+
+        /* Responsive text scale-down on very small screens */
+        @media (max-width: 380px) {
+            .text-4xl { font-size: 1.75rem !important; }
+            .text-3xl { font-size: 1.4rem !important; }
+            .text-2xl { font-size: 1.15rem !important; }
+        }
+        /* Tablet landscape: two-column dashboard cards */
+        @media (min-width: 641px) and (max-width: 1024px) {
+            .md\:grid-cols-3 { grid-template-columns: repeat(2, 1fr) !important; }
+        }
+        /* Landscape mobile: reduce vertical padding */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .pb-24 { padding-bottom: 4rem !important; }
+            .p-6 { padding: 0.75rem !important; }
+            .mb-6 { margin-bottom: 0.75rem !important; }
+        }
+
         #loading { display: flex; align-items: center; justify-content: center; min-height: 100vh; font-size: 1.5rem; color: #6b7280; font-family: sans-serif; }
         /* Dark theme overrides */
         .t-dark { background-color: #0f172a; color: #f8fafc; }
@@ -925,7 +948,10 @@
 
             // Total de gastos extras (solo los que descuentan de MXN)
 
-            const totalGastosExtras = estado.gastosExtras.reduce((total, g) => (!g.fuente || g.fuente === 'mxn') ? total + g.monto : total, 0);
+            const totalGastosExtras = estado.gastosExtras.reduce((total, g) => {
+                if (g.esAporteAhorro) return total; // ya contado en acumuladoEsperado via calcularCiclo
+                return (!g.fuente || g.fuente === 'mxn') ? total + g.monto : total;
+            }, 0);
 
 
 
@@ -1714,8 +1740,32 @@
                                     </div>
                                     <div className="flex gap-2">
                                         <button onClick={() => { setForm({...seleccionado, montosDivididos: seleccionado.montosDivididos || { diarios: seleccionado.monto, quincenal: 0, mensual: 0 }}); setModal('editar'); }} className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-bold">✏️</button>
-                                        <button onClick={() => { if(confirm(esAhorro ? `¿Eliminar el ahorro "${seleccionado.nombre}"?` : `¿Eliminar "${seleccionado.nombre}"?`)) { setEstado({...estado, gastosFijos: estado.gastosFijos.filter(g => g.id !== seleccionado.id)}); setVista('dashboard'); }}}
-                                            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-bold">🗑️</button>
+                                        <button onClick={() => {
+                                            if (confirm(esAhorro ? `¿Eliminar el ahorro "${seleccionado.nombre}"?` : `¿Eliminar "${seleccionado.nombre}"?`)) {
+                                                if (esAhorro) {
+                                                    const aportesDelAhorro = estado.gastosExtras.filter(g => g.esAporteAhorro && g.ahorroId === seleccionado.id);
+                                                    const totalPorFuente = aportesDelAhorro.reduce((acc, aporte) => {
+                                                        const fuente = aporte.fuente || 'mxn';
+                                                        acc[fuente] = (acc[fuente] || 0) + aporte.monto;
+                                                        return acc;
+                                                    }, {});
+                                                    const nuevoEstado = {...estado};
+                                                    nuevoEstado.gastosFijos = estado.gastosFijos.filter(g => g.id !== seleccionado.id);
+                                                    nuevoEstado.gastosExtras = estado.gastosExtras.filter(g => !(g.esAporteAhorro && g.ahorroId === seleccionado.id));
+                                                    const nuevaBilletera = {...(estado.billetera || {})};
+                                                    if (totalPorFuente.usd) nuevaBilletera.usd = (nuevaBilletera.usd || 0) + totalPorFuente.usd;
+                                                    if (totalPorFuente.ars) nuevaBilletera.ars = (nuevaBilletera.ars || 0) + totalPorFuente.ars;
+                                                    nuevoEstado.billetera = nuevaBilletera;
+                                                    setEstado(nuevoEstado);
+                                                    if (Object.keys(totalPorFuente).length > 0) {
+                                                        alert(`Ahorro eliminado. Se devolvieron:\n${Object.entries(totalPorFuente).map(([fuente, monto]) => `${fuente.toUpperCase()}: $${Math.round(monto).toLocaleString()}`).join('\n')}`);
+                                                    }
+                                                } else {
+                                                    setEstado({...estado, gastosFijos: estado.gastosFijos.filter(g => g.id !== seleccionado.id)});
+                                                }
+                                                setVista('dashboard');
+                                            }
+                                        }} className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-bold">🗑️</button>
                                     </div>
                                 </div>
 
@@ -1805,6 +1855,79 @@
                                 })()}
 
                             </div>
+
+                        {esAhorro && (() => {
+                            const aportesAlAhorro = (estado.gastosExtras || [])
+                                .filter(g => g.esAporteAhorro && g.ahorroId === seleccionado.id)
+                                .sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+                            return (
+                                <div className="bg-white rounded-3xl shadow-2xl p-6 mt-4">
+                                    <h3 className="text-xl font-bold text-gray-800 mb-4">📝 Historial de Aportes</h3>
+                                    {aportesAlAhorro.length === 0 ? (
+                                        <div className="text-center py-8 text-gray-500">
+                                            <p className="text-4xl mb-2">📭</p>
+                                            <p>Aún no hay aportes registrados</p>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            {aportesAlAhorro.map(aporte => (
+                                                <div key={aporte.id} className="bg-gray-50 rounded-xl p-4 flex items-center justify-between hover:bg-gray-100 transition-colors">
+                                                    <div className="flex-1">
+                                                        <p className="font-bold text-lg text-gray-800">
+                                                            ${Math.round(aporte.monto).toLocaleString()}
+                                                        </p>
+                                                        <p className="text-sm text-gray-600">
+                                                            📅 {formatearFecha(aporte.fecha)}
+                                                        </p>
+                                                        <p className="text-xs text-gray-500">
+                                                            Desde: {aporte.fuente === 'mxn' ? 'MXN Disponible' : aporte.fuente.toUpperCase()}
+                                                        </p>
+                                                    </div>
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            onClick={() => {
+                                                                setForm({
+                                                                    aporteId: aporte.id,
+                                                                    ahorroId: seleccionado.id,
+                                                                    nombreAhorro: seleccionado.nombre,
+                                                                    monto: aporte.monto,
+                                                                    fecha: aporte.fecha,
+                                                                    fuente: aporte.fuente
+                                                                });
+                                                                setModal('editarAporte');
+                                                            }}
+                                                            className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-bold transition-colors">
+                                                            ✏️ Editar
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                if (confirm(`¿Eliminar aporte de $${Math.round(aporte.monto).toLocaleString()}?`)) {
+                                                                    setEstado({
+                                                                        ...estado,
+                                                                        gastosExtras: estado.gastosExtras.filter(g => g.id !== aporte.id)
+                                                                    });
+                                                                }
+                                                            }}
+                                                            className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm font-bold transition-colors">
+                                                            🗑️
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            <div className="bg-green-50 rounded-xl p-4 border-2 border-green-200 mt-4">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="font-bold text-gray-700">Total aportado:</span>
+                                                    <span className="text-2xl font-bold text-green-800">
+                                                        ${Math.round(aportesAlAhorro.reduce((sum, a) => sum + a.monto, 0)).toLocaleString()}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })()}
+
                         </div>
                     </div>
                 );
@@ -4111,7 +4234,7 @@
                                     return;
                                 }
                                 const maxId = estado.gastosExtras.length > 0 ? Math.max(...estado.gastosExtras.map(g => g.id)) : 0;
-                                const fechaActual = calcularFechaActual().toISOString().split('T')[0];
+                                const fechaActual = e.target.fechaAporte?.value || calcularFechaActual().toISOString().split('T')[0];
                                 const nuevoAporte = {
                                     id: maxId + 1,
                                     fecha: fechaActual,
@@ -4149,11 +4272,93 @@
                                         className="w-full px-4 py-3 border-2 rounded-xl text-2xl" placeholder="0" />
                                     <p className="text-xs text-gray-500 mt-1">Esto se restará de tu disponible y se sumará al ahorro</p>
                                 </div>
+                                <div className="mb-4">
+                                    <label className="block text-gray-700 font-bold mb-2">Fecha del aporte</label>
+                                    <input
+                                        type="date"
+                                        name="fechaAporte"
+                                        defaultValue={new Date().toISOString().split('T')[0]}
+                                        required
+                                        className="w-full px-4 py-3 border-2 rounded-xl focus:border-indigo-500 outline-none"
+                                    />
+                                </div>
                                 <div className="flex gap-3">
                                     <button type="button" onClick={() => setModal(null)}
                                         className="flex-1 bg-gray-200 hover:bg-gray-300 px-6 py-3 rounded-xl font-bold">Cancelar</button>
                                     <button type="submit"
                                         className="flex-1 bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-bold">Aportar</button>
+                                </div>
+                            </form>
+                        </Modal>
+                    )}
+
+                    {modal === 'editarAporte' && (
+                        <Modal onClose={() => { setModal(null); setForm({}); }}>
+                            <h2 className="text-2xl font-bold mb-6">✏️ Editar Aporte</h2>
+                            <form onSubmit={(e) => {
+                                e.preventDefault();
+                                const nuevoMonto = parseFloat(e.target.monto.value);
+                                const nuevaFecha = e.target.fecha.value;
+                                const nuevaFuente = e.target.fuente.value;
+                                if (!nuevoMonto || nuevoMonto <= 0) { alert('Ingresa un monto válido'); return; }
+                                setEstado({
+                                    ...estado,
+                                    gastosExtras: estado.gastosExtras.map(g =>
+                                        g.id === form.aporteId
+                                            ? {...g, monto: nuevoMonto, fecha: nuevaFecha, fuente: nuevaFuente}
+                                            : g
+                                    )
+                                });
+                                setModal(null);
+                                setForm({});
+                            }}>
+                                <p className="text-gray-600 mb-4">
+                                    Aporte a: <strong>{form.nombreAhorro}</strong>
+                                </p>
+                                <div className="mb-4">
+                                    <label className="block text-gray-700 font-bold mb-2">Monto</label>
+                                    <input
+                                        type="number"
+                                        name="monto"
+                                        defaultValue={form.monto}
+                                        step="0.01"
+                                        required
+                                        className="w-full px-4 py-3 border-2 rounded-xl text-lg font-bold focus:border-indigo-500 outline-none"
+                                    />
+                                </div>
+                                <div className="mb-4">
+                                    <label className="block text-gray-700 font-bold mb-2">Fecha</label>
+                                    <input
+                                        type="date"
+                                        name="fecha"
+                                        defaultValue={form.fecha}
+                                        required
+                                        className="w-full px-4 py-3 border-2 rounded-xl focus:border-indigo-500 outline-none"
+                                    />
+                                </div>
+                                <div className="mb-6">
+                                    <label className="block text-gray-700 font-bold mb-2">Desde</label>
+                                    <select
+                                        name="fuente"
+                                        defaultValue={form.fuente}
+                                        className="w-full px-4 py-3 border-2 rounded-xl font-bold focus:border-indigo-500 outline-none">
+                                        <option value="mxn">💵 MXN Disponible</option>
+                                        <option value="usd">💵 USD</option>
+                                        <option value="ars">💵 ARS</option>
+                                    </select>
+                                </div>
+                                <div className="flex gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => { setModal(null); setForm({}); }}
+                                        className="flex-1 bg-gray-200 hover:bg-gray-300 py-3 rounded-xl font-bold transition-colors">
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white py-3 rounded-xl font-bold transition-all shadow-lg">
+                                        💾 Guardar
+                                    </button>
                                 </div>
                             </form>
                         </Modal>
@@ -4300,6 +4505,7 @@
                                             setEstado({
                                                 ...estado,
                                                 gastosFijos: nuevosGastosFijos,
+                                                gastosExtras: estado.gastosExtras.filter(g => !(g.esAporteAhorro && g.ahorroId === form.gastoId)),
                                                 ahorrosCompletados: [...(estado.ahorrosCompletados || []), nuevoAhorroCompletado],
                                                 ingresosDiarios: nuevosIngresos
                                             });
