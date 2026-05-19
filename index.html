@@ -2,14 +2,14 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="mobile-web-app-capable" content="yes">
     <title>Finanzas App</title>
     <!-- PWA Meta Tags -->
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#8B5CF6">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Finanzas">
     <link rel="apple-touch-icon" href="/icon-192.png">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -34,6 +34,15 @@
             .pb-24 { padding-bottom: 4rem !important; }
             .p-6 { padding: 0.75rem !important; }
             .mb-6 { margin-bottom: 0.75rem !important; }
+        }
+        /* Tablet landscape: use full width, two-column layout */
+        @media (min-width: 641px) and (orientation: landscape) {
+            body { width: 100vw; height: 100vh; overflow-x: hidden; }
+            .dashboard-grid { grid-template-columns: repeat(2, 1fr) !important; }
+        }
+        /* Tablet portrait: single column */
+        @media (min-width: 641px) and (orientation: portrait) {
+            .dashboard-grid { grid-template-columns: 1fr !important; }
         }
 
         #loading { display: flex; align-items: center; justify-content: center; min-height: 100vh; font-size: 1.5rem; color: #6b7280; font-family: sans-serif; }
@@ -672,6 +681,22 @@
                 };
                 window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
                 return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+            }, []);
+
+            useEffect(() => {
+                const handleOrientationChange = () => {
+                    setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 100);
+                };
+                window.addEventListener('orientationchange', handleOrientationChange);
+                if (screen.orientation) {
+                    screen.orientation.addEventListener('change', handleOrientationChange);
+                }
+                return () => {
+                    window.removeEventListener('orientationchange', handleOrientationChange);
+                    if (screen.orientation) {
+                        screen.orientation.removeEventListener('change', handleOrientationChange);
+                    }
+                };
             }, []);
 
             const formatearFecha = (fecha) => {
