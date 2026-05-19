@@ -948,7 +948,10 @@
 
             // Total de gastos extras (solo los que descuentan de MXN)
 
-            const totalGastosExtras = estado.gastosExtras.reduce((total, g) => (!g.fuente || g.fuente === 'mxn') ? total + g.monto : total, 0);
+            const totalGastosExtras = estado.gastosExtras.reduce((total, g) => {
+                if (g.esAporteAhorro) return total; // ya contado en acumuladoEsperado via calcularCiclo
+                return (!g.fuente || g.fuente === 'mxn') ? total + g.monto : total;
+            }, 0);
 
 
 
