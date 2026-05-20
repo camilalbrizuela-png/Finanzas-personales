@@ -1270,13 +1270,14 @@
                                                     <p className="text-xs text-gray-600 mb-1">💡 Para llegar a tiempo:</p>
                                                     <p className="text-sm font-bold text-gray-800">Ahorra {simbolo}{Math.round(ciclo.diarioRecomendado).toLocaleString()}/día</p>
                                                 </div>
-                                                {!ciclo.cicloCompleto && superavit > 0 && (
+                                                {!ciclo.cicloCompleto && getWalletBalance(gasto.moneda || estado.monedaPrincipal || 'MXN') > 0 && (
                                                     <button onClick={(e) => {
                                                         e.stopPropagation();
                                                         setForm({
                                                             ahorroId: gasto.id,
                                                             ahorroNombre: gasto.nombre,
                                                             ahorroMoneda: gasto.moneda || 'MXN',
+                                                            disponibleMoneda: getWalletBalance(gasto.moneda || estado.monedaPrincipal || 'MXN'),
                                                             disponibleMXN: superavit,
                                                             diarioRecomendado: ciclo.diarioRecomendado
                                                         });
@@ -1901,13 +1902,13 @@
                                                 <div key={aporte.id} className="bg-gray-50 rounded-xl p-4 flex items-center justify-between hover:bg-gray-100 transition-colors">
                                                     <div className="flex-1">
                                                         <p className="font-bold text-lg text-gray-800">
-                                                            ${Math.round(aporte.monto).toLocaleString()}
+                                                            {aporte.fuente === 'mxn' || aporte.fuente === (estado.monedaPrincipal || 'MXN').toLowerCase() ? '$' : `${aporte.fuente.toUpperCase()} `}{Math.round(aporte.monto).toLocaleString()}
                                                         </p>
                                                         <p className="text-sm text-gray-600">
                                                             📅 {formatearFecha(aporte.fecha)}
                                                         </p>
                                                         <p className="text-xs text-gray-500">
-                                                            Desde: {aporte.fuente === 'mxn' ? 'MXN Disponible' : aporte.fuente.toUpperCase()}
+                                                            Desde: {aporte.fuente === 'mxn' ? `${estado.monedaPrincipal || 'MXN'} Disponible` : aporte.fuente.toUpperCase()}
                                                         </p>
                                                     </div>
                                                     <div className="flex gap-2">
@@ -1928,11 +1929,17 @@
                                                         </button>
                                                         <button
                                                             onClick={() => {
-                                                                if (confirm(`¿Eliminar aporte de $${Math.round(aporte.monto).toLocaleString()}?`)) {
-                                                                    setEstado({
-                                                                        ...estado,
-                                                                        gastosExtras: estado.gastosExtras.filter(g => g.id !== aporte.id)
-                                                                    });
+                                                                const simboloAporte = aporte.fuente === 'mxn' ? '$' : `${aporte.fuente.toUpperCase()} `;
+                                                                if (confirm(`¿Eliminar aporte de ${simboloAporte}${Math.round(aporte.monto).toLocaleString()}?`)) {
+                                                                    const nuevoEstado = { ...estado, gastosExtras: estado.gastosExtras.filter(g => g.id !== aporte.id) };
+                                                                    if (aporte.fuente && aporte.fuente !== 'mxn') {
+                                                                        const nuevaBilletera = { ...(estado.billetera || {}) };
+                                                                        if (aporte.fuente === 'usd') nuevaBilletera.usd = (nuevaBilletera.usd || 0) + aporte.monto;
+                                                                        else if (aporte.fuente === 'ars') nuevaBilletera.ars = (nuevaBilletera.ars || 0) + aporte.monto;
+                                                                        else nuevaBilletera.monedas = { ...(nuevaBilletera.monedas || {}), [aporte.fuente.toUpperCase()]: ((nuevaBilletera.monedas || {})[aporte.fuente.toUpperCase()] || 0) + aporte.monto };
+                                                                        nuevoEstado.billetera = nuevaBilletera;
+                                                                    }
+                                                                    setEstado(nuevoEstado);
                                                                 }
                                                             }}
                                                             className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg text-sm font-bold transition-colors">
@@ -4255,34 +4262,44 @@
                                 const montoAporte = parseFloat(e.target.monto.value);
                                 const ahorroMoneda = form.ahorroMoneda || 'MXN';
                                 const principal = estado.monedaPrincipal || 'MXN';
+                                const esPrincipal = ahorroMoneda === principal;
+                                const disponibleActual = esPrincipal ? superavit : getWalletBalance(ahorroMoneda);
                                 if (montoAporte <= 0) { alert('El monto debe ser mayor a 0'); return; }
-                                if ((ahorroMoneda === 'MXN' || ahorroMoneda === principal) && montoAporte > superavit) {
-                                    alert(`No tenés suficiente disponible. Disponible: $${Math.round(superavit)}`);
+                                if (montoAporte > disponibleActual) {
+                                    alert(`No tenés suficiente ${ahorroMoneda} disponible. Disponible: ${esPrincipal ? '$' : ahorroMoneda + ' '}${Math.round(disponibleActual).toLocaleString()}`);
                                     return;
                                 }
                                 const maxId = estado.gastosExtras.length > 0 ? Math.max(...estado.gastosExtras.map(g => g.id)) : 0;
                                 const fechaActual = e.target.fechaAporte?.value || calcularFechaActual().toISOString().split('T')[0];
+                                const fuente = esPrincipal ? 'mxn' : ahorroMoneda.toLowerCase();
                                 const nuevoAporte = {
                                     id: maxId + 1,
                                     fecha: fechaActual,
                                     concepto: `Aporte a ${form.ahorroNombre}`,
                                     monto: montoAporte,
                                     categoriaId: (estado.categoriasGasto || []).find(c => c.nombre === 'Otros')?.id,
-                                    fuente: ahorroMoneda === principal ? 'mxn' : ahorroMoneda.toLowerCase(),
+                                    fuente,
                                     esAporteAhorro: true,
                                     ahorroId: form.ahorroId
                                 };
-                                setEstado({
-                                    ...estado,
-                                    gastosExtras: [...estado.gastosExtras, nuevoAporte]
-                                });
+                                const nuevoEstado = { ...estado, gastosExtras: [...estado.gastosExtras, nuevoAporte] };
+                                if (!esPrincipal) {
+                                    const nuevaBilletera = { ...(estado.billetera || {}) };
+                                    if (ahorroMoneda === 'USD') nuevaBilletera.usd = (nuevaBilletera.usd || 0) - montoAporte;
+                                    else if (ahorroMoneda === 'ARS') nuevaBilletera.ars = (nuevaBilletera.ars || 0) - montoAporte;
+                                    else nuevaBilletera.monedas = { ...(nuevaBilletera.monedas || {}), [ahorroMoneda]: ((nuevaBilletera.monedas || {})[ahorroMoneda] || 0) - montoAporte };
+                                    nuevoEstado.billetera = nuevaBilletera;
+                                }
+                                setEstado(nuevoEstado);
                                 setModal(null);
                             }}>
                                 <div className="bg-blue-50 rounded-xl p-4 mb-4">
                                     <div className="grid grid-cols-2 gap-3 text-sm">
                                         <div>
                                             <p className="text-gray-600">Disponible</p>
-                                            <p className="text-xl font-bold text-gray-800">${Math.round(form.disponibleMXN).toLocaleString()}</p>
+                                            <p className="text-xl font-bold text-gray-800">
+                                                {form.ahorroMoneda !== (estado.monedaPrincipal || 'MXN') ? `${form.ahorroMoneda} ` : '$'}{Math.round(form.disponibleMoneda ?? form.disponibleMXN).toLocaleString()}
+                                            </p>
                                         </div>
                                         <div>
                                             <p className="text-gray-600">Recomendado</p>
@@ -4295,7 +4312,7 @@
                                 <div className="mb-4">
                                     <label className="block text-gray-700 font-bold mb-2">Monto a aportar ({form.ahorroMoneda})</label>
                                     <input type="number" name="monto" step="0.01" required
-                                        defaultValue={Math.round(form.ahorroMoneda === (estado.monedaPrincipal || 'MXN') ? Math.min(form.diarioRecomendado, form.disponibleMXN) : form.diarioRecomendado)}
+                                        defaultValue={Math.round(Math.min(form.diarioRecomendado, form.disponibleMoneda ?? form.disponibleMXN))}
                                         className="w-full px-4 py-3 border-2 rounded-xl text-2xl" placeholder="0" />
                                     <p className="text-xs text-gray-500 mt-1">Esto se restará de tu disponible y se sumará al ahorro</p>
                                 </div>
