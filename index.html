@@ -2202,6 +2202,30 @@
                                                 className="w-full px-4 py-3 border-2 rounded-xl" />
                                         </div>
                                         <div>
+                                            <h3 className="text-lg font-bold mb-3">💱 Moneda Principal</h3>
+                                            <p className="text-sm text-gray-600 mb-3">La moneda base para calcular disponible, resúmenes y textos de la app.</p>
+                                            <select
+                                                value={estado.monedaPrincipal || 'MXN'}
+                                                onChange={(e) => {
+                                                    const nueva = e.target.value;
+                                                    const vieja = estado.monedaPrincipal || 'MXN';
+                                                    if (nueva === vieja) return;
+                                                    const nuevasSecundarias = [
+                                                        vieja,
+                                                        ...(estado.monedasSecundarias || []).filter(m => m !== nueva)
+                                                    ];
+                                                    setEstado({ ...estado, monedaPrincipal: nueva, monedasSecundarias: nuevasSecundarias });
+                                                }}
+                                                className="w-full px-4 py-3 border-2 rounded-xl font-bold focus:border-gray-500 outline-none">
+                                                {[estado.monedaPrincipal || 'MXN', ...(estado.monedasSecundarias || [])].map(code => (
+                                                    <option key={code} value={code}>{monedaConf(code).emoji} {code}</option>
+                                                ))}
+                                            </select>
+                                            {(estado.monedasSecundarias || []).length === 0 && (
+                                                <p className="text-xs text-amber-600 mt-2 bg-amber-50 rounded-lg p-2">💡 Para cambiar la moneda principal, primero agrega monedas secundarias desde Agregar Moneda.</p>
+                                            )}
+                                        </div>
+                                        <div>
                                             <h3 className="text-lg font-bold mb-3">💱 Tipos de Cambio</h3>
                                             {(estado.monedasSecundarias || []).length === 0 ? (
                                                 <p className="text-sm text-gray-500 bg-gray-50 rounded-xl p-3">No hay monedas secundarias configuradas.</p>
