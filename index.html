@@ -101,10 +101,12 @@
             </div>
         );
 
-        const TutorialOverlay = ({ paso, onNext, onBack, onSkip, onComplete }) => {
+        const TutorialOverlay = ({ paso, onNext, onBack, onSkip, onComplete, monedaPrincipal: mp }) => {
             const [aceptoTerminos, setAceptoTerminos] = React.useState(false);
             const [scrolledToBottom, setScrolledToBottom] = React.useState(false);
             const [spotlightRect, setSpotlightRect] = React.useState(null);
+            const principal = mp || 'MXN';
+            const simbolo = principal === 'MXN' || principal === 'ARS' || principal === 'COP' || principal === 'CLP' || principal === 'BRL' ? '$' : principal === 'USD' ? 'US$' : principal === 'EUR' ? '€' : principal === 'GBP' ? '£' : principal + ' ';
 
             const steps = [
                 {
@@ -191,7 +193,7 @@
                 {
                     title: '🛒 Otros Gastos',
                     icon: '🛒',
-                    desc: 'Para gastos ocasionales, elige de qué sección de tu billetera sale el dinero: MXN disponible, USD, ahorros, etc.',
+                    desc: `Para gastos ocasionales, elige de qué sección de tu billetera sale el dinero: ${principal} disponible, ahorros, etc.`,
                     spotlightId: 'boton-otro-gasto',
                     demoContent: (
                         <div className="bg-white rounded-xl p-4 border-2 border-indigo-200">
@@ -209,7 +211,7 @@
                                     <label className="text-xs text-gray-600 mb-2 block">Pagar desde:</label>
                                     <div className="space-y-2">
                                         <div className="border-2 border-indigo-500 bg-indigo-50 rounded-lg px-3 py-2 font-bold">
-                                            💵 MXN Disponible
+                                            💵 {principal} Disponible
                                         </div>
                                         <div className="border-2 rounded-lg px-3 py-2 text-gray-400">
                                             💵 USD
@@ -540,6 +542,7 @@
             const [form, setForm] = useState({});
             const [reportePeriodo, setReportePeriodo] = useState('mensual');
             const [deferredPrompt, setDeferredPrompt] = useState(null);
+            const [tabActivo, setTabActivo] = useState('ingresos');
 
             const convertirMoneda = (monto, monedaOrigen, monedaDestino) => {
                 if (monedaOrigen === monedaDestino) return monto;
@@ -2133,7 +2136,6 @@
 
             // Vista Movimientos (tabs: Ingresos / Gastos / Ahorros)
             const VistaMovimientos = () => {
-                const [tabActivo, setTabActivo] = React.useState('ingresos');
                 return (
                     <div className="pb-24">
                         <div className="bg-gradient-to-r from-gray-500 to-gray-600 text-white p-6 rounded-b-3xl shadow-xl mb-6">
@@ -3023,6 +3025,7 @@
                             onBack={retrocederTutorial}
                             onSkip={saltarTutorial}
                             onComplete={saltarTutorial}
+                            monedaPrincipal={estado.monedaPrincipal || 'MXN'}
                         />
                     )}
                     {vista === 'detalle' && seleccionado && <Detalle />}
