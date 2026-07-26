@@ -47,6 +47,20 @@
             .dashboard-grid { grid-template-columns: 1fr !important; }
         }
 
+        /* ─── PWA safe area insets (notch / dynamic island / home indicator) ─── */
+        /* Pushes all app content below the status bar when installed as PWA      */
+        .app-root {
+            padding-top: env(safe-area-inset-top, 0px);
+        }
+        /* Bottom nav clears the home indicator bar on iPhone */
+        .nav-bottom-safe {
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+        /* Detalle back-button area: min 1rem padding PLUS status bar height */
+        .view-detalle {
+            padding-top: max(1rem, calc(env(safe-area-inset-top, 0px) + 0.5rem));
+        }
+
         #loading { display: flex; align-items: center; justify-content: center; min-height: 100vh; font-size: 1.5rem; color: #6b7280; font-family: sans-serif; }
         /* Dark theme overrides */
         .t-dark { background-color: #0f172a; color: #f8fafc; }
@@ -1023,7 +1037,7 @@
             };
 
             const MenuNav = () => (
-                <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 shadow-lg">
+                <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 shadow-lg nav-bottom-safe">
                     <div className="max-w-6xl mx-auto grid grid-cols-5 gap-0 p-1">
                         <button onClick={() => setVista('dashboard')} className={`flex flex-col items-center py-2 rounded-xl ${vista === 'dashboard' ? t.navActive : 'text-gray-600'}`}>
                             <span className="text-lg">🏠</span>
@@ -1760,9 +1774,9 @@
                 const ciclo = calcularCiclo(seleccionado);
                 const esAhorro = seleccionado.categoria === 'Ahorro';
                 return (
-                    <div className={`min-h-screen bg-gradient-to-br ${t.bg} p-4 pb-24`}>
+                    <div className={`min-h-screen bg-gradient-to-br ${t.bg} view-detalle px-4 pb-24`}>
                         <div className="max-w-2xl mx-auto">
-                            <button onClick={() => setVista('dashboard')} className={`mb-4 ${t.accentText} font-semibold`}>← Volver</button>
+                            <button onClick={() => setVista('dashboard')} className={`mb-4 ${t.accentText} font-semibold text-lg py-2 pr-4`}>← Volver</button>
                             <div className="bg-white rounded-3xl shadow-2xl p-8">
                                 <div className="flex justify-between items-start mb-6">
                                     <div>
@@ -3034,7 +3048,7 @@
             const saltarTutorial = () => { setEstado({...estado, tutorialActivo: false, tutorialCompletado: true}); };
 
             return (
-                <div className={estado.tema === 'dark' ? 't-dark' : ''}>
+                <div className={`app-root${estado.tema === 'dark' ? ' t-dark' : ''}`}>
                     {!estado.onboardingCompleto ? (
                         <Tutorial />
                     ) : (
