@@ -1633,10 +1633,10 @@
                 const getNombreFuente = (fuente) => {
                     if (!fuente) return `${monedaConf(estado.monedaPrincipal || 'MXN').emoji} ${estado.monedaPrincipal || 'MXN'}`;
                     if (fuente === 'sueldo') return '💰 Salario';
-                    const fCode = fuente.toUpperCase();
+                    const fCode = String(fuente).toUpperCase();
                     if (MONEDA_CONF[fCode]) return `${monedaConf(fCode).emoji} ${fCode}`;
                     const seccion = (estado.billetera.secciones || []).find(s => s.id === fuente || s.id === parseInt(fuente));
-                    return seccion ? `${seccion.icono || '💼'} ${seccion.nombre}` : fuente;
+                    return seccion ? `${seccion.icono || '💼'} ${seccion.nombre}` : String(fuente);
                 };
 
                 return (
@@ -1678,7 +1678,7 @@
                                     const principal = estado.monedaPrincipal || 'MXN';
                                     const totalPrincipal = estado.gastosExtras.filter(g => !g.fuente || g.fuente === 'mxn' || g.fuente === principal.toLowerCase()).reduce((sum, g) => sum + g.monto, 0);
                                     const secundariasConGastos = (estado.monedasSecundarias || []).filter(m => estado.gastosExtras.some(g => g.fuente === m.toLowerCase()));
-                                    const seccionesConGastos = (estado.billetera.secciones || []).filter(s => estado.gastosExtras.some(g => g.fuente === s.id));
+                                    const seccionesConGastos = (estado.billetera.secciones || []).filter(s => estado.gastosExtras.some(g => g.fuente === s.id || parseInt(g.fuente) === s.id));
                                     const items = [principal, ...secundariasConGastos, ...seccionesConGastos.map(s => `sec_${s.id}`)];
                                     const cols = items.length === 1 ? 'grid-cols-1' : items.length === 2 ? 'grid-cols-2' : 'grid-cols-3';
                                     return (
@@ -1698,7 +1698,7 @@
                                                 );
                                             })}
                                             {seccionesConGastos.map(seccion => {
-                                                const total = estado.gastosExtras.filter(g => g.fuente === seccion.id).reduce((sum, g) => sum + g.monto, 0);
+                                                const total = estado.gastosExtras.filter(g => g.fuente === seccion.id || parseInt(g.fuente) === seccion.id).reduce((sum, g) => sum + g.monto, 0);
                                                 const esOtraMoneda = seccion.moneda && seccion.moneda !== principal;
                                                 return (
                                                     <div key={seccion.id} className="bg-red-50 rounded-xl p-3">
@@ -1750,7 +1750,7 @@
                                                                     nuevaBilletera.tanda = nuevaBilletera.tanda + gasto.monto;
                                                                 } else if (gasto.fuente && gasto.fuente !== 'mxn') {
                                                                     nuevaBilletera.secciones = (nuevaBilletera.secciones || []).map(s =>
-                                                                        s.id === gasto.fuente ? {...s, monto: s.monto + gasto.monto} : s
+                                                                        (s.id === gasto.fuente || s.id === parseInt(gasto.fuente)) ? {...s, monto: s.monto + gasto.monto} : s
                                                                     );
                                                                 }
                                                                 setEstado({...estado, gastosExtras: estado.gastosExtras.filter(g => g.id !== gasto.id), billetera: nuevaBilletera});
@@ -2450,10 +2450,10 @@
                 const getNF = (fuente) => {
                     if (!fuente) return `${monedaConf(estado.monedaPrincipal || 'MXN').emoji} ${estado.monedaPrincipal || 'MXN'}`;
                     if (fuente === 'sueldo') return '💰 Salario';
-                    const fCode = fuente.toUpperCase();
+                    const fCode = String(fuente).toUpperCase();
                     if (MONEDA_CONF[fCode]) return `${monedaConf(fCode).emoji} ${fCode}`;
-                    const s = (estado.billetera.secciones || []).find(s => s.id === parseInt(fuente));
-                    return s ? `${s.icono || '💼'} ${s.nombre}` : fuente;
+                    const s = (estado.billetera.secciones || []).find(s => s.id === fuente || s.id === parseInt(fuente));
+                    return s ? `${s.icono || '💼'} ${s.nombre}` : String(fuente);
                 };
                 const porFuente = gastosFilt.reduce((acc, g) => {
                     const f = getNF(g.fuente);
@@ -2667,7 +2667,7 @@
             const ModalIngreso = () => {
                 const sec = form.seccionIngreso;
                 const principal = estado.monedaPrincipal || 'MXN';
-                const secCode = sec ? sec.toUpperCase() : principal;
+                const secCode = sec ? String(sec).toUpperCase() : principal;
                 const seccionCustom = (estado.billetera.secciones || []).find(s => s.id === sec || s.id === parseInt(sec));
                 const cfg = monedaConf(secCode);
                 let titulo, placeholder, tcInfo;
@@ -3312,10 +3312,10 @@
                                     De: {(() => {
                                         const f = form.fuente;
                                         if (!f) return `${monedaConf(estado.monedaPrincipal || 'MXN').emoji} ${estado.monedaPrincipal || 'MXN'}`;
-                                        const fCode = f.toUpperCase();
+                                        const fCode = String(f).toUpperCase();
                                         if (MONEDA_CONF[fCode]) return `${monedaConf(fCode).emoji} ${fCode}`;
                                         const sec = (estado.billetera.secciones || []).find(s => s.id === f || s.id === parseInt(f));
-                                        return sec ? `${sec.icono || '💼'} ${sec.nombre}` : f;
+                                        return sec ? `${sec.icono || '💼'} ${sec.nombre}` : String(f);
                                     })()}
                                 </span>
                             </div>
